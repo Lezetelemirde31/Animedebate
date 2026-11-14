@@ -1,0 +1,221 @@
+// Anime Auction — data model
+// Characters and anime are seeded from src/data (see prisma/seed.ts).
+// Live auction state is owned by the Socket.IO server and persisted here
+// on every state transition so that balances, ownership and history stay
+// consistent even across server restarts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+  MYTHIC
+}
+
+enum MatchStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+  ABANDONED
+}
+
+enum LotStatus {
+  ACTIVE
+  SOLD
+  UNSOLD
+  CANCELLED
+}
+
+enum MatchResult {
+  WIN
+  LOSS
+  DRAW
+}
+
+model User {
+  id                String   @id @default(cuid())
+  username          String   @unique
+  /// Lower-cased username used for case-insensitive uniqueness and lookups.
+  usernameKey       String   @unique
+  passwordHash      String
+  /// Preset gradient avatar id (see src/lib/avatars.ts).
+  avatarStyle       String   @default("violet")
+  /// Optional owned character used as profile picture.
+  avatarCharacterId String?
+  avatarCharacter   Character? @relation("UserAvatar", fields: [avatarCharacterId], references: [id], onDelete: SetNull)
+
+  auctionWins   Int @default(0)
+  auctionLosses Int @default(0)
+  matchesPlayed Int @default(0)
+  matchesWon    Int @default(0)
+  totalSpent    Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions      Session[]
+  matchPlayers  MatchPlayer[]
+  bids          Bid[]
+  wonLots       AuctionLot[]     @relation("LotWinner")
+  owned         OwnedCharacter[]
+  hostedMatches Match[]          @relation("MatchHost")
+  wonMatches    Match[]          @relation("MatchWinner")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  /// SHA-256 of the session token; the raw token only lives in the cookie.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Anime {
+  /// Stable slug, e.g. "naruto".
+  id          String      @id
+  name        String
+  shortName   String
+  color       String
+  description String
+  enabled     Boolean     @default(true)
+  sortOrder   Int         @default(0)
+  characters  Character[]
+}
+
+model Character {
+  /// Stable slug, e.g. "naruto-itachi-uchiha".
+  id          String   @id
+  name        String
+  title       String
+  animeId     String
+  anime       Anime    @relation(fields: [animeId], references: [id])
+  imageUrl    String?
+  description String
+  abilities   String[]
+  rarity      Rarity
+  powerLevel  Int?
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lots          AuctionLot[]
+  owners        OwnedCharacter[]
+  avatarOfUsers User[]           @relation("UserAvatar")
+
+  @@index([animeId])
+  @@index([rarity])
+}
+
+model Match {
+  id              String      @id @default(cuid())
+  /// Short, human friendly room code (also used in URLs).
+  code            String      @unique
+  status          MatchStatus @default(WAITING)
+  isPrivate       Boolean     @default(true)
+  isMatchmade     Boolean     @default(false)
+  hostId          String?
+  host            User?       @relation("MatchHost", fields: [hostId], references: [id], onDelete: SetNull)
+  totalLots       Int
+  bidSeconds      Int
+  startingBalance Int
+  minIncrement    Int
+  animeIds        String[]
+  winnerId        String?
+  winner          User?       @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  endReason       String?
+  createdAt       DateTime    @default(now())
+  startedAt       DateTime?
+  endedAt         DateTime?
+  updatedAt       DateTime    @updatedAt
+
+  players MatchPlayer[]
+  lots    AuctionLot[]
+
+  @@index([status, isPrivate])
+  @@index([createdAt])
+}
+
+model MatchPlayer {
+  id       String       @id @default(cuid())
+  matchId  String
+  match    Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seat     Int
+  /// Server-authoritative virtual balance for this match.
+  balance  Int
+  score    Int          @default(0)
+  result   MatchResult?
+  joinedAt DateTime     @default(now())
+
+  @@unique([matchId, userId])
+  @@unique([matchId, seat])
+  @@index([userId])
+}
+
+model AuctionLot {
+  id            String     @id @default(cuid())
+  matchId       String
+  match         Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  lotNumber     Int
+  characterId   String
+  character     Character  @relation(fields: [characterId], references: [id])
+  startingPrice Int
+  status        LotStatus  @default(ACTIVE)
+  winnerId      String?
+  winner        User?      @relation("LotWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  finalPrice    Int?
+  startedAt     DateTime   @default(now())
+  endedAt       DateTime?
+
+  bids Bid[]
+
+  @@unique([matchId, lotNumber])
+  @@index([characterId])
+  @@index([winnerId])
+}
+
+model Bid {
+  id        String     @id @default(cuid())
+  lotId     String
+  lot       AuctionLot @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  createdAt DateTime   @default(now())
+
+  @@index([lotId])
+  @@index([userId])
+}
+
+model OwnedCharacter {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  characterId    String
+  character      Character @relation(fields: [characterId], references: [id])
+  /// Ownership is unique per (user, character). Winning the same character
+  /// again in a later match adds a copy instead of a duplicate entry.
+  copies         Int       @default(1)
+  lastPrice      Int
+  totalSpent     Int
+  acquiredAt     DateTime  @default(now())
+  lastAcquiredAt DateTime  @default(now())
+  sourceMatchId  String?
+
+  @@unique([userId, characterId])
+  @@index([characterId])
+}
