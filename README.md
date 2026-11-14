@@ -62,12 +62,30 @@ npm run start                 # serves Next.js + Socket.IO on $PORT (default 300
 
 To try multiplayer locally, open two different browsers (or a normal and a private window), register two accounts, create a room in one and join with the code in the other.
 
+## Deployment
+
+The live auction runs in **one long-running Node process**: it keeps WebSocket connections open and runs per-room timers. Deploy it to a host that runs a normal Node server or a Docker container, together with a PostgreSQL database.
+
+> **Vercel cannot run this app.** Vercel deploys Next.js as serverless functions, so the Socket.IO server in `server.ts` never starts (`/socket.io` returns 404) and there is no long-lived process for auction timers. Pages also fail there unless `DATABASE_URL` points at a reachable database. Use one of the options below, and disconnect the repository from Vercel so it stops publishing broken previews.
+
+**Render (one click, includes the database):** Dashboard → **New → Blueprint** → select this repository. [`render.yaml`](render.yaml) creates the web service and a PostgreSQL database and wires `DATABASE_URL` automatically. Free web services sleep when idle, which ends live matches. Use a paid instance for always-on play.
+
+**Railway / Fly.io / any Docker host:** the [`Dockerfile`](Dockerfile) builds a production image. Provide `DATABASE_URL` (and the platform's `PORT`). On start the container runs `npm run start:prod`, which applies migrations, seeds the characters and starts the server.
+
+```bash
+docker build -t anime-auction .
+docker run -p 3000:3000 -e DATABASE_URL="postgresql://user:pass@host:5432/db" anime-auction
+```
+
+`GET /api/health` returns `200 {"ok":true}` when the server and database are up, for platform health checks. Run a **single instance**: live rooms are held in memory, so don't scale horizontally.
+
 ### Scripts
 
 | Script | Purpose |
 | --- | --- |
 | `npm run dev` | Development server (Next.js HMR; auto-restarts when server code changes) |
 | `npm run build` / `npm run start` | Production build / run |
+| `npm run start:prod` | Migrate + seed, then start (used by the Dockerfile and Render) |
 | `npm run setup` | `prisma migrate deploy` + seed |
 | `npm run db:seed` | Re-seed anime & characters (idempotent) |
 | `npm run db:migrate` | Create/apply a new migration during development |
