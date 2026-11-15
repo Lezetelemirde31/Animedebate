@@ -1,8 +1,5 @@
-// Anime Auction — data model
+// Anime Auction & Anime Debate — Unified PostgreSQL / Supabase Data Model
 // Characters and anime are seeded from src/data (see prisma/seed.ts).
-// Live auction state is owned by the Socket.IO server and persisted here
-// on every state transition so that balances, ownership and history stay
-// consistent even across server restarts.
 
 generator client {
   provider = "prisma-client-js"
@@ -41,18 +38,86 @@ enum MatchResult {
   DRAW
 }
 
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum DebateCategory {
+  GENERAL
+  POWER_SCALING
+  LORE
+  HOT_TAKE
+}
+
+enum ContentStatus {
+  OPEN
+  LOCKED
+  HIDDEN
+}
+
+enum ComparisonCriteria {
+  OVERALL
+  COMBAT
+  WRITING
+  INTELLIGENCE
+}
+
+enum ComparisonSide {
+  A
+  B
+}
+
+enum NotificationType {
+  COMMENT_ON_DEBATE
+  COMMENT_ON_COMPARISON
+  COMMENT_REPLY
+  REACTION_MILESTONE
+  BADGE_EARNED
+  LEVEL_UP
+  MODERATION
+}
+
+enum BadgeRuleType {
+  DEBATES_COUNT
+  COMPARISONS_COUNT
+  COMMENTS_COUNT
+  LIKES_RECEIVED
+  LEVEL_REACHED
+  AUCTION_WINS
+}
+
 model User {
-  id                String   @id @default(cuid())
-  username          String   @unique
+  id                String     @id @default(cuid())
+  username          String     @unique
   /// Lower-cased username used for case-insensitive uniqueness and lookups.
-  usernameKey       String   @unique
+  usernameKey       String     @unique
   passwordHash      String
+  role              UserRole   @default(USER)
+  bio               String?
   /// Preset gradient avatar id (see src/lib/avatars.ts).
-  avatarStyle       String   @default("violet")
-  /// Optional owned character used as profile picture.
+  avatarStyle       String     @default("violet")
+  /// Optional owned character or selected character avatar.
   avatarCharacterId String?
   avatarCharacter   Character? @relation("UserAvatar", fields: [avatarCharacterId], references: [id], onDelete: SetNull)
+  /// Optional custom avatar image URL (from allowed presets/storage).
+  avatarCustomUrl   String?
 
+  /// Gamification & Community Stats
+  xp               Int       @default(0)
+  level            Int       @default(1)
+  debatesCount     Int       @default(0)
+  comparisonsCount Int       @default(0)
+  commentsCount    Int       @default(0)
+  likesReceived    Int       @default(0)
+
+  /// Moderation & Account Safety
+  isBanned          Boolean   @default(false)
+  bannedReason      String?
+  usernameChangedAt DateTime?
+
+  /// Auction Stats
   auctionWins   Int @default(0)
   auctionLosses Int @default(0)
   matchesPlayed Int @default(0)
@@ -62,13 +127,27 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions      Session[]
-  matchPlayers  MatchPlayer[]
-  bids          Bid[]
-  wonLots       AuctionLot[]     @relation("LotWinner")
-  owned         OwnedCharacter[]
-  hostedMatches Match[]          @relation("MatchHost")
-  wonMatches    Match[]          @relation("MatchWinner")
+  sessions           Session[]
+  matchPlayers       MatchPlayer[]
+  bids               Bid[]
+  wonLots            AuctionLot[]          @relation("LotWinner")
+  owned              OwnedCharacter[]
+  hostedMatches      Match[]               @relation("MatchHost")
+  wonMatches         Match[]               @relation("MatchWinner")
+  debates            Debate[]
+  comparisons        CharacterComparison[]
+  comparisonVotes    ComparisonVote[]
+  comments           Comment[]
+  reactions          Reaction[]
+  favorites          Favorite[]
+  badges             UserBadge[]
+  notifications      Notification[]        @relation("NotificationRecipient")
+  actedNotifications Notification[]        @relation("NotificationActor")
+  xpEvents           XpEvent[]
+  moderationLogs     ModerationLog[]       @relation("ModerationAdmin")
+
+  @@index([xp])
+  @@index([role])
 }
 
 model Session {
@@ -85,14 +164,15 @@ model Session {
 
 model Anime {
   /// Stable slug, e.g. "naruto".
-  id          String      @id
+  id          String                @id
   name        String
   shortName   String
   color       String
   description String
-  enabled     Boolean     @default(true)
-  sortOrder   Int         @default(0)
+  enabled     Boolean               @default(true)
+  sortOrder   Int                   @default(0)
   characters  Character[]
+  debates     Debate[]
 }
 
 model Character {
@@ -111,9 +191,14 @@ model Character {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  lots          AuctionLot[]
-  owners        OwnedCharacter[]
-  avatarOfUsers User[]           @relation("UserAvatar")
+  lots           AuctionLot[]
+  owners         OwnedCharacter[]
+  avatarOfUsers  User[]                @relation("UserAvatar")
+  debates        Debate[]
+  comparisonsAsA CharacterComparison[] @relation("ComparisonCharA")
+  comparisonsAsB CharacterComparison[] @relation("ComparisonCharB")
+  comments       Comment[]
+  favorites      Favorite[]
 
   @@index([animeId])
   @@index([rarity])
@@ -121,7 +206,6 @@ model Character {
 
 model Match {
   id              String      @id @default(cuid())
-  /// Short, human friendly room code (also used in URLs).
   code            String      @unique
   status          MatchStatus @default(WAITING)
   isPrivate       Boolean     @default(true)
@@ -155,7 +239,6 @@ model MatchPlayer {
   userId   String
   user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   seat     Int
-  /// Server-authoritative virtual balance for this match.
   balance  Int
   score    Int          @default(0)
   result   MatchResult?
@@ -207,8 +290,6 @@ model OwnedCharacter {
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   characterId    String
   character      Character @relation(fields: [characterId], references: [id])
-  /// Ownership is unique per (user, character). Winning the same character
-  /// again in a later match adds a copy instead of a duplicate entry.
   copies         Int       @default(1)
   lastPrice      Int
   totalSpent     Int
@@ -218,4 +299,223 @@ model OwnedCharacter {
 
   @@unique([userId, characterId])
   @@index([characterId])
+}
+
+// ─── Anime Debate Community Models ──────────────────────────────────────────
+
+model Debate {
+  id            String         @id @default(cuid())
+  slug          String         @unique
+  authorId      String
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  animeId       String?
+  anime         Anime?         @relation(fields: [animeId], references: [id], onDelete: SetNull)
+  characterId   String?
+  character     Character?     @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  title         String
+  content       String
+  category      DebateCategory @default(GENERAL)
+  status        ContentStatus  @default(OPEN)
+  isPinned      Boolean        @default(false)
+  likesCount    Int            @default(0)
+  dislikesCount Int            @default(0)
+  commentsCount Int            @default(0)
+  viewsCount    Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  comments  Comment[]
+  reactions Reaction[]
+  favorites Favorite[]
+
+  @@index([status, isPinned, createdAt])
+  @@index([authorId])
+  @@index([animeId])
+  @@index([characterId])
+}
+
+model CharacterComparison {
+  id            String             @id @default(cuid())
+  slug          String             @unique
+  authorId      String
+  author        User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  characterAId  String
+  characterA    Character          @relation("ComparisonCharA", fields: [characterAId], references: [id])
+  characterBId  String
+  characterB    Character          @relation("ComparisonCharB", fields: [characterBId], references: [id])
+  title         String
+  description   String
+  criteria      ComparisonCriteria @default(OVERALL)
+  status        ContentStatus      @default(OPEN)
+  votesACount   Int                @default(0)
+  votesBCount   Int                @default(0)
+  likesCount    Int                @default(0)
+  dislikesCount Int                @default(0)
+  commentsCount Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  sideVotes ComparisonVote[]
+  comments  Comment[]
+  reactions Reaction[]
+  favorites Favorite[]
+
+  @@index([status, createdAt])
+  @@index([authorId])
+  @@index([characterAId])
+  @@index([characterBId])
+}
+
+model ComparisonVote {
+  id           String              @id @default(cuid())
+  comparisonId String
+  comparison   CharacterComparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  side         ComparisonSide
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([comparisonId, userId])
+  @@index([userId])
+}
+
+model Comment {
+  id            String               @id @default(cuid())
+  authorId      String
+  author        User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  debateId      String?
+  debate        Debate?              @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  comparisonId  String?
+  comparison    CharacterComparison? @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  characterId   String?
+  character     Character?           @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  parentId      String?
+  parent        Comment?             @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Comment[]            @relation("CommentReplies")
+  body          String
+  likesCount    Int                  @default(0)
+  dislikesCount Int                  @default(0)
+  isDeleted     Boolean              @default(false)
+  editedAt      DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  reactions Reaction[]
+
+  @@index([debateId, createdAt])
+  @@index([comparisonId, createdAt])
+  @@index([characterId, createdAt])
+  @@index([parentId])
+  @@index([authorId])
+}
+
+model Reaction {
+  id           String               @id @default(cuid())
+  userId       String
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  debateId     String?
+  debate       Debate?              @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  comparisonId String?
+  comparison   CharacterComparison? @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  commentId    String?
+  comment      Comment?             @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  /// 1 = Like, -1 = Dislike
+  value        Int
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@unique([userId, debateId])
+  @@unique([userId, comparisonId])
+  @@unique([userId, commentId])
+  @@index([debateId])
+  @@index([comparisonId])
+  @@index([commentId])
+}
+
+model Favorite {
+  id           String               @id @default(cuid())
+  userId       String
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  characterId  String?
+  character    Character?           @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  debateId     String?
+  debate       Debate?              @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  comparisonId String?
+  comparison   CharacterComparison? @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  createdAt    DateTime             @default(now())
+
+  @@unique([userId, characterId])
+  @@unique([userId, debateId])
+  @@unique([userId, comparisonId])
+  @@index([userId, createdAt])
+}
+
+model Badge {
+  id          String        @id
+  slug        String        @unique
+  name        String
+  description String
+  icon        String
+  color       String
+  ruleType    BadgeRuleType
+  threshold   Int
+  createdAt   DateTime      @default(now())
+
+  users UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?            @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  type      NotificationType
+  title     String
+  message   String
+  linkUrl   String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
+
+model XpEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  reason    String
+  refType   String?
+  refId     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model ModerationLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation("ModerationAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  action     String
+  targetType String
+  targetId   String
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([adminId])
 }

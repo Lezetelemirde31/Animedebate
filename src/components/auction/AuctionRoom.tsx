@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Radio, WifiOff } from "lucide-react";
 import { useRoom, useServerNow, type RoomEventWithMeta } from "@/hooks/useRoom";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { useCurrentUser } from "@/components/providers/SessionProvider";
 import { ErrorState, Spinner } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
@@ -12,37 +13,53 @@ import { AuctionStage } from "./AuctionStage";
 import { LobbyView } from "./LobbyView";
 import { MatchSummary } from "./MatchSummary";
 
-function describe(e: RoomEventWithMeta, myId: string | null): { text: string; tone: "info" | "good" | "warn" } | null {
-  const who = (id: string, name: string) => (id === myId ? "You" : name);
+function describe(
+  e: RoomEventWithMeta,
+  myId: string | null,
+  t: ReturnType<typeof useLanguage>["t"],
+): { text: string; tone: "info" | "good" | "warn" } | null {
+  const who = (id: string, name: string) => (id === myId ? t.auction.you : name);
   switch (e.type) {
     case "player_joined":
-      return { text: `${who(e.userId, e.username)} joined the room`, tone: "good" };
+      return { text: t.auction.room.joinedRoom(who(e.userId, e.username)), tone: "good" };
     case "player_left":
-      return { text: `${who(e.userId, e.username)} left the room`, tone: "warn" };
+      return { text: t.auction.room.leftRoom(who(e.userId, e.username)), tone: "warn" };
     case "player_disconnected":
-      return e.userId === myId ? null : { text: `${e.username} disconnected`, tone: "warn" };
+      return e.userId === myId ? null : { text: t.auction.room.disconnectedRoom(e.username), tone: "warn" };
     case "player_reconnected":
-      return e.userId === myId ? null : { text: `${e.username} reconnected`, tone: "good" };
+      return e.userId === myId ? null : { text: t.auction.room.reconnectedRoom(e.username), tone: "good" };
     case "bid":
-      return e.overtime ? { text: `Overtime! ${who(e.bid.userId, e.bid.username)} bid $${e.bid.amount}`, tone: "warn" } : null;
+      return e.overtime
+        ? { text: t.auction.room.overtimeBid(who(e.bid.userId, e.bid.username), e.bid.amount), tone: "warn" }
+        : null;
     case "match_paused":
-      return { text: "Match paused — waiting for reconnection", tone: "warn" };
+      return { text: t.auction.room.pausedToast, tone: "warn" };
     case "match_resumed":
-      return { text: "Match resumed", tone: "good" };
+      return { text: t.auction.room.resumedToast, tone: "good" };
     default:
       return null;
   }
 }
 
-function Toasts({ events, now, myId }: { events: RoomEventWithMeta[]; now: number; myId: string | null }) {
+function Toasts({
+  events,
+  now,
+  myId,
+  t,
+}: {
+  events: RoomEventWithMeta[];
+  now: number;
+  myId: string | null;
+  t: ReturnType<typeof useLanguage>["t"];
+}) {
   const recent = events
     .filter((e) => Date.now() - e.at < 4500 || now - e.at < 4500)
-    .map((e) => ({ e, d: describe(e, myId) }))
+    .map((e) => ({ e, d: describe(e, myId, t) }))
     .filter((x) => x.d)
     .slice(-3);
   if (recent.length === 0) return null;
   return (
-    <div className="pointer-events-none fixed bottom-6 right-4 z-50 flex w-72 flex-col gap-2" aria-live="polite">
+    <div className="pointer-events-none fixed bottom-20 right-4 z-50 flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-2" aria-live="polite">
       {recent.map(({ e, d }) => (
         <div
           key={e.key}
@@ -62,12 +79,14 @@ function ConfirmDialog({
   title,
   body,
   confirmLabel,
+  stayLabel,
   onConfirm,
   onCancel,
 }: {
   title: string;
   body: string;
   confirmLabel: string;
+  stayLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -75,13 +94,13 @@ function ConfirmDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal>
       <div className="glass-strong w-full max-w-md rounded-3xl p-6 animate-pop-in">
         <div className="flex items-center gap-3">
-          <AlertTriangle className="h-6 w-6 text-rose-300" />
+          <AlertTriangle className="h-6 w-6 shrink-0 text-rose-300" />
           <h2 className="font-display text-xl font-bold text-white">{title}</h2>
         </div>
         <p className="mt-3 text-sm text-zinc-300">{body}</p>
         <div className="mt-6 flex justify-end gap-2">
           <button className="btn btn-ghost" onClick={onCancel} autoFocus>
-            Stay
+            {stayLabel}
           </button>
           <button className="btn btn-danger" onClick={onConfirm}>
             {confirmLabel}
@@ -94,6 +113,7 @@ function ConfirmDialog({
 
 export function AuctionRoom({ code }: { code: string }) {
   const router = useRouter();
+  const { t } = useLanguage();
   const user = useCurrentUser();
   const room = useRoom(code);
   const now = useServerNow(100);
@@ -123,35 +143,35 @@ export function AuctionRoom({ code }: { code: string }) {
     const actions = {
       NOT_FOUND: (
         <>
-          <Link href="/play/join" className="btn btn-primary">Try another code</Link>
-          <Link href="/play/create" className="btn btn-ghost">Create a room</Link>
+          <Link href="/play/join" className="btn btn-primary">{t.auction.room.tryAnotherCode}</Link>
+          <Link href="/play/create" className="btn btn-ghost">{t.auction.room.createRoom}</Link>
         </>
       ),
       MATCH_ENDED: (
         <>
           {error.data?.matchId && (
-            <Link href={`/history/${error.data.matchId}`} className="btn btn-primary">View results</Link>
+            <Link href={`/history/${error.data.matchId}`} className="btn btn-primary">{t.auction.room.viewResults}</Link>
           )}
-          <Link href="/play" className="btn btn-ghost">Find a new match</Link>
+          <Link href="/play" className="btn btn-ghost">{t.auction.room.findNewMatch}</Link>
         </>
       ),
       ACTIVE_MATCH: error.data?.code ? (
-        <Link href={`/room/${error.data.code}`} className="btn btn-primary">Return to your match</Link>
+        <Link href={`/room/${error.data.code}`} className="btn btn-primary">{t.auction.room.returnMatch}</Link>
       ) : null,
     } as Record<string, React.ReactNode>;
     return (
       <ErrorState
         title={
           error.code === "NOT_FOUND"
-            ? "Room not found"
+            ? t.auction.room.notFoundTitle
             : error.code === "MATCH_ENDED"
-              ? "This auction has ended"
+              ? t.auction.room.endedTitle
               : error.code === "ACTIVE_MATCH"
-                ? "You're in another match"
-                : "Couldn't join the room"
+                ? t.auction.room.activeMatchTitle
+                : t.auction.room.cantJoinTitle
         }
         description={error.message}
-        action={actions[error.code] ?? <Link href="/play" className="btn btn-primary">Back to Play</Link>}
+        action={actions[error.code] ?? <Link href="/play" className="btn btn-primary">{t.auction.room.backToPlay}</Link>}
       />
     );
   }
@@ -164,7 +184,7 @@ export function AuctionRoom({ code }: { code: string }) {
           <Spinner className="relative h-10 w-10" />
         </div>
         <p className="font-display uppercase tracking-[0.3em] text-zinc-400">
-          {connection === "connected" ? `Joining room ${code}…` : "Connecting to the auction server…"}
+          {connection === "connected" ? t.auction.room.joiningRoom(code) : t.auction.room.connectingServer}
         </p>
       </div>
     );
@@ -174,15 +194,15 @@ export function AuctionRoom({ code }: { code: string }) {
     <div>
       {connection !== "connected" && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-200">
-          <WifiOff className="h-4 w-4" /> Connection lost — reconnecting. Your seat is safe for a little while.
+          <WifiOff className="h-4 w-4 shrink-0" /> {t.auction.room.connectionLost}
         </div>
       )}
       {!isPlayer && snapshot.phase !== "LOBBY" && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-purple-500/30 bg-purple-500/10 px-4 py-2 text-sm text-purple-200">
-          <Radio className="h-4 w-4" /> Spectating — you see exactly what the players see.
+          <Radio className="h-4 w-4 shrink-0" /> {t.auction.room.spectatingBanner}
         </div>
       )}
-      <Toasts events={room.events} now={now} myId={myId} />
+      <Toasts events={room.events} now={now} myId={myId} t={t} />
 
       {snapshot.phase === "LOBBY" ? (
         <LobbyView snapshot={snapshot} myId={myId} now={now} onReady={room.setReady} onLeave={leave} />
@@ -201,9 +221,10 @@ export function AuctionRoom({ code }: { code: string }) {
 
       {confirmLeave && (
         <ConfirmDialog
-          title="Forfeit the match?"
-          body="Leaving now ends the match and your opponent wins by forfeit. Characters you've already won stay in your collection."
-          confirmLabel="Forfeit & leave"
+          title={t.auction.room.forfeitTitle}
+          body={t.auction.room.forfeitBody}
+          confirmLabel={t.auction.room.forfeitConfirm}
+          stayLabel={t.auction.room.stayBtn}
           onConfirm={leave}
           onCancel={() => setConfirmLeave(false)}
         />

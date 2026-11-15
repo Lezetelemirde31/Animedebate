@@ -57,10 +57,15 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   routerRef.current = router;
 
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_DISABLE_SOCKET === "1") {
+      setStatus("reconnecting");
+      return;
+    }
     const s: AppSocket = io({
       path: "/socket.io",
       transports: ["websocket", "polling"],
       withCredentials: true,
+      reconnectionAttempts: 6,
       reconnectionDelay: 500,
       reconnectionDelayMax: 4000,
     });
@@ -71,6 +76,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     });
     s.on("disconnect", () => setStatus("reconnecting"));
     s.io.on("reconnect_attempt", () => setStatus("reconnecting"));
+    s.io.on("reconnect_failed", () => setStatus("reconnecting"));
     s.on("presence:stats", setStats);
     s.on("queue:status", setQueue);
     s.on("queue:matched", ({ code }) => {

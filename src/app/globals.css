@@ -70,24 +70,34 @@
   color-scheme: dark;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
 html,
 body {
   background: var(--color-ink-950);
   color: #ececf3;
+  overflow-x: clip;
+  overscroll-behavior-y: none;
 }
 
 body {
   font-family: var(--font-sans);
-  min-height: 100dvh;
+  min-height: 100svh;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ambient backdrop: neon blooms + faint grid. */
+/* Ambient backdrop: GPU-promoted layer so scrolling never triggers full-screen repaints. */
 .app-backdrop {
   position: fixed;
   inset: 0;
   z-index: -10;
   pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  backface-visibility: hidden;
   background:
     radial-gradient(60rem 40rem at 10% -10%, rgba(139, 92, 246, 0.22), transparent 60%),
     radial-gradient(50rem 35rem at 100% 0%, rgba(225, 29, 72, 0.14), transparent 60%),
@@ -98,6 +108,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
+  transform: translate3d(0, 0, 0);
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
@@ -109,14 +120,14 @@ body {
   .glass {
     background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
     border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(135%);
+    -webkit-backdrop-filter: blur(12px) saturate(135%);
   }
   .glass-strong {
-    background: linear-gradient(160deg, rgba(30, 20, 52, 0.75), rgba(10, 7, 18, 0.8));
+    background: linear-gradient(160deg, rgba(30, 20, 52, 0.85), rgba(10, 7, 18, 0.9));
     border: 1px solid rgba(168, 85, 247, 0.22);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
   }
   .neon-border {
     box-shadow:

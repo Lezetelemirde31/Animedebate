@@ -15,9 +15,19 @@ export function percent(numerator: number, denominator: number): string {
   return `${Math.round((numerator / denominator) * 100)}%`;
 }
 
-export function timeAgo(date: Date | number): string {
+export function timeAgo(date: Date | number, locale: "tr" | "en" = "tr"): string {
   const ms = Date.now() - (typeof date === "number" ? date : date.getTime());
   const s = Math.max(0, Math.floor(ms / 1000));
+  if (locale === "tr") {
+    if (s < 60) return "az önce";
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m} dk önce`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} sa önce`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `${d} gün önce`;
+    return new Date(date).toLocaleDateString("tr-TR");
+  }
   if (s < 60) return "just now";
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m ago`;
@@ -25,7 +35,7 @@ export function timeAgo(date: Date | number): string {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 30) return `${d}d ago`;
-  return new Date(date).toLocaleDateString();
+  return new Date(date).toLocaleDateString("en-US");
 }
 
 export function initials(name: string): string {

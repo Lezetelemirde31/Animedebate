@@ -1,15 +1,17 @@
 "use client";
 
 import { DoorOpen, Radar, Swords, Users } from "lucide-react";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { useSocket } from "@/components/providers/SocketProvider";
 
 export function LiveStats() {
   const { stats, status } = useSocket();
+  const { t } = useLanguage();
   const items = [
-    { label: "Online now", value: stats?.online, icon: Users, color: "text-emerald-300" },
-    { label: "Live auctions", value: stats?.liveMatches, icon: Swords, color: "text-rose-300" },
-    { label: "Searching", value: stats?.inQueue, icon: Radar, color: "text-purple-300" },
-    { label: "Open rooms", value: stats?.openRooms, icon: DoorOpen, color: "text-sky-300" },
+    { label: t.liveStats.onlineNow, value: stats?.online, icon: Users, color: "text-emerald-300" },
+    { label: t.liveStats.liveAuctions, value: stats?.liveMatches, icon: Swords, color: "text-rose-300" },
+    { label: t.liveStats.searching, value: stats?.inQueue, icon: Radar, color: "text-purple-300" },
+    { label: t.liveStats.openRooms, value: stats?.openRooms, icon: DoorOpen, color: "text-sky-300" },
   ];
   return (
     <div className="glass grid grid-cols-2 gap-px overflow-hidden rounded-2xl md:grid-cols-4">

@@ -17,6 +17,19 @@ export async function requireUser(nextPath: string): Promise<SessionUser> {
   return user;
 }
 
+/** Requires ADMIN or MODERATOR role on server pages. */
+export async function requireAdmin(nextPath = "/admin"): Promise<SessionUser> {
+  const user = await requireUser(nextPath);
+  if (user.role !== "ADMIN" && user.role !== "MODERATOR") {
+    redirect("/");
+  }
+  return user;
+}
+
+export function isStaff(user: SessionUser | null | undefined): boolean {
+  return user?.role === "ADMIN" || user?.role === "MODERATOR";
+}
+
 /** Whether the current request arrived over HTTPS (directly or via a proxy). */
 export async function isSecureRequest(): Promise<boolean> {
   const h = await headers();

@@ -6,12 +6,14 @@ import { Check, Globe, Lock, Plus } from "lucide-react";
 import type { Ack } from "@/game/types";
 import { GAME_RULES } from "@/game/config";
 import { ENABLED_ANIME } from "@/data/anime";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { emitWithAck, useSocket } from "@/components/providers/SocketProvider";
 import { FormError, Spinner } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
 export function CreateRoomForm({ characterCounts }: { characterCounts: Record<string, number> }) {
   const router = useRouter();
+  const { t } = useLanguage();
   const { socket, status } = useSocket();
   const [isPrivate, setPrivate] = useState(true);
   const [totalLots, setLots] = useState<number>(GAME_RULES.defaultLots);
@@ -29,7 +31,7 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
   async function create(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (animeIds.length === 0) return setError("Pick at least one anime.");
+    if (animeIds.length === 0) return setError(t.play.pickOneAnime);
     setPending(true);
     try {
       const res = await emitWithAck<Ack<{ code: string }>>(socket, (s, ack) =>
@@ -42,7 +44,7 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
       }
       router.push(`/room/${res.data.code}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create the room.");
+      setError(err instanceof Error ? err.message : t.play.couldNotCreateRoom);
       setPending(false);
     }
   }
@@ -51,11 +53,11 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
     <form onSubmit={create} className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
         <section className="glass rounded-3xl p-6">
-          <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">Visibility</h2>
+          <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.play.visibility}</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {[
-              { value: true, icon: Lock, title: "Private", text: "Only players with the room code can join." },
-              { value: false, icon: Globe, title: "Public", text: "Listed in open rooms and used by quick match." },
+              { value: true, icon: Lock, title: t.play.privateTitle, text: t.play.privateDesc },
+              { value: false, icon: Globe, title: t.play.publicTitle, text: t.play.publicDesc },
             ].map((o) => (
               <button
                 type="button"
@@ -77,13 +79,13 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
 
         <section className="glass rounded-3xl p-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">Anime pool</h2>
+            <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.play.animePool}</h2>
             <button
               type="button"
               className="text-xs text-purple-300 hover:text-purple-200"
               onClick={() => setAnime(animeIds.length === ENABLED_ANIME.length ? [] : ENABLED_ANIME.map((a) => a.id))}
             >
-              {animeIds.length === ENABLED_ANIME.length ? "Clear all" : "Select all"}
+              {animeIds.length === ENABLED_ANIME.length ? t.play.clearAll : t.play.selectAll}
             </button>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -106,7 +108,7 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
                   <div className="font-display font-semibold" style={{ color: a.color }}>
                     {a.shortName}
                   </div>
-                  <div className="mt-1 text-xs text-zinc-400">{characterCounts[a.id] ?? 0} characters</div>
+                  <div className="mt-1 text-xs text-zinc-400">{t.home.charactersCount(characterCounts[a.id] ?? 0)}</div>
                 </button>
               );
             })}
@@ -115,7 +117,7 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
 
         <section className="glass grid gap-6 rounded-3xl p-6 sm:grid-cols-2">
           <div>
-            <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">Lots per match</h2>
+            <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.play.lotsPerMatch}</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {GAME_RULES.lotOptions.map((n) => (
                 <button type="button" key={n} className="chip !px-4 !py-2" data-active={totalLots === n} onClick={() => setLots(n)}>
@@ -125,11 +127,11 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
             </div>
           </div>
           <div>
-            <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">Bid timer</h2>
+            <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.play.bidTimer}</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {GAME_RULES.timerOptions.map((n) => (
                 <button type="button" key={n} className="chip !px-4 !py-2" data-active={bidSeconds === n} onClick={() => setTimer(n)}>
-                  {n}s
+                  {n}{t.auction.secLabel}
                 </button>
               ))}
             </div>
@@ -138,30 +140,30 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
       </div>
 
       <aside className="glass-strong h-fit rounded-3xl p-6 neon-border lg:sticky lg:top-24">
-        <h2 className="font-display text-lg font-bold text-white">Room summary</h2>
+        <h2 className="font-display text-lg font-bold text-white">{t.play.roomSummary}</h2>
         <dl className="mt-4 space-y-3 text-sm">
           <div className="flex justify-between">
-            <dt className="text-zinc-400">Visibility</dt>
-            <dd className="text-white">{isPrivate ? "Private" : "Public"}</dd>
+            <dt className="text-zinc-400">{t.play.visibility}</dt>
+            <dd className="text-white">{isPrivate ? t.play.privateTitle : t.play.publicTitle}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-zinc-400">Starting balance</dt>
-            <dd className="text-white">${GAME_RULES.startingBalance} each</dd>
+            <dt className="text-zinc-400">{t.play.startingBalance}</dt>
+            <dd className="text-white">{t.play.eachBal(GAME_RULES.startingBalance)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-zinc-400">Lots</dt>
+            <dt className="text-zinc-400">{t.play.lotsLabel}</dt>
             <dd className="text-white">{totalLots}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-zinc-400">Timer</dt>
-            <dd className="text-white">{bidSeconds}s (+{GAME_RULES.overtimeSeconds}s overtime)</dd>
+            <dt className="text-zinc-400">{t.play.timerLabel}</dt>
+            <dd className="text-white">{t.play.overtimeFmt(bidSeconds, GAME_RULES.overtimeSeconds)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-zinc-400">Character pool</dt>
-            <dd className={cn(poolSize < totalLots ? "text-rose-300" : "text-white")}>{poolSize} characters</dd>
+            <dt className="text-zinc-400">{t.play.characterPool}</dt>
+            <dd className={cn(poolSize < totalLots ? "text-rose-300" : "text-white")}>{t.home.charactersCount(poolSize)}</dd>
           </div>
         </dl>
-        <FormError message={poolSize < totalLots && animeIds.length > 0 ? "Not enough characters for that many lots — add more anime." : error} />
+        <FormError message={poolSize < totalLots && animeIds.length > 0 ? t.play.notEnoughChars : error} />
         <button
           type="submit"
           className="btn btn-primary mt-6 w-full !py-3.5"
@@ -169,9 +171,9 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
           data-testid="create-room-submit"
         >
           {pending ? <Spinner className="h-4 w-4 text-white" /> : <Plus className="h-4 w-4" />}
-          Create room
+          {t.play.createRoom}
         </button>
-        {status !== "connected" && <p className="mt-2 text-center text-xs text-amber-300">Connecting to the live server…</p>}
+        {status !== "connected" && <p className="mt-2 text-center text-xs text-amber-300">{t.play.connectingLiveServer}</p>}
       </aside>
     </form>
   );

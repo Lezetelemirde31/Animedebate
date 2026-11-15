@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Zap } from "lucide-react";
 import type { CharacterDTO } from "@/game/types";
 import { RARITY_INFO } from "@/game/rarity";
+import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { CharacterArt } from "./CharacterArt";
 import { AnimeBadge, RarityBadge } from "./badges";
@@ -12,18 +13,20 @@ export function CharacterCard({
   footer,
   className,
   compact,
+  locale = "tr",
 }: {
   character: CharacterDTO;
   href?: string;
   footer?: React.ReactNode;
   className?: string;
   compact?: boolean;
+  locale?: Locale;
 }) {
   const info = RARITY_INFO[character.rarity];
   const body = (
     <div
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-ink-900/80 transition duration-300",
+        "group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-ink-900/90 transition duration-300 [contain:layout_style]",
         "hover:-translate-y-1 hover:shadow-2xl",
         className,
       )}
@@ -42,10 +45,10 @@ export function CharacterCard({
           style={{ background: `linear-gradient(90deg, transparent, ${info.color}, transparent)` }}
         />
         <div className="absolute left-2 top-2">
-          <RarityBadge rarity={character.rarity} />
+          <RarityBadge rarity={character.rarity} locale={locale} />
         </div>
         {character.powerLevel !== null && !compact && (
-          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-amber-200 backdrop-blur">
+          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/80 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
             <Zap className="h-3 w-3" />
             {character.powerLevel}
           </div>
@@ -62,7 +65,7 @@ export function CharacterCard({
     </div>
   );
   return href ? (
-    <Link href={href} className="block h-full focus-visible:outline-2 focus-visible:outline-purple-400 rounded-2xl">
+    <Link href={href} className="block h-full rounded-2xl focus-visible:outline-2 focus-visible:outline-purple-400">
       {body}
     </Link>
   ) : (

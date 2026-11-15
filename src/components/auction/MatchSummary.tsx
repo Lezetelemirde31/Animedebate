@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { History, Library, RefreshCw, Swords, Trophy } from "lucide-react";
 import type { Ack, CharacterDTO, RoomSnapshot } from "@/game/types";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { CharacterCard } from "@/components/character/CharacterCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { FormError, Spinner } from "@/components/ui/primitives";
@@ -19,6 +20,7 @@ export function MatchSummary({
   myId: string | null;
   onRematch: () => Promise<Ack>;
 }) {
+  const { locale, t } = useLanguage();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const result = snapshot.result;
@@ -26,23 +28,23 @@ export function MatchSummary({
   const me = players.find((p) => p.userId === myId) ?? null;
   const ordered = me ? [me, ...players.filter((p) => p.userId !== me.userId)] : players;
   const sideOf = (id: string): Side => (id === ordered[0]?.userId ? "purple" : "red");
-  const nameOf = (id: string) => players.find((p) => p.userId === id)?.username ?? "Unknown";
+  const nameOf = (id: string) => players.find((p) => p.userId === id)?.username ?? t.auction.unknown;
   const chars = new Map<string, CharacterDTO>(snapshot.history.map((h) => [h.character.id, h.character]));
   const abandoned = snapshot.phase === "ABANDONED";
 
-  let headline = "Match over";
+  let headline: string = t.auction.summary.matchOver;
   let tone: "win" | "loss" | "draw" | "neutral" = "neutral";
   if (abandoned) {
-    headline = "Match abandoned";
+    headline = t.auction.summary.matchAbandoned;
   } else if (result) {
     if (!result.winnerId) {
-      headline = "Draw";
+      headline = t.auction.summary.draw;
       tone = "draw";
     } else if (me) {
       tone = result.winnerId === me.userId ? "win" : "loss";
-      headline = tone === "win" ? "Victory" : "Defeat";
+      headline = tone === "win" ? t.auction.summary.victory : t.auction.summary.defeat;
     } else {
-      headline = `${nameOf(result.winnerId)} wins`;
+      headline = t.auction.summary.winsSuffix(nameOf(result.winnerId));
     }
   }
 
@@ -71,7 +73,7 @@ export function MatchSummary({
           <Trophy className={cn("mx-auto h-12 w-12", tone === "win" ? "text-amber-300" : tone === "loss" ? "text-rose-300" : "text-zinc-300")} />
           <h1
             className={cn(
-              "mt-3 font-display text-5xl font-black uppercase tracking-widest md:text-6xl",
+              "mt-3 break-words font-display text-4xl font-black uppercase tracking-widest sm:text-5xl md:text-6xl",
               tone === "win" ? "text-gradient" : tone === "loss" ? "text-neon-red" : "text-white",
             )}
             data-testid="match-headline"
@@ -91,28 +93,28 @@ export function MatchSummary({
             <div key={p.userId} className={cn("glass rounded-3xl p-5", isWinner && cn("border", s.border, s.glow))}>
               <div className="flex items-center gap-3">
                 <Avatar username={p.username} style={p.avatar.style} imageUrl={p.avatar.imageUrl} size={52} ring={s.ring} />
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 font-display text-lg font-bold text-white">
-                    {p.username} {isWinner && <Trophy className="h-4 w-4 text-amber-300" />}
+                    <span className="truncate">{p.username}</span> {isWinner && <Trophy className="h-4 w-4 shrink-0 text-amber-300" />}
                   </div>
                   <div className="text-xs text-zinc-400">
-                    {won.length} character{won.length === 1 ? "" : "s"} · ${snapshot.settings.startingBalance - p.balance} spent
+                    {t.auction.summary.charsSpent(won.length, snapshot.settings.startingBalance - p.balance)}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] uppercase tracking-widest text-zinc-400">Score</div>
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-400">{t.auction.score}</div>
                   <div className={cn("font-display text-3xl font-bold", s.text)}>{p.score}</div>
-                  <div className="text-xs text-zinc-400">${p.balance} left</div>
+                  <div className="text-xs text-zinc-400">{t.auction.summary.balanceLeft(p.balance)}</div>
                 </div>
               </div>
               {won.length > 0 ? (
                 <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {won.map((c) => (
-                    <CharacterCard key={c.id} character={c} compact href={`/characters/${c.id}`} />
+                    <CharacterCard key={c.id} character={c} compact href={`/characters/${c.id}`} locale={locale} />
                   ))}
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-zinc-500">No characters won this match.</p>
+                <p className="mt-4 text-sm text-zinc-500">{t.auction.summary.noCharsWonMatch}</p>
               )}
             </div>
           );
@@ -124,36 +126,36 @@ export function MatchSummary({
       <div className="glass flex flex-col items-center justify-between gap-4 rounded-3xl p-5 md:flex-row">
         <p className="text-sm text-zinc-400">
           {abandoned
-            ? "Both players left before the match finished. Characters already won were kept."
+            ? t.auction.summary.abandonedNote
             : me
               ? votedByMe
-                ? "Rematch requested — waiting for your opponent…"
+                ? t.auction.summary.rematchRequested
                 : opponentVoted
-                  ? "Your opponent wants a rematch!"
-                  : "Characters you won are now in your collection."
-              : "You watched this match as a spectator."}
+                  ? t.auction.summary.opponentWantsRematch
+                  : t.auction.summary.wonCharsSaved
+              : t.auction.summary.watchedAsSpectator}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {me && !abandoned && (
             <button className="btn btn-primary" onClick={rematch} disabled={pending || votedByMe || !everyoneHere} data-testid="rematch-button">
               {pending ? <Spinner className="h-4 w-4 text-white" /> : <RefreshCw className="h-4 w-4" />}
-              {votedByMe ? "Waiting…" : opponentVoted ? "Accept rematch" : "Rematch"}
+              {votedByMe ? t.auction.summary.waitingDots : opponentVoted ? t.auction.summary.acceptRematch : t.auction.summary.rematch}
             </button>
           )}
           <Link href="/play" className="btn btn-ghost">
-            <Swords className="h-4 w-4" /> New match
+            <Swords className="h-4 w-4" /> {t.auction.summary.newMatch}
           </Link>
           <Link href={`/history/${snapshot.matchId}`} className="btn btn-ghost">
-            <History className="h-4 w-4" /> Full report
+            <History className="h-4 w-4" /> {t.auction.summary.fullReport}
           </Link>
           {me && (
             <Link href="/collection" className="btn btn-ghost">
-              <Library className="h-4 w-4" /> Collection
+              <Library className="h-4 w-4" /> {t.auction.summary.collection}
             </Link>
           )}
         </div>
       </div>
-      {me && !everyoneHere && !abandoned && <p className="text-center text-xs text-zinc-500">Rematch needs both players in the room.</p>}
+      {me && !everyoneHere && !abandoned && <p className="text-center text-xs text-zinc-500">{t.auction.summary.rematchNeedsBoth}</p>}
       <FormError message={error} />
     </div>
   );

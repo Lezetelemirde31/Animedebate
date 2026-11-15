@@ -1,15 +1,21 @@
 /**
- * Seeds anime and characters from src/data. Idempotent: run it again after
- * editing the data files or adding a new anime.
- *
- *   npm run db:seed
+ * Seeds anime, characters, and community badges from src/data.
+ * Idempotent: safe to run repeatedly (`npm run db:seed`).
  */
 import { PrismaClient } from "@prisma/client";
 import { ANIME } from "../src/data/anime";
+import { BADGES } from "../src/data/badges";
 import { getCatalog } from "../src/data/characters";
 import images from "../src/data/character-images.json";
 
-const prisma = new PrismaClient();
+const seedDbUrl =
+  process.env.DIRECT_URL?.trim() ||
+  process.env.POSTGRES_URL_NON_POOLING?.trim() ||
+  process.env.DATABASE_URL?.trim() ||
+  process.env.POSTGRES_PRISMA_URL?.trim() ||
+  process.env.POSTGRES_URL?.trim();
+
+const prisma = new PrismaClient(seedDbUrl ? { datasources: { db: { url: seedDbUrl } } } : undefined);
 const imageMap = images as Record<string, { url: string }>;
 
 async function main() {
@@ -52,12 +58,28 @@ async function main() {
     await prisma.character.upsert({ where: { id: c.id }, create: { id: c.id, ...data }, update: data });
   }
 
-  // Characters removed from the curated data are disabled (never deleted, so history stays intact).
+  for (const b of BADGES) {
+    await prisma.badge.upsert({
+      where: { id: b.id },
+      create: b,
+      update: {
+        slug: b.slug,
+        name: b.name,
+        description: b.description,
+        icon: b.icon,
+        color: b.color,
+        ruleType: b.ruleType,
+        threshold: b.threshold,
+      },
+    });
+  }
+
+  // Characters removed from curated data are disabled rather than deleted, preserving match & debate history.
   const ids = catalog.map((c) => c.id);
   const disabled = await prisma.character.updateMany({ where: { id: { notIn: ids } }, data: { enabled: false } });
 
   const counts = await prisma.character.groupBy({ by: ["animeId"], _count: { _all: true }, where: { enabled: true } });
-  console.log(`Seeded ${ANIME.length} anime and ${catalog.length} characters (${disabled.count} disabled).`);
+  console.log(`Seeded ${ANIME.length} anime, ${catalog.length} characters (${disabled.count} disabled), and ${BADGES.length} badges.`);
   for (const row of counts) console.log(`  ${row.animeId}: ${row._count._all}`);
 }
 

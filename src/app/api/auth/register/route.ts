@@ -21,16 +21,18 @@ export async function POST(req: NextRequest) {
 
   const styles = Object.keys(AVATAR_STYLES);
   try {
+    const isFirstUser = (await prisma.user.count()) === 0;
     const user = await prisma.user.create({
       data: {
         username,
         usernameKey: username.toLowerCase(),
         passwordHash: await hashPassword(password),
         avatarStyle: styles[Math.floor(Math.random() * styles.length)],
+        role: isFirstUser ? "ADMIN" : "USER",
       },
     });
     const session = await createSession(user.id);
-    const res = NextResponse.json({ ok: true, user: { id: user.id, username: user.username } });
+    const res = NextResponse.json({ ok: true, user: { id: user.id, username: user.username, role: user.role } });
     setSessionCookie(res, session.token, session.expiresAt, await isSecureRequest());
     return res;
   } catch (err) {

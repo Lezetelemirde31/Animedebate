@@ -1,9 +1,21 @@
 import { getAnime } from "@/data/anime";
 import { RARITY_INFO, type Rarity } from "@/game/rarity";
+import { RARITY_LABELS, type Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-export function RarityBadge({ rarity, className, size = "sm" }: { rarity: Rarity; className?: string; size?: "sm" | "md" }) {
+export function RarityBadge({
+  rarity,
+  className,
+  size = "sm",
+  locale = "tr",
+}: {
+  rarity: Rarity;
+  className?: string;
+  size?: "sm" | "md";
+  locale?: Locale;
+}) {
   const info = RARITY_INFO[rarity];
+  const label = RARITY_LABELS[locale][rarity];
   return (
     <span
       className={cn(
@@ -14,14 +26,12 @@ export function RarityBadge({ rarity, className, size = "sm" }: { rarity: Rarity
       style={{
         color: info.color,
         borderColor: `${info.color}88`,
-        // Tinted, mostly opaque base so the badge stays readable over bright artwork.
-        background: `linear-gradient(${info.color}2e, ${info.color}2e), rgba(8, 5, 14, 0.82)`,
-        boxShadow: `0 0 14px -4px ${info.glow}`,
-        backdropFilter: "blur(6px)",
+        background: `linear-gradient(${info.color}2e, ${info.color}2e), rgba(8, 5, 14, 0.9)`,
+        boxShadow: `0 0 12px -4px ${info.glow}`,
       }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: info.color }} />
-      {info.label}
+      {label}
     </span>
   );
 }

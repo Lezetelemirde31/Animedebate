@@ -1,19 +1,21 @@
 import Link from "next/link";
 import { ErrorState } from "@/components/ui/primitives";
+import { getServerTranslations } from "@/lib/i18n-server";
 
-export default function NotFound() {
+export default async function NotFound() {
+  const { t } = await getServerTranslations();
   return (
     <div className="pt-10">
       <ErrorState
-        title="Page not found"
-        description="This lot was never listed. The page you were looking for doesn't exist."
+        title={t.errors.notFoundTitle}
+        description={t.errors.notFoundDesc}
         action={
           <>
             <Link href="/" className="btn btn-primary">
-              Go home
+              {t.errors.goHome}
             </Link>
             <Link href="/play" className="btn btn-ghost">
-              Play
+              {t.errors.play}
             </Link>
           </>
         }

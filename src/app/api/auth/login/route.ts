@@ -23,9 +23,12 @@ export async function POST(req: NextRequest) {
   // Always run bcrypt so response time does not reveal whether the user exists.
   const valid = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
   if (!user || !valid) return jsonError("Invalid username or password.", 401);
+  if (user.isBanned) {
+    return jsonError(user.bannedReason ? `Account suspended: ${user.bannedReason}` : "Your account has been suspended.", 403);
+  }
 
   const session = await createSession(user.id);
-  const res = NextResponse.json({ ok: true, user: { id: user.id, username: user.username } });
+  const res = NextResponse.json({ ok: true, user: { id: user.id, username: user.username, role: user.role } });
   setSessionCookie(res, session.token, session.expiresAt, await isSecureRequest());
   return res;
 }

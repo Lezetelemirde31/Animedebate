@@ -3,6 +3,7 @@
 import { Crown, Wifi, WifiOff } from "lucide-react";
 import type { BidDTO, CharacterDTO, LotSummary, PlayerState } from "@/game/types";
 import { RARITY_INFO } from "@/game/rarity";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { CharacterArt } from "@/components/character/CharacterArt";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ export function TimerRing({
   size?: number;
   label?: string;
 }) {
+  const { t } = useLanguage();
   const r = size / 2 - 8;
   const c = 2 * Math.PI * r;
   const frac = Math.max(0, Math.min(1, remainingMs / Math.max(1, totalMs)));
@@ -65,11 +67,13 @@ export function TimerRing({
           style={{ filter: `drop-shadow(0 0 8px ${stroke})`, transition: "stroke-dashoffset 0.1s linear, stroke 0.3s" }}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-1 text-center">
         <span className={cn("font-display font-bold tabular-nums", danger ? "text-rose-300" : "text-white")} style={{ fontSize: size * 0.3 }}>
           {paused ? "II" : secs}
         </span>
-        <span className="text-[10px] uppercase tracking-widest text-zinc-400">{label ?? (paused ? "paused" : "sec")}</span>
+        <span className="text-[9px] uppercase tracking-widest text-zinc-400">
+          {label ?? (paused ? t.auction.pausedLabel : t.auction.secLabel)}
+        </span>
       </div>
     </div>
   );
@@ -92,6 +96,7 @@ export function PlayerPanel({
   wonCharacters: CharacterDTO[];
   compact?: boolean;
 }) {
+  const { t } = useLanguage();
   const s = SIDE_STYLES[side];
   const pct = Math.round((player.balance / Math.max(1, startingBalance)) * 100);
   return (
@@ -108,32 +113,32 @@ export function PlayerPanel({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate font-display font-semibold text-white">{player.username}</span>
-            {player.isHost && <Crown className="h-3.5 w-3.5 shrink-0 text-amber-300" aria-label="Host" />}
-            {isMe && <span className="rounded bg-white/10 px-1.5 text-[10px] font-semibold uppercase text-zinc-300">You</span>}
+            {player.isHost && <Crown className="h-3.5 w-3.5 shrink-0 text-amber-300" aria-label={t.auction.lobby.hostAria} />}
+            {isMe && <span className="rounded bg-white/10 px-1.5 text-[10px] font-semibold uppercase text-zinc-300">{t.auction.you}</span>}
           </div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-xs">
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
             {player.connected ? (
               <span className="flex items-center gap-1 text-emerald-300">
-                <Wifi className="h-3 w-3" /> Online
+                <Wifi className="h-3 w-3" /> {t.auction.online}
               </span>
             ) : (
               <span className="flex items-center gap-1 text-amber-300">
-                <WifiOff className="h-3 w-3" /> Reconnecting…
+                <WifiOff className="h-3 w-3" /> {t.auction.reconnecting}
               </span>
             )}
-            {leading && <span className={cn("font-semibold", s.text)}>· Leading</span>}
+            {leading && <span className={cn("font-semibold", s.text)}>· {t.auction.leading}</span>}
           </div>
         </div>
       </div>
       <div className="relative mt-4 flex items-end justify-between">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-zinc-400">Balance</div>
+          <div className="text-[10px] uppercase tracking-widest text-zinc-400">{t.auction.balance}</div>
           <div className={cn("font-display text-3xl font-bold tabular-nums", s.text)} data-testid={`balance-${player.username}`}>
             ${player.balance}
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] uppercase tracking-widest text-zinc-400">Score</div>
+          <div className="text-[10px] uppercase tracking-widest text-zinc-400">{t.auction.score}</div>
           <div className="font-display text-xl font-bold text-white tabular-nums">{player.score}</div>
         </div>
       </div>
@@ -145,9 +150,9 @@ export function PlayerPanel({
       </div>
       {!compact && (
         <div className="relative mt-4">
-          <div className="mb-2 text-[10px] uppercase tracking-widest text-zinc-400">Won this match · {wonCharacters.length}</div>
+          <div className="mb-2 text-[10px] uppercase tracking-widest text-zinc-400">{t.auction.wonThisMatch(wonCharacters.length)}</div>
           {wonCharacters.length === 0 ? (
-            <p className="text-xs text-zinc-500">No characters yet.</p>
+            <p className="text-xs text-zinc-500">{t.auction.noCharsYet}</p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {wonCharacters.map((c) => (
@@ -169,15 +174,16 @@ export function PlayerPanel({
 }
 
 export function BidFeed({ bids, sideOf, now }: { bids: BidDTO[]; sideOf: (userId: string) => Side; now: number }) {
+  const { t } = useLanguage();
   const list = [...bids].reverse();
   return (
     <div className="glass rounded-2xl p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">Bid history</h3>
-        <span className="text-xs text-zinc-500">{bids.length} bids</span>
+        <h3 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.auction.bidHistory}</h3>
+        <span className="text-xs text-zinc-500">{t.auction.bidsCount(bids.length)}</span>
       </div>
       {list.length === 0 ? (
-        <p className="py-6 text-center text-sm text-zinc-500">No bids on this lot yet — be the first.</p>
+        <p className="py-6 text-center text-sm text-zinc-500">{t.auction.noBidsOnLot}</p>
       ) : (
         <ul className="max-h-64 space-y-1.5 overflow-y-auto pr-1" data-testid="bid-feed">
           {list.map((b, i) => {
@@ -192,7 +198,7 @@ export function BidFeed({ bids, sideOf, now }: { bids: BidDTO[]; sideOf: (userId
               >
                 <span className={cn("truncate font-medium", s.text)}>{b.username}</span>
                 <span className="flex items-center gap-3">
-                  <span className="text-[11px] text-zinc-500">{Math.max(0, Math.round((now - b.at) / 1000))}s ago</span>
+                  <span className="text-[11px] text-zinc-500">{t.auction.secAgo(Math.max(0, Math.round((now - b.at) / 1000)))}</span>
                   <span className="font-display font-bold tabular-nums text-white">${b.amount}</span>
                 </span>
               </li>
@@ -215,16 +221,15 @@ export function LotHistoryStrip({
   sideOf: (userId: string) => Side;
   nameOf: (userId: string) => string;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="glass rounded-2xl p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">Auction history</h3>
-        <span className="text-xs text-zinc-500">
-          {history.length}/{totalLots} lots
-        </span>
+        <h3 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.auction.auctionHistory}</h3>
+        <span className="text-xs text-zinc-500">{t.auction.lotsSlash(history.length, totalLots)}</span>
       </div>
       {history.length === 0 ? (
-        <p className="py-3 text-sm text-zinc-500">Completed lots will appear here.</p>
+        <p className="py-3 text-sm text-zinc-500">{t.auction.completedLotsHere}</p>
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-1">
           {history.map((h) => {
@@ -242,7 +247,7 @@ export function LotHistoryStrip({
                   <div className="absolute left-1 top-1 rounded bg-black/70 px-1.5 text-[10px] font-semibold text-zinc-200">#{h.lotNumber}</div>
                 </div>
                 <div className={cn("mt-1 truncate text-center text-xs font-semibold", sold ? s!.text : "text-zinc-500")}>
-                  {sold ? `${nameOf(h.winnerId!)} · $${h.finalPrice}` : "Unsold"}
+                  {sold ? `${nameOf(h.winnerId!)} · $${h.finalPrice}` : t.auction.unsoldStamp}
                 </div>
               </div>
             );

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Ban, Gavel, Flame } from "lucide-react";
 import type { Ack, LotState, PlayerState } from "@/game/types";
 import { minimumNextBid } from "@/game/rules";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Spinner } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export function BidControls({
   isSpectator: boolean;
   onBid: (lotId: string, amount: number) => Promise<Ack<{ amount: number }>>;
 }) {
+  const { t } = useLanguage();
   const [custom, setCustom] = useState("");
   const [pending, setPending] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,10 +37,10 @@ export function BidControls({
   const leading = !!me && lot.highestBidderId === me.userId;
 
   let blocked: string | null = null;
-  if (isSpectator) blocked = "You are spectating this auction.";
-  else if (!biddingOpen) blocked = "Bidding is closed for this lot.";
-  else if (leading) blocked = "You hold the highest bid — wait for your opponent.";
-  else if (balance < minBid) blocked = `Insufficient balance — you have $${balance}, the minimum bid is $${minBid}.`;
+  if (isSpectator) blocked = t.auction.spectatorMsg;
+  else if (!biddingOpen) blocked = t.auction.biddingClosed;
+  else if (leading) blocked = t.auction.alreadyLeading;
+  else if (balance < minBid) blocked = t.auction.insufficientBalance(balance, minBid);
 
   useEffect(() => {
     setError(null);
@@ -47,8 +49,8 @@ export function BidControls({
 
   useEffect(() => {
     if (!error) return;
-    const t = setTimeout(() => setError(null), 3500);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setError(null), 3500);
+    return () => clearTimeout(timer);
   }, [error]);
 
   async function place(amount: number) {
@@ -63,7 +65,7 @@ export function BidControls({
 
   const base = lot.highestBid ?? lot.startingPrice - minIncrement;
   const quick = [
-    { label: `Bid $${minBid}`, amount: minBid, primary: true },
+    { label: t.auction.bidMin(minBid), amount: minBid, primary: true },
     { label: `+$2 → $${base + 2}`, amount: Math.max(minBid, base + 2) },
     { label: `+$5 → $${base + 5}`, amount: Math.max(minBid, base + 5) },
   ].filter((q, i, arr) => arr.findIndex((x) => x.amount === q.amount) === i);
@@ -90,9 +92,9 @@ export function BidControls({
           className="btn btn-danger"
           disabled={!!blocked || pending !== null || balance < minBid}
           onClick={() => place(balance)}
-          title="Bid your entire remaining balance"
+          title={t.auction.allInTitle}
         >
-          <Flame className="h-4 w-4" /> All-in ${balance}
+          <Flame className="h-4 w-4" /> {t.auction.allIn(balance)}
         </button>
       </div>
       <form
@@ -108,16 +110,16 @@ export function BidControls({
             className="input !pl-7 font-display tabular-nums"
             inputMode="numeric"
             pattern="[0-9]*"
-            placeholder={`Custom amount (min $${minBid}, max $${balance})`}
+            placeholder={t.auction.customPlaceholder(minBid, balance)}
             value={custom}
             onChange={(e) => setCustom(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
             disabled={!!blocked}
-            aria-label="Custom bid amount"
+            aria-label={t.auction.customAria}
             data-testid="bid-custom"
           />
         </div>
-        <button type="submit" className="btn btn-ghost" disabled={!!blocked || !customValid || pending !== null}>
-          Place bid
+        <button type="submit" className="btn btn-ghost shrink-0" disabled={!!blocked || !customValid || pending !== null}>
+          {t.auction.placeBid}
         </button>
       </form>
       {(blocked || error) && (

@@ -4,23 +4,20 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Trophy } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/server";
+import { getServerTranslations } from "@/lib/i18n-server";
 import { getAnime } from "@/data/anime";
 import { Avatar } from "@/components/ui/Avatar";
 import { CharacterArt } from "@/components/character/CharacterArt";
 import { RarityBadge } from "@/components/character/badges";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Match report" };
-
-const REASONS: Record<string, string> = {
-  COMPLETED: "All lots were auctioned.",
-  POOL_EXHAUSTED: "No affordable characters were left.",
-  FORFEIT: "A player forfeited or failed to reconnect.",
-  ABANDONED: "Both players left before the end.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return { title: t.history.reportTitle };
+}
 
 export default async function MatchReportPage({ params }: { params: Promise<{ matchId: string }> }) {
-  const { matchId } = await params;
+  const [{ matchId }, { locale, t }] = await Promise.all([params, getServerTranslations()]);
   const match = await prisma.match.findUnique({
     where: { id: matchId },
     include: {
@@ -45,32 +42,32 @@ export default async function MatchReportPage({ params }: { params: Promise<{ ma
   return (
     <div className="space-y-6">
       <Link href="/history" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white">
-        <ArrowLeft className="h-4 w-4" /> Auction history
+        <ArrowLeft className="h-4 w-4" /> {t.history.eyebrow}
       </Link>
 
       <div className="glass-strong relative overflow-hidden rounded-3xl p-6 md:p-8 neon-border animate-slide-up">
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-purple-600/30 blur-3xl" />
         <div className="relative">
           <p className="font-display text-xs font-semibold uppercase tracking-[0.3em] text-purple-300/80">
-            Match report · Room {match.code}
+            {t.history.roomPrefix(match.code)}
           </p>
           <h1 className="mt-2 font-display text-3xl font-bold text-white md:text-4xl">
             {match.status === "IN_PROGRESS" || match.status === "WAITING"
-              ? "Match in progress"
+              ? t.history.inProgress
               : match.winnerId
-                ? `${match.players.find((p) => p.userId === match.winnerId)?.user.username ?? "Unknown"} won`
+                ? t.history.wonBy(match.players.find((p) => p.userId === match.winnerId)?.user.username ?? t.auction.unknown)
                 : match.status === "ABANDONED"
-                  ? "Match abandoned"
-                  : "Draw"}
+                  ? t.history.abandoned
+                  : t.history.draw}
           </h1>
           <p className="mt-2 text-sm text-zinc-400">
-            {match.endReason ? REASONS[match.endReason] ?? match.endReason : "Still running."} · {match.totalLots} lots · {match.bidSeconds}s timer ·{" "}
+            {match.endReason ? t.history.reasons[match.endReason] ?? match.endReason : t.history.stillRunning} · {t.history.lotsWord(match.totalLots)} · {match.bidSeconds}s ·{" "}
             {match.animeIds.map((id) => getAnime(id)?.shortName ?? id).join(", ")}
-            {match.endedAt ? ` · ${match.endedAt.toLocaleString()}` : ""}
+            {match.endedAt ? ` · ${match.endedAt.toLocaleString(locale === "tr" ? "tr-TR" : "en-US")}` : ""}
           </p>
           {(match.status === "IN_PROGRESS" || match.status === "WAITING") && (
             <Link href={`/room/${match.code}`} className="btn btn-primary mt-4">
-              Open live room
+              {t.history.openLiveRoom}
             </Link>
           )}
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -81,14 +78,15 @@ export default async function MatchReportPage({ params }: { params: Promise<{ ma
                   <Link href={`/profile/${p.user.username}`} className="flex items-center gap-2 font-display font-semibold text-white hover:underline">
                     {p.user.username}
                     {match.winnerId === p.userId && <Trophy className="h-4 w-4 text-amber-300" />}
-                    {viewer?.id === p.userId && <span className="text-xs font-normal text-zinc-500">(you)</span>}
+                    {viewer?.id === p.userId && <span className="text-xs font-normal text-zinc-500">{t.history.youLower}</span>}
                   </Link>
                   <div className="text-xs text-zinc-400">
-                    {p.result ?? "—"} · ${p.balance} left of ${match.startingBalance}
+                    {p.result === "WIN" ? t.profile.win : p.result === "LOSS" ? t.profile.loss : p.result === "DRAW" ? t.profile.draw : "—"} ·{" "}
+                    {t.history.leftOf(p.balance, match.startingBalance)}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] uppercase tracking-widest text-zinc-500">Score</div>
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-500">{t.history.scoreLabel}</div>
                   <div className={cn("font-display text-2xl font-bold", i === 0 ? "text-purple-200" : "text-rose-200")}>{p.score}</div>
                 </div>
               </div>
@@ -98,7 +96,7 @@ export default async function MatchReportPage({ params }: { params: Promise<{ ma
       </div>
 
       <div className="space-y-3">
-        {match.lots.length === 0 && <div className="glass rounded-2xl p-8 text-center text-sm text-zinc-400">No lots were auctioned in this match.</div>}
+        {match.lots.length === 0 && <div className="glass rounded-2xl p-8 text-center text-sm text-zinc-400">{t.history.noLotsAuctioned}</div>}
         {match.lots.map((lot) => {
           const winner = match.players.find((p) => p.userId === lot.winnerId);
           return (
@@ -108,17 +106,17 @@ export default async function MatchReportPage({ params }: { params: Promise<{ ma
                   <CharacterArt name={lot.character.name} animeId={lot.character.animeId} imageUrl={lot.character.imageUrl} />
                 </Link>
                 <div>
-                  <div className="text-xs text-zinc-500">Lot #{lot.lotNumber}</div>
+                  <div className="text-xs text-zinc-500">{t.history.lotNumber(lot.lotNumber)}</div>
                   <div className="font-display font-semibold text-white">{lot.character.name}</div>
                   <div className="mt-1 flex items-center gap-2">
-                    <RarityBadge rarity={lot.character.rarity} />
-                    <span className="text-xs text-zinc-500">opens ${lot.startingPrice}</span>
+                    <RarityBadge rarity={lot.character.rarity} locale={locale} />
+                    <span className="text-xs text-zinc-500">{t.history.opensPrice(lot.startingPrice)}</span>
                   </div>
                 </div>
               </div>
               <div className="flex-1">
                 {lot.bids.length === 0 ? (
-                  <p className="text-sm text-zinc-500">No bids.</p>
+                  <p className="text-sm text-zinc-500">{t.history.noBids}</p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
                     {lot.bids.map((b) => (
@@ -136,7 +134,9 @@ export default async function MatchReportPage({ params }: { params: Promise<{ ma
                     <div className={cn("text-sm", colorOf(lot.winnerId))}>{winner?.user.username ?? "—"}</div>
                   </>
                 ) : (
-                  <div className="font-display text-sm uppercase tracking-widest text-zinc-500">{lot.status === "UNSOLD" ? "Unsold" : lot.status === "CANCELLED" ? "Cancelled" : "Live"}</div>
+                  <div className="font-display text-sm uppercase tracking-widest text-zinc-500">
+                    {lot.status === "UNSOLD" ? t.history.unsold : lot.status === "CANCELLED" ? t.history.cancelled : t.history.live}
+                  </div>
                 )}
               </div>
             </div>

@@ -5,11 +5,13 @@ import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH } from "@/game/config";
 import { normalizeRoomCode } from "@/game/rules";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { FormError } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
 export function JoinCodeForm({ compact }: { compact?: boolean }) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -17,7 +19,7 @@ export function JoinCodeForm({ compact }: { compact?: boolean }) {
     e.preventDefault();
     const normalized = normalizeRoomCode(code);
     if (!normalized) {
-      setError(`Room codes are ${ROOM_CODE_LENGTH} characters (letters and digits, no 0/O/1/I/L).`);
+      setError(t.play.invalidCodeMsg(ROOM_CODE_LENGTH));
       return;
     }
     router.push(`/room/${normalized}`);
@@ -41,13 +43,13 @@ export function JoinCodeForm({ compact }: { compact?: boolean }) {
             );
           }}
           placeholder="ABC123"
-          aria-label="Room code"
+          aria-label={t.play.roomCodeAria}
           autoComplete="off"
           spellCheck={false}
           data-testid="join-code-input"
         />
-        <button type="submit" className={cn("btn btn-primary", !compact && "!py-4")} disabled={code.length !== ROOM_CODE_LENGTH} data-testid="join-code-submit">
-          Join <ArrowRight className="h-4 w-4" />
+        <button type="submit" className={cn("btn btn-primary shrink-0", !compact && "!py-4")} disabled={code.length !== ROOM_CODE_LENGTH} data-testid="join-code-submit">
+          {t.play.joinBtn} <ArrowRight className="h-4 w-4" />
         </button>
       </div>
       <FormError message={error} />

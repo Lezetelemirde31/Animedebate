@@ -5,6 +5,8 @@ import { Search, SearchX, SlidersHorizontal } from "lucide-react";
 import type { CharacterDTO } from "@/game/types";
 import { RARITIES, RARITY_INFO, rarityRank, type Rarity } from "@/game/rarity";
 import { ENABLED_ANIME } from "@/data/anime";
+import { useLanguage } from "@/components/providers/LanguageProvider";
+import { RARITY_LABELS } from "@/lib/i18n";
 import { CharacterCard } from "./CharacterCard";
 
 export interface BrowserItem extends CharacterDTO {
@@ -22,6 +24,7 @@ export function CharacterBrowser({
   mode: "database" | "collection";
   initialAnime?: string;
 }) {
+  const { locale, t } = useLanguage();
   const [query, setQuery] = useState("");
   const [anime, setAnime] = useState<string[]>(initialAnime ? [initialAnime] : []);
   const [rarity, setRarity] = useState<Rarity[]>([]);
@@ -53,31 +56,41 @@ export function CharacterBrowser({
 
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
   const sortOptions: { key: SortKey; label: string }[] = [
-    ...(mode === "collection" ? [{ key: "recent" as const, label: "Recently won" }, { key: "price" as const, label: "Price paid" }] : []),
-    { key: "rarity", label: "Rarity" },
-    { key: "power", label: "Power" },
-    { key: "name", label: "Name" },
-    { key: "anime", label: "Anime" },
+    ...(mode === "collection"
+      ? [
+          { key: "recent" as const, label: t.characters.sortRecent },
+          { key: "price" as const, label: t.characters.sortPrice },
+        ]
+      : []),
+    { key: "rarity", label: t.characters.sortRarity },
+    { key: "power", label: t.characters.sortPower },
+    { key: "name", label: t.characters.sortName },
+    { key: "anime", label: t.characters.sortAnime },
   ];
 
   return (
     <div>
-      <div className="glass sticky top-[4.5rem] z-20 mb-6 space-y-4 rounded-2xl p-4">
+      <div className="z-30 mb-6 space-y-4 rounded-2xl border border-white/10 bg-ink-900/95 p-4 shadow-[0_12px_36px_-12px_rgba(0,0,0,0.9)] backdrop-blur-md md:sticky md:top-[4.5rem]">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
             <input
               className="input !pl-10"
-              placeholder="Search by name, title, anime or ability…"
+              placeholder={t.characters.searchPlaceholder}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              aria-label="Search characters"
+              aria-label={t.characters.searchAria}
               data-testid="character-search"
             />
           </div>
           <label className="flex items-center gap-2 text-sm text-zinc-400">
             <SlidersHorizontal className="h-4 w-4" />
-            <select className="input !w-auto !py-2" value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label="Sort">
+            <select
+              className="input !w-auto !py-2"
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              aria-label={t.characters.sortAria}
+            >
               {sortOptions.map((o) => (
                 <option key={o.key} value={o.key} className="bg-ink-900">
                   {o.label}
@@ -88,7 +101,7 @@ export function CharacterBrowser({
         </div>
         <div className="flex flex-wrap gap-2">
           <button className="chip" data-active={anime.length === 0} onClick={() => setAnime([])}>
-            All anime
+            {t.characters.allAnime}
           </button>
           {ENABLED_ANIME.map((a) => (
             <button key={a.id} className="chip" data-active={anime.includes(a.id)} onClick={() => setAnime(toggle(anime, a.id))}>
@@ -101,12 +114,18 @@ export function CharacterBrowser({
           {RARITIES.slice()
             .reverse()
             .map((r) => (
-              <button key={r} className="chip" data-active={rarity.includes(r)} onClick={() => setRarity(toggle(rarity, r))} style={{ color: RARITY_INFO[r].color }}>
-                {RARITY_INFO[r].label}
+              <button
+                key={r}
+                className="chip"
+                data-active={rarity.includes(r)}
+                onClick={() => setRarity(toggle(rarity, r))}
+                style={{ color: RARITY_INFO[r].color }}
+              >
+                {RARITY_LABELS[locale][r]}
               </button>
             ))}
           <span className="ml-auto text-xs text-zinc-500" data-testid="result-count">
-            {filtered.length} of {items.length}
+            {t.characters.resultCount(filtered.length, items.length)}
           </span>
         </div>
       </div>
@@ -114,7 +133,7 @@ export function CharacterBrowser({
       {filtered.length === 0 ? (
         <div className="glass flex flex-col items-center rounded-3xl py-16 text-center">
           <SearchX className="h-10 w-10 text-zinc-500" />
-          <p className="mt-3 font-display text-lg text-white">No characters match these filters</p>
+          <p className="mt-3 font-display text-lg text-white">{t.characters.noMatches}</p>
           <button
             className="btn btn-ghost mt-4"
             onClick={() => {
@@ -123,26 +142,26 @@ export function CharacterBrowser({
               setRarity([]);
             }}
           >
-            Reset filters
+            {t.characters.resetFilters}
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {filtered.map((c, i) => (
-            <div key={c.id} className="animate-slide-up" style={{ animationDelay: `${Math.min(i, 18) * 25}ms` }}>
-              <CharacterCard
-                character={c}
-                href={`/characters/${c.id}`}
-                footer={
-                  c.owned ? (
-                    <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[11px] text-zinc-400">
-                      <span>Paid ${c.owned.lastPrice}</span>
-                      {c.owned.copies > 1 && <span className="rounded bg-purple-500/20 px-1.5 font-semibold text-purple-200">×{c.owned.copies}</span>}
-                    </div>
-                  ) : null
-                }
-              />
-            </div>
+          {filtered.map((c) => (
+            <CharacterCard
+              key={c.id}
+              character={c}
+              href={`/characters/${c.id}`}
+              locale={locale}
+              footer={
+                c.owned ? (
+                  <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[11px] text-zinc-400">
+                    <span>{t.characters.paidLabel(c.owned.lastPrice)}</span>
+                    {c.owned.copies > 1 && <span className="rounded bg-purple-500/20 px-1.5 font-semibold text-purple-200">×{c.owned.copies}</span>}
+                  </div>
+                ) : null
+              }
+            />
           ))}
         </div>
       )}

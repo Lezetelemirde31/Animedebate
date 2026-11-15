@@ -1,18 +1,27 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth/server";
+import { getServerTranslations } from "@/lib/i18n-server";
 import { PageHeader } from "@/components/ui/primitives";
 import { PlayHub } from "@/components/play/PlayHub";
 
-export const metadata: Metadata = { title: "Play" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return { title: t.play.title };
+}
 
 export default async function PlayPage() {
   await requireUser("/play");
+  const { t } = await getServerTranslations();
   return (
     <>
       <PageHeader
-        eyebrow="Play"
-        title={<>Find your <span className="text-gradient">rival</span></>}
-        description="Jump into a quick match, host your own room, or join a friend with a code. Every player starts with $20."
+        eyebrow={t.play.eyebrow}
+        title={
+          <>
+            {t.play.headingStart} <span className="text-gradient">{t.play.headingAccent}</span>
+          </>
+        }
+        description={t.play.description}
       />
       <PlayHub />
     </>

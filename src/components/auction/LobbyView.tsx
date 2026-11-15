@@ -4,13 +4,26 @@ import { useState } from "react";
 import { Check, Copy, Crown, Globe, Link2, Lock, LogOut, Timer, Layers, UserPlus, Wifi, WifiOff, Wallet } from "lucide-react";
 import type { Ack, RoomSnapshot } from "@/game/types";
 import { getAnime } from "@/data/anime";
-import { TIE_BREAK_RULE } from "@/game/config";
 import { RARITIES, RARITY_INFO } from "@/game/rarity";
+import { useLanguage } from "@/components/providers/LanguageProvider";
+import { RARITY_LABELS } from "@/lib/i18n";
 import { Avatar } from "@/components/ui/Avatar";
 import { FormError, Spinner } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
-function CopyButton({ text, label, icon: Icon }: { text: string; label: string; icon: typeof Copy }) {
+function CopyButton({
+  text,
+  label,
+  copiedLabel,
+  copyPrompt,
+  icon: Icon,
+}: {
+  text: string;
+  label: string;
+  copiedLabel: string;
+  copyPrompt: string;
+  icon: typeof Copy;
+}) {
   const [done, setDone] = useState(false);
   return (
     <button
@@ -21,12 +34,12 @@ function CopyButton({ text, label, icon: Icon }: { text: string; label: string; 
           setDone(true);
           setTimeout(() => setDone(false), 1500);
         } catch {
-          window.prompt("Copy this:", text);
+          window.prompt(copyPrompt, text);
         }
       }}
     >
       {done ? <Check className="h-4 w-4 text-emerald-300" /> : <Icon className="h-4 w-4" />}
-      {done ? "Copied" : label}
+      {done ? copiedLabel : label}
     </button>
   );
 }
@@ -44,6 +57,7 @@ export function LobbyView({
   onReady: (ready: boolean) => Promise<Ack>;
   onLeave: () => void;
 }) {
+  const { locale, t } = useLanguage();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const me = snapshot.players.find((p) => p.userId === myId) ?? null;
@@ -69,18 +83,34 @@ export function LobbyView({
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-purple-300/80">
                 {snapshot.isPrivate ? <Lock className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
-                {snapshot.isPrivate ? "Private room" : snapshot.isMatchmade ? "Matchmade room" : "Public room"}
+                {snapshot.isPrivate
+                  ? t.auction.lobby.privateRoom
+                  : snapshot.isMatchmade
+                    ? t.auction.lobby.matchmadeRoom
+                    : t.auction.lobby.publicRoom}
               </div>
               <div className="mt-2 font-display text-5xl font-black tracking-[0.25em] text-white md:text-6xl" data-testid="room-code">
                 {snapshot.code}
               </div>
               <p className="mt-2 text-sm text-zinc-400">
-                {full ? "Both seats are filled. Ready up to start the auction." : "Share this code with your opponent to let them join."}
+                {full ? t.auction.lobby.bothFilled : t.auction.lobby.shareCode}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <CopyButton text={snapshot.code} label="Copy code" icon={Copy} />
-              <CopyButton text={shareUrl} label="Copy link" icon={Link2} />
+              <CopyButton
+                text={snapshot.code}
+                label={t.auction.lobby.copyCode}
+                copiedLabel={t.auction.lobby.copied}
+                copyPrompt={t.auction.lobby.copyPrompt}
+                icon={Copy}
+              />
+              <CopyButton
+                text={shareUrl}
+                label={t.auction.lobby.copyLink}
+                copiedLabel={t.auction.lobby.copied}
+                copyPrompt={t.auction.lobby.copyPrompt}
+                icon={Link2}
+              />
             </div>
           </div>
         </div>
@@ -103,20 +133,22 @@ export function LobbyView({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="truncate font-display text-xl font-bold text-white">{p.username}</span>
-                        {p.isHost && <Crown className="h-4 w-4 text-amber-300" aria-label="Host" />}
+                        {p.isHost && <Crown className="h-4 w-4 shrink-0 text-amber-300" aria-label={t.auction.lobby.hostAria} />}
                       </div>
-                      <div className="mt-1 flex items-center gap-1.5 text-xs">
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
                         {p.connected ? (
                           <span className="flex items-center gap-1 text-emerald-300">
-                            <Wifi className="h-3 w-3" /> Connected
+                            <Wifi className="h-3 w-3" /> {t.auction.lobby.connected}
                           </span>
                         ) : (
                           <span className="flex items-center gap-1 text-amber-300">
-                            <WifiOff className="h-3 w-3" /> Disconnected
-                            {p.disconnectDeadline ? ` · seat held ${Math.max(0, Math.ceil((p.disconnectDeadline - now) / 1000))}s` : ""}
+                            <WifiOff className="h-3 w-3" /> {t.auction.lobby.disconnected}
+                            {p.disconnectDeadline
+                              ? t.auction.lobby.seatHeld(Math.max(0, Math.ceil((p.disconnectDeadline - now) / 1000)))
+                              : ""}
                           </span>
                         )}
-                        {p.userId === myId && <span className="text-zinc-500">· you</span>}
+                        {p.userId === myId && <span className="text-zinc-500">{t.auction.lobby.youSuffix}</span>}
                       </div>
                     </div>
                   </div>
@@ -129,7 +161,7 @@ export function LobbyView({
                       data-testid={`ready-state-${p.username}`}
                     >
                       <span className={cn("h-2 w-2 rounded-full", p.ready ? "bg-emerald-400 shadow-[0_0_10px_#34d399]" : "bg-zinc-500")} />
-                      {p.ready ? "Ready" : "Not ready"}
+                      {p.ready ? t.auction.lobby.ready : t.auction.lobby.notReady}
                     </span>
                   </div>
                 </div>
@@ -139,8 +171,8 @@ export function LobbyView({
                     <span className="absolute inset-0 animate-ping rounded-full border border-purple-500/30" />
                     <UserPlus className="h-6 w-6 text-zinc-500" />
                   </div>
-                  <div className="font-display font-semibold text-zinc-300">Waiting for a challenger…</div>
-                  <div className="mt-1 text-xs text-zinc-500">They can join with code {snapshot.code}</div>
+                  <div className="font-display font-semibold text-zinc-300">{t.auction.lobby.waitingChallenger}</div>
+                  <div className="mt-1 text-xs text-zinc-500">{t.auction.lobby.canJoinWithCode(snapshot.code)}</div>
                 </div>
               )}
             </div>
@@ -152,23 +184,23 @@ export function LobbyView({
             <>
               <div className="text-sm text-zinc-400">
                 {!full
-                  ? "You can ready up now — the auction starts when both players are ready."
+                  ? t.auction.lobby.readyHintNotFull
                   : me.ready
-                    ? "Waiting for your opponent to ready up…"
-                    : "Your opponent is here. Ready up when you are!"}
+                    ? t.auction.lobby.readyHintWaitingOpp
+                    : t.auction.lobby.readyHintBothHere}
               </div>
               <div className="flex gap-2">
                 <button className="btn btn-ghost" onClick={onLeave}>
-                  <LogOut className="h-4 w-4" /> Leave
+                  <LogOut className="h-4 w-4" /> {t.auction.lobby.leave}
                 </button>
                 <button className={cn("btn min-w-36", me.ready ? "btn-ghost" : "btn-primary")} onClick={toggleReady} disabled={pending} data-testid="ready-button">
                   {pending && <Spinner className="h-4 w-4 text-white" />}
-                  {me.ready ? "Cancel ready" : "I'm ready"}
+                  {me.ready ? t.auction.lobby.cancelReady : t.auction.lobby.imReady}
                 </button>
               </div>
             </>
           ) : (
-            <div className="text-sm text-zinc-400">This room is full — you are watching as a spectator.</div>
+            <div className="text-sm text-zinc-400">{t.auction.lobby.roomFullSpectator}</div>
           )}
         </div>
         <FormError message={error} />
@@ -176,27 +208,27 @@ export function LobbyView({
 
       <div className="space-y-6 lg:col-span-2">
         <div className="glass rounded-3xl p-6 animate-slide-up" style={{ animationDelay: "120ms" }}>
-          <h3 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">Match settings</h3>
+          <h3 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.auction.lobby.matchSettings}</h3>
           <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-xl bg-white/5 p-3">
-              <dt className="flex items-center gap-1.5 text-xs text-zinc-400"><Wallet className="h-3.5 w-3.5" /> Starting balance</dt>
+              <dt className="flex items-center gap-1.5 text-xs text-zinc-400"><Wallet className="h-3.5 w-3.5" /> {t.play.startingBalance}</dt>
               <dd className="mt-1 font-display text-xl font-bold text-white">${snapshot.settings.startingBalance}</dd>
             </div>
             <div className="rounded-xl bg-white/5 p-3">
-              <dt className="flex items-center gap-1.5 text-xs text-zinc-400"><Layers className="h-3.5 w-3.5" /> Lots</dt>
+              <dt className="flex items-center gap-1.5 text-xs text-zinc-400"><Layers className="h-3.5 w-3.5" /> {t.play.lotsLabel}</dt>
               <dd className="mt-1 font-display text-xl font-bold text-white">{snapshot.settings.totalLots}</dd>
             </div>
             <div className="rounded-xl bg-white/5 p-3">
-              <dt className="flex items-center gap-1.5 text-xs text-zinc-400"><Timer className="h-3.5 w-3.5" /> Bid timer</dt>
-              <dd className="mt-1 font-display text-xl font-bold text-white">{snapshot.settings.bidSeconds}s</dd>
+              <dt className="flex items-center gap-1.5 text-xs text-zinc-400"><Timer className="h-3.5 w-3.5" /> {t.play.bidTimer}</dt>
+              <dd className="mt-1 font-display text-xl font-bold text-white">{snapshot.settings.bidSeconds}{t.auction.secLabel}</dd>
             </div>
             <div className="rounded-xl bg-white/5 p-3">
-              <dt className="text-xs text-zinc-400">Min increment</dt>
+              <dt className="text-xs text-zinc-400">{t.auction.lobby.minIncrement}</dt>
               <dd className="mt-1 font-display text-xl font-bold text-white">${snapshot.settings.minIncrement}</dd>
             </div>
           </dl>
           <div className="mt-4">
-            <div className="mb-2 text-xs text-zinc-400">Anime in the pool</div>
+            <div className="mb-2 text-xs text-zinc-400">{t.auction.lobby.animeInPool}</div>
             <div className="flex flex-wrap gap-1.5">
               {snapshot.settings.animeIds.map((id) => {
                 const a = getAnime(id);
@@ -211,23 +243,23 @@ export function LobbyView({
         </div>
 
         <div className="glass rounded-3xl p-6 animate-slide-up" style={{ animationDelay: "200ms" }}>
-          <h3 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">How it plays</h3>
+          <h3 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.auction.lobby.howItPlays}</h3>
           <ol className="mt-4 space-y-2.5 text-sm text-zinc-300">
-            <li><b className="text-white">1.</b> A random character is revealed to both players at the same moment.</li>
-            <li><b className="text-white">2.</b> Outbid each other before the timer hits zero. Late bids trigger {snapshot.settings.overtimeSeconds}s of overtime.</li>
-            <li><b className="text-white">3.</b> The winner pays their bid and the character joins their collection forever.</li>
-            <li><b className="text-white">4.</b> After {snapshot.settings.totalLots} lots, the highest collection score wins the match.</li>
+            <li><b className="text-white">1.</b> {t.auction.lobby.playStep1}</li>
+            <li><b className="text-white">2.</b> {t.auction.lobby.playStep2(snapshot.settings.overtimeSeconds)}</li>
+            <li><b className="text-white">3.</b> {t.auction.lobby.playStep3}</li>
+            <li><b className="text-white">4.</b> {t.auction.lobby.playStep4(snapshot.settings.totalLots)}</li>
           </ol>
-          <div className="mt-4 grid grid-cols-5 gap-1.5 text-center text-[10px]">
+          <div className="mt-4 grid grid-cols-2 gap-1.5 text-center text-[10px] sm:grid-cols-5">
             {RARITIES.map((r) => (
               <div key={r} className="rounded-lg border p-1.5" style={{ borderColor: `${RARITY_INFO[r].color}55`, color: RARITY_INFO[r].color }}>
-                <div className="font-semibold uppercase">{RARITY_INFO[r].label}</div>
-                <div className="text-zinc-400">{RARITY_INFO[r].points} pt · from ${RARITY_INFO[r].startingPrice}</div>
+                <div className="font-semibold uppercase">{RARITY_LABELS[locale][r]}</div>
+                <div className="text-zinc-400">{t.auction.lobby.ptFrom(RARITY_INFO[r].points, RARITY_INFO[r].startingPrice)}</div>
               </div>
             ))}
           </div>
           <p className="mt-4 rounded-xl border border-purple-500/20 bg-purple-500/5 p-3 text-xs text-zinc-300">
-            <b className="text-purple-200">Tie rule:</b> {TIE_BREAK_RULE}
+            <b className="text-purple-200">{t.auction.lobby.tieRuleLabel}</b> {t.auction.tieBreakRule}
           </p>
         </div>
       </div>

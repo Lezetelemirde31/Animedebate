@@ -1,12 +1,18 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { UserRole } from "@prisma/client";
 
 export interface ClientUser {
   id: string;
   username: string;
+  role: UserRole;
+  bio: string | null;
+  xp: number;
+  level: number;
   avatarStyle: string;
   avatarImage: string | null;
+  unreadNotifications: number;
 }
 
 const SessionContext = createContext<ClientUser | null>(null);

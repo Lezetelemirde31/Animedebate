@@ -3,15 +3,20 @@ import { Coins, Gem, Library, Sparkles } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth/server";
 import { enabledCharacterWhere, toCharacterDTO } from "@/lib/characters";
+import { RARITY_LABELS } from "@/lib/i18n";
+import { getServerTranslations } from "@/lib/i18n-server";
 import { ENABLED_ANIME } from "@/data/anime";
 import { RARITIES, RARITY_INFO } from "@/game/rarity";
 import { EmptyState, PageHeader, StatTile } from "@/components/ui/primitives";
 import { CharacterBrowser, type BrowserItem } from "@/components/character/CharacterBrowser";
 
-export const metadata: Metadata = { title: "My collection" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return { title: t.collection.title };
+}
 
 export default async function CollectionPage() {
-  const user = await requireUser("/collection");
+  const [user, { locale, t }] = await Promise.all([requireUser("/collection"), getServerTranslations()]);
   const [owned, totalCharacters] = await Promise.all([
     prisma.ownedCharacter.findMany({
       where: { userId: user.id, character: enabledCharacterWhere },
@@ -32,33 +37,37 @@ export default async function CollectionPage() {
   return (
     <>
       <PageHeader
-        eyebrow="My collection"
-        title={<>Your <span className="text-gradient">vault</span></>}
-        description="Every character you have won at auction. Win the same character again and it stacks as an extra copy."
+        eyebrow={t.collection.eyebrow}
+        title={
+          <>
+            {t.collection.headingStart} <span className="text-gradient">{t.collection.headingAccent}</span>
+          </>
+        }
+        description={t.collection.description}
       />
       {owned.length === 0 ? (
         <EmptyState
           icon={Library}
-          title="Your collection is empty"
-          description="Win a character at auction and it will appear here forever. Each match starts you with $20 to spend."
-          action={{ href: "/play", label: "Play a match" }}
+          title={t.collection.emptyTitle}
+          description={t.collection.emptyDesc}
+          action={{ href: "/play", label: t.collection.playMatch }}
         />
       ) : (
         <>
           <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatTile label="Unique characters" value={`${owned.length}/${totalCharacters}`} icon={Library} accent="purple" />
-            <StatTile label="Total copies" value={owned.reduce((s, o) => s + o.copies, 0)} icon={Sparkles} accent="sky" />
-            <StatTile label="Collection score" value={value} icon={Gem} accent="amber" hint="Sum of rarity points" />
-            <StatTile label="Virtual $ spent" value={`$${spent}`} icon={Coins} accent="red" />
+            <StatTile label={t.collection.uniqueChars} value={`${owned.length}/${totalCharacters}`} icon={Library} accent="purple" />
+            <StatTile label={t.collection.totalCopies} value={owned.reduce((s, o) => s + o.copies, 0)} icon={Sparkles} accent="sky" />
+            <StatTile label={t.collection.collectionScore} value={value} icon={Gem} accent="amber" hint={t.collection.raritySumHint} />
+            <StatTile label={t.collection.virtualSpent} value={`$${spent}`} icon={Coins} accent="red" />
           </div>
           <div className="mb-8 grid gap-4 md:grid-cols-2">
             <div className="glass rounded-2xl p-5">
-              <h3 className="mb-3 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400">By rarity</h3>
+              <h3 className="mb-3 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400">{t.collection.byRarity}</h3>
               <div className="space-y-2">
                 {byRarity.map(({ r, n }) => (
                   <div key={r} className="flex items-center gap-3 text-sm">
                     <span className="w-20" style={{ color: RARITY_INFO[r].color }}>
-                      {RARITY_INFO[r].label}
+                      {RARITY_LABELS[locale][r]}
                     </span>
                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
                       <div className="h-full rounded-full" style={{ width: `${(n / owned.length) * 100}%`, background: RARITY_INFO[r].color }} />
@@ -69,7 +78,7 @@ export default async function CollectionPage() {
               </div>
             </div>
             <div className="glass rounded-2xl p-5">
-              <h3 className="mb-3 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400">By anime</h3>
+              <h3 className="mb-3 font-display text-xs font-semibold uppercase tracking-widest text-zinc-400">{t.collection.byAnime}</h3>
               <div className="space-y-2">
                 {byAnime.map(({ a, n }) => (
                   <div key={a.id} className="flex items-center gap-3 text-sm">
