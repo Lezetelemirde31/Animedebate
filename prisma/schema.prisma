@@ -165,6 +165,7 @@ model User {
   actedNotifications Notification[]        @relation("NotificationActor")
   xpEvents           XpEvent[]
   coinEvents         CoinEvent[]
+  avatarImage        UserAvatarImage?
   moderationLogs     ModerationLog[]       @relation("ModerationAdmin")
   queueEntry         QueueEntry?
   spectating         MatchSpectator[]
@@ -630,4 +631,14 @@ model CoinEvent {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+/// A profile picture uploaded from the user's device, re-encoded on the
+/// server (square WebP, metadata stripped) and served from /api/avatar/[userId].
+model UserAvatarImage {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      Bytes
+  mime      String
+  updatedAt DateTime @updatedAt
 }

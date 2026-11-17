@@ -185,13 +185,13 @@ export class ArenaManager {
   private async getProfile(userId: string): Promise<{ userId: string; username: string; avatar: AvatarDTO }> {
     const u = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, username: true, avatarStyle: true, avatarCharacter: { select: { imageUrl: true } } },
+      select: { id: true, username: true, avatarStyle: true, avatarCustomUrl: true, avatarCharacter: { select: { imageUrl: true } } },
     });
     if (!u) throw new EngineError("NOT_FOUND", "NOT_FOUND");
     return {
       userId: u.id,
       username: u.username,
-      avatar: { style: u.avatarStyle, imageUrl: u.avatarCharacter?.imageUrl ?? null },
+      avatar: { style: u.avatarStyle, imageUrl: u.avatarCustomUrl ?? u.avatarCharacter?.imageUrl ?? null },
     };
   }
 

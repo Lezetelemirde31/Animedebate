@@ -47,7 +47,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
       orderBy: { endedAt: "desc" },
       take: 8,
       include: {
-        winner: { select: { username: true, avatarStyle: true, avatarCharacter: { select: { imageUrl: true } } } },
+        winner: { select: { username: true, avatarStyle: true, avatarCustomUrl: true, avatarCharacter: { select: { imageUrl: true } } } },
         _count: { select: { bids: true } },
       },
     }),
@@ -264,7 +264,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
                   {sales.map((s) => (
                     <li key={s.id} className="flex items-center gap-3 py-2.5">
                       {s.winner ? (
-                        <Avatar username={s.winner.username} style={s.winner.avatarStyle} imageUrl={s.winner.avatarCharacter?.imageUrl} size={30} />
+                        <Avatar username={s.winner.username} style={s.winner.avatarStyle} imageUrl={s.winner.avatarCustomUrl ?? s.winner.avatarCharacter?.imageUrl} size={30} />
                       ) : null}
                       <Link href={s.winner ? `/profile/${s.winner.username}` : "#"} className="flex-1 text-sm text-zinc-200 hover:text-white">
                         {s.winner?.username ?? t.characters.deletedUser}

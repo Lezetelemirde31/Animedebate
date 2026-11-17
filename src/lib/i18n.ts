@@ -524,6 +524,11 @@ export const MESSAGES = {
       wearCharacter: "Veya koleksiyonundan bir karakter seç",
       noOwnedForAvatar: "Profil fotoğrafı olarak kullanmak için açık artırmadan karakter kazan.",
       avatarUpdateError: "Profil fotoğrafı güncellenemedi.",
+      uploadFromGallery: "Galeriden fotoğraf yükle",
+      uploadHint: "JPG, PNG, WebP, GIF veya AVIF · en fazla 4 MB. Kare olarak kırpılır; hareketli GIF'ler hareketli kalır.",
+      uploading: "Yükleniyor…",
+      removePhoto: "Fotoğrafı kaldır",
+      yourPhoto: "Yüklediğin fotoğraf",
     },
     collection: {
       title: "Koleksiyonum",
@@ -1446,6 +1451,11 @@ export const MESSAGES = {
       wearCharacter: "Or wear a character from your collection",
       noOwnedForAvatar: "Win characters at auction to unlock them as profile pictures.",
       avatarUpdateError: "Could not update your profile picture.",
+      uploadFromGallery: "Upload from gallery",
+      uploadHint: "JPG, PNG, WebP, GIF or AVIF · up to 4 MB. Cropped to a square; animated GIFs stay animated.",
+      uploading: "Uploading…",
+      removePhoto: "Remove photo",
+      yourPhoto: "Your uploaded photo",
     },
     collection: {
       title: "My collection",

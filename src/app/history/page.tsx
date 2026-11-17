@@ -32,7 +32,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
       include: {
         match: {
           include: {
-            players: { include: { user: { select: { username: true, avatarStyle: true, avatarCharacter: { select: { imageUrl: true } } } } } },
+            players: { include: { user: { select: { username: true, avatarStyle: true, avatarCustomUrl: true, avatarCharacter: { select: { imageUrl: true } } } } } },
             lots: {
               where: { status: "SOLD", winnerId: user.id },
               orderBy: { lotNumber: "asc" },
@@ -104,7 +104,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                   <div className="flex items-center gap-2">
                     {opp ? (
                       <>
-                        <Avatar username={opp.user.username} style={opp.user.avatarStyle} imageUrl={opp.user.avatarCharacter?.imageUrl} size={30} />
+                        <Avatar username={opp.user.username} style={opp.user.avatarStyle} imageUrl={opp.user.avatarCustomUrl ?? opp.user.avatarCharacter?.imageUrl} size={30} />
                         <span className="text-sm text-zinc-200">vs {opp.user.username}</span>
                       </>
                     ) : (

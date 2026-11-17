@@ -23,7 +23,7 @@ export default async function MatchReportPage({ params }: { params: Promise<{ ma
     include: {
       players: {
         orderBy: { seat: "asc" },
-        include: { user: { select: { id: true, username: true, avatarStyle: true, avatarCharacter: { select: { imageUrl: true } } } } },
+        include: { user: { select: { id: true, username: true, avatarStyle: true, avatarCustomUrl: true, avatarCharacter: { select: { imageUrl: true } } } } },
       },
       lots: {
         orderBy: { lotNumber: "asc" },
@@ -73,7 +73,7 @@ export default async function MatchReportPage({ params }: { params: Promise<{ ma
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {match.players.map((p, i) => (
               <div key={p.id} className={cn("flex items-center gap-3 rounded-2xl border bg-black/20 p-4", i === 0 ? "border-purple-500/30" : "border-rose-500/30")}>
-                <Avatar username={p.user.username} style={p.user.avatarStyle} imageUrl={p.user.avatarCharacter?.imageUrl} size={44} ring={i === 0 ? "purple" : "red"} />
+                <Avatar username={p.user.username} style={p.user.avatarStyle} imageUrl={p.user.avatarCustomUrl ?? p.user.avatarCharacter?.imageUrl} size={44} ring={i === 0 ? "purple" : "red"} />
                 <div className="flex-1">
                   <Link href={`/profile/${p.user.username}`} className="flex items-center gap-2 font-display font-semibold text-white hover:underline">
                     {p.user.username}

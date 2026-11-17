@@ -196,6 +196,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
               <AvatarPicker
                 currentStyle={profile.avatarStyle}
                 currentCharacterId={profile.avatarCharacterId}
+                customUrl={profile.avatarCustomUrl}
                 owned={owned.map((o) => ({ id: o.characterId, name: o.character.name, imageUrl: o.character.imageUrl }))}
               />
             </div>

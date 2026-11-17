@@ -35,6 +35,7 @@ export async function PATCH(req: NextRequest) {
     bio?: string | null;
     avatarStyle?: string;
     avatarCharacterId?: string | null;
+    avatarCustomUrl?: string | null;
   } = {};
 
   if (username !== undefined && username !== currentRecord.username) {
@@ -79,12 +80,17 @@ export async function PATCH(req: NextRequest) {
     data.avatarCharacterId = avatarCharacterId;
   }
 
+  // Picking an emblem or a character replaces an uploaded picture.
+  const replacesUpload = avatarStyle !== undefined || avatarCharacterId !== undefined;
+  if (replacesUpload) data.avatarCustomUrl = null;
+
   try {
     const updated = await prisma.user.update({
       where: { id: user.id },
       data,
       select: { id: true, username: true, bio: true, avatarStyle: true, avatarCharacterId: true },
     });
+    if (replacesUpload) await prisma.userAvatarImage.deleteMany({ where: { userId: user.id } });
     return NextResponse.json({ ok: true, user: updated });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
