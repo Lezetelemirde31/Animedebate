@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n";
 import { BADGE_TEXT } from "@/lib/i18n";
+import { RANKS } from "@/game/ranks";
 
 interface StoredNotification {
   type: string;
@@ -36,6 +37,13 @@ export function notificationText(n: StoredNotification, locale: Locale): { title
       const name = loc?.name ?? (str(p.name) || n.title);
       const description = loc?.description ?? (str(p.description) || n.message);
       return { title: tr ? `Rozet kazandın: ${name}` : `Badge Unlocked: ${name}`, message: description };
+    }
+    case "RANK_UP": {
+      const rank = RANKS.find((r) => r.id === p.rank);
+      if (!rank) return stored;
+      return tr
+        ? { title: `Yeni rütbe: ${rank.name.tr}`, message: `${rank.name.tr} rütbesine yükseldin ve ${rank.coinBonus} Anime Coin kazandın.` }
+        : { title: `New rank: ${rank.name.en}`, message: `You reached the ${rank.name.en} rank and earned ${rank.coinBonus} Anime Coins.` };
     }
     case "MODERATION":
       if (p.kind === "restored") {

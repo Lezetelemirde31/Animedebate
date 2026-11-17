@@ -152,7 +152,14 @@ export interface RoomS {
 /** Things that happen as a result of the auction, handled outside the engine. */
 export interface EngineHooks {
   lotWon?(input: { userId: string; lotId: string; matchId: string }): Promise<unknown>;
-  matchFinished?(input: { matchId: string; playerIds: string[]; winnerId: string | null }): Promise<unknown>;
+  matchFinished?(input: {
+    matchId: string;
+    playerIds: string[];
+    winnerId: string | null;
+    reason: MatchResultState["reason"];
+    /** Players who walked out (forfeit): no reward for them. */
+    leaverIds: string[];
+  }): Promise<unknown>;
 }
 
 export interface Ctx {
@@ -736,7 +743,8 @@ export async function finish(
     const hook = ctx.hooks?.matchFinished;
     if (hook && started) {
       const playerIds = s.players.map((p) => p.userId);
-      s.after.push(() => hook({ matchId: s.id, playerIds, winnerId }));
+      const leaverIds = reason === "FORFEIT" ? playerIds.filter((id) => id !== winnerId) : [];
+      s.after.push(() => hook({ matchId: s.id, playerIds, winnerId, reason, leaverIds }));
     }
   }
   await tx.match.update({

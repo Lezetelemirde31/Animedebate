@@ -1,4 +1,4 @@
-import { Award, Crown, Flame, Gavel, Heart, MessageCircle, MessagesSquare, Swords, Zap } from "lucide-react";
+import { Award, Crown, Flame, Gavel, Gem, Heart, Library, MessageCircle, MessagesSquare, Shield, Star, Swords, Trophy, Zap } from "lucide-react";
 
 const ICON_MAP = {
   Flame,
@@ -9,6 +9,11 @@ const ICON_MAP = {
   Zap,
   Crown,
   Gavel,
+  Library,
+  Gem,
+  Shield,
+  Trophy,
+  Star,
 } as const;
 
 export function BadgePill({

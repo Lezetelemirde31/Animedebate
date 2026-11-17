@@ -10,6 +10,7 @@ export interface ClientUser {
   bio: string | null;
   xp: number;
   level: number;
+  coins: number;
   avatarStyle: string;
   avatarImage: string | null;
   unreadNotifications: number;

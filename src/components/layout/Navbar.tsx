@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, Bookmark, Gavel, Languages, LogOut, Menu, Radio, Shield, User, X } from "lucide-react";
+import { Bell, Bookmark, Coins, Gavel, Languages, LogOut, Menu, Radio, Shield, User, X } from "lucide-react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { useCurrentUser } from "@/components/providers/SessionProvider";
 import { useSocket } from "@/components/providers/SocketProvider";
 import { Avatar } from "@/components/ui/Avatar";
+import { RankBadge } from "@/components/progression/RankBadge";
 import { cn } from "@/lib/utils";
 
 async function logout() {
@@ -186,6 +187,15 @@ export function Navbar() {
                 </button>
                 {menu && (
                   <div role="menu" className="glass-strong absolute right-0 mt-2 w-56 overflow-hidden rounded-xl p-1 animate-pop-in">
+                    <Link href="/ranks" className="mb-1 block rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 hover:bg-white/10" role="menuitem" data-testid="nav-progress">
+                      <div className="flex items-center justify-between gap-2">
+                        <RankBadge level={user.level} locale={locale} size="xs" />
+                        <span className="flex items-center gap-1 font-display text-xs font-bold text-amber-200" data-testid="nav-coins">
+                          <Coins className="h-3.5 w-3.5" /> {user.coins} {t.progression.coinsShort}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-zinc-400">{t.progression.ranksLink}</div>
+                    </Link>
                     <Link href={`/profile/${user.username}`} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-200 hover:bg-white/10" role="menuitem">
                       <User className="h-4 w-4" /> {t.nav.myProfile}
                     </Link>

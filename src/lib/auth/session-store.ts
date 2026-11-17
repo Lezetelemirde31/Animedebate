@@ -9,6 +9,7 @@ export interface SessionUser {
   bio: string | null;
   xp: number;
   level: number;
+  coins: number;
   isBanned: boolean;
   avatarStyle: string;
   avatarImage: string | null;
@@ -46,6 +47,7 @@ export async function getUserBySessionToken(token: string | undefined | null): P
     bio: u.bio,
     xp: u.xp,
     level: u.level,
+    coins: u.coins ?? 0,
     isBanned: u.isBanned,
     avatarStyle: u.avatarStyle,
     avatarImage: u.avatarCustomUrl ?? u.avatarCharacter?.imageUrl ?? null,

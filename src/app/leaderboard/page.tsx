@@ -7,6 +7,7 @@ import { getPlayerStats, winRate, type PlayerStatsRow } from "@/lib/stats";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState, PageHeader } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
+import { RankBadge } from "@/components/progression/RankBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function LeaderboardPage({ searchParams }: { searchParams: Promise<{ sort?: string }> }) {
-  const [{ sort: rawSort }, { t }, me, allRows] = await Promise.all([
+  const [{ sort: rawSort }, { locale, t }, me, allRows] = await Promise.all([
     searchParams,
     getServerTranslations(),
     getCurrentUser(),
@@ -104,6 +105,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
                     {t.nav.levelShort}.{r.level}
                   </span>
                 </div>
+                <RankBadge level={r.level} locale={locale} size="xs" className="relative mt-1" />
                 <div className="relative mt-1 font-display text-3xl font-black text-gradient">{def.fmt(r)}</div>
                 <div className="relative text-xs uppercase tracking-widest text-zinc-500">{def.label}</div>
               </Link>
@@ -144,7 +146,8 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
                           </Link>
                         </td>
                         <td className={cn("px-5 py-3 text-right font-display font-semibold", sort === "xp" ? "text-purple-200" : "text-zinc-200")}>
-                          {t.nav.levelShort}.{r.level} <span className="text-xs text-zinc-500">({r.xp})</span>
+                          {t.nav.levelShort}.{r.level} <span className="text-xs text-zinc-500">({r.xp})</span>{" "}
+                          <RankBadge level={r.level} locale={locale} size="xs" />
                         </td>
                         <td className="px-5 py-3 text-right text-zinc-300">{r.debatesCount + r.comparisonsCount}</td>
                         <td className={cn("px-5 py-3 text-right", sort === "debates" && "text-purple-200")}>{r.likesReceived}</td>

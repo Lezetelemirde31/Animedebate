@@ -33,6 +33,7 @@ interface StoreTables {
   userBadge: Row[];
   notification: Row[];
   xpEvent: Row[];
+  coinEvent: Row[];
   moderationLog: Row[];
   matchSpectator: Row[];
   queueEntry: Row[];
@@ -273,6 +274,7 @@ function buildInitialTables(): StoreTables {
     userBadge,
     notification: [],
     xpEvent: [],
+    coinEvent: [],
     moderationLog: [],
     matchSpectator: [],
     queueEntry: [],
@@ -288,6 +290,7 @@ function getTables(): StoreTables {
   g.__aaPreviewTables.matchSpectator ??= [];
   g.__aaPreviewTables.queueEntry ??= [];
   g.__aaPreviewTables.arenaRoom ??= [];
+  g.__aaPreviewTables.coinEvent ??= [];
   return g.__aaPreviewTables;
 }
 
@@ -564,6 +567,7 @@ function applyDefaults(tableName: keyof StoreTables, data: Row): Row {
       avatarCustomUrl: null,
       xp: 0,
       level: 1,
+      coins: 0,
       debatesCount: 0,
       comparisonsCount: 0,
       commentsCount: 0,
@@ -830,6 +834,7 @@ export function createPreviewPrisma(): PrismaClient {
     userBadge: makeDelegate(tables, "userBadge"),
     notification: makeDelegate(tables, "notification"),
     xpEvent: makeDelegate(tables, "xpEvent"),
+    coinEvent: makeDelegate(tables, "coinEvent"),
     moderationLog: makeDelegate(tables, "moderationLog"),
     matchSpectator: makeDelegate(tables, "matchSpectator"),
     queueEntry: makeDelegate(tables, "queueEntry"),

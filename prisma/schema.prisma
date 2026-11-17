@@ -88,6 +88,7 @@ enum NotificationType {
   REACTION_MILESTONE
   BADGE_EARNED
   LEVEL_UP
+  RANK_UP
   MODERATION
 }
 
@@ -98,6 +99,8 @@ enum BadgeRuleType {
   LIKES_RECEIVED
   LEVEL_REACHED
   AUCTION_WINS
+  MATCHES_PLAYED
+  MATCHES_WON
 }
 
 model User {
@@ -119,6 +122,8 @@ model User {
   /// Gamification & Community Stats
   xp               Int @default(0)
   level            Int @default(1)
+  /// Anime Coins (AC): fictional currency earned by playing; never bought with real money.
+  coins            Int @default(0)
   debatesCount     Int @default(0)
   comparisonsCount Int @default(0)
   commentsCount    Int @default(0)
@@ -159,6 +164,7 @@ model User {
   notifications      Notification[]        @relation("NotificationRecipient")
   actedNotifications Notification[]        @relation("NotificationActor")
   xpEvents           XpEvent[]
+  coinEvents         CoinEvent[]
   moderationLogs     ModerationLog[]       @relation("ModerationAdmin")
   queueEntry         QueueEntry?
   spectating         MatchSpectator[]
@@ -610,4 +616,18 @@ model ArenaRoom {
   updatedAt DateTime @updatedAt
 
   @@index([phase, updatedAt])
+}
+
+/// Every Anime Coin change (earned or spent), for history and auditing.
+model CoinEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  reason    String
+  refType   String?
+  refId     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

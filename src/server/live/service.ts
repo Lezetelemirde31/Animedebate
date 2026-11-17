@@ -64,6 +64,20 @@ export function setTimingForTests(t: Partial<Timing>): void {
 /** Default follow-ups: XP (and with it levels and badges) for every character won at auction. */
 const DEFAULT_HOOKS: EngineHooks = {
   lotWon: ({ userId, lotId }) => awardXp({ userId, amount: XP_REWARDS.WIN_AUCTION, reason: "WIN_AUCTION", refType: "lot", refId: lotId }),
+  // Finishing a match pays XP and Anime Coins; walking out of one pays nothing.
+  matchFinished: async ({ matchId, playerIds, winnerId, leaverIds }) => {
+    for (const userId of playerIds) {
+      if (leaverIds.includes(userId)) continue;
+      const won = userId === winnerId;
+      await awardXp({
+        userId,
+        amount: won ? XP_REWARDS.MATCH_WIN : XP_REWARDS.MATCH_PLAY,
+        reason: won ? "MATCH_WIN" : "MATCH_PLAY",
+        refType: "match",
+        refId: matchId,
+      });
+    }
+  },
 };
 
 async function makeCtx(tx: Tx): Promise<Ctx> {

@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma, dbMode } from "@/lib/db";
+import { awardXp } from "@/lib/gamification";
 import {
   ARENA_MAX_ROUNDS,
   ARENA_WINS_TO_WIN,
@@ -40,38 +41,9 @@ export { EngineError };
 
 type Tx = Prisma.TransactionClient;
 
-function levelFromXp(xp: number): number {
-  return Math.floor(Math.sqrt(Math.max(0, Math.floor(xp)) / 50)) + 1;
-}
-
+/** Arena XP and Anime Coins go through the shared progression (levels, ranks, badges). */
 async function awardArenaXp(userId: string, amount: number, reason: string, refId: string): Promise<void> {
-  if (amount <= 0) return;
-  const updated = await prisma.user.update({
-    where: { id: userId },
-    data: { xp: { increment: amount } },
-    select: { xp: true, level: true },
-  });
-  const nextLevel = levelFromXp(updated.xp);
-  if (nextLevel > updated.level) {
-    await prisma.user.update({ where: { id: userId }, data: { level: nextLevel } });
-    await prisma.notification
-      .create({
-        data: {
-          userId,
-          type: "LEVEL_UP",
-          title: `Level ${nextLevel} Reached!`,
-          message: `You earned enough XP to advance to Level ${nextLevel}.`,
-          params: { level: nextLevel },
-          linkUrl: "/profile",
-        },
-      })
-      .catch(() => undefined);
-  }
-  await prisma.xpEvent
-    .create({
-      data: { userId, amount, reason, refType: "ARENA_MATCH", refId },
-    })
-    .catch(() => undefined);
+  await awardXp({ userId, amount, reason, refType: "ARENA_MATCH", refId });
 }
 
 interface ArenaPlayerSeat {
