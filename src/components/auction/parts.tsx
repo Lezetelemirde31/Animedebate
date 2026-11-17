@@ -86,6 +86,7 @@ export function PlayerPanel({
   leading,
   startingBalance,
   wonCharacters,
+  teamSize,
   compact,
 }: {
   player: PlayerState;
@@ -94,6 +95,8 @@ export function PlayerPanel({
   leading: boolean;
   startingBalance: number;
   wonCharacters: CharacterDTO[];
+  /** Characters per team: shows progress and empty slots. */
+  teamSize?: number;
   compact?: boolean;
 }) {
   const { t } = useLanguage();
@@ -150,7 +153,21 @@ export function PlayerPanel({
       </div>
       {!compact && (
         <div className="relative mt-4">
-          <div className="mb-2 text-[10px] uppercase tracking-widest text-zinc-400">{t.auction.wonThisMatch(wonCharacters.length)}</div>
+          <div className="mb-2 flex items-center justify-between gap-2 text-[10px] uppercase tracking-widest text-zinc-400">
+            <span data-testid={`team-${player.username}`}>
+              {teamSize ? t.auction.teamProgress(wonCharacters.length, teamSize) : t.auction.wonThisMatch(wonCharacters.length)}
+            </span>
+            {!!teamSize && wonCharacters.length >= teamSize && (
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 font-semibold normal-case tracking-normal text-emerald-300">{t.auction.teamFullBadge}</span>
+            )}
+          </div>
+          {!!teamSize && (
+            <div className="mb-2 flex gap-1" aria-hidden>
+              {Array.from({ length: teamSize }, (_, i) => (
+                <span key={i} className="h-1.5 flex-1 rounded-full" style={{ background: i < wonCharacters.length ? s.hex : "rgba(255,255,255,0.1)" }} />
+              ))}
+            </div>
+          )}
           {wonCharacters.length === 0 ? (
             <p className="text-xs text-zinc-500">{t.auction.noCharsYet}</p>
           ) : (
@@ -212,12 +229,10 @@ export function BidFeed({ bids, sideOf, now }: { bids: BidDTO[]; sideOf: (userId
 
 export function LotHistoryStrip({
   history,
-  totalLots,
   sideOf,
   nameOf,
 }: {
   history: LotSummary[];
-  totalLots: number;
   sideOf: (userId: string) => Side;
   nameOf: (userId: string) => string;
 }) {
@@ -226,7 +241,7 @@ export function LotHistoryStrip({
     <div className="glass rounded-2xl p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.auction.auctionHistory}</h3>
-        <span className="text-xs text-zinc-500">{t.auction.lotsSlash(history.length, totalLots)}</span>
+        <span className="text-xs text-zinc-500">{t.auction.roundsCount(history.length)}</span>
       </div>
       {history.length === 0 ? (
         <p className="py-3 text-sm text-zinc-500">{t.auction.completedLotsHere}</p>
@@ -247,7 +262,13 @@ export function LotHistoryStrip({
                   <div className="absolute left-1 top-1 rounded bg-black/70 px-1.5 text-[10px] font-semibold text-zinc-200">#{h.lotNumber}</div>
                 </div>
                 <div className={cn("mt-1 truncate text-center text-xs font-semibold", sold ? s!.text : "text-zinc-500")}>
-                  {sold ? `${nameOf(h.winnerId!)} · $${h.finalPrice}` : t.auction.unsoldStamp}
+                  {sold
+                    ? h.autoAssigned
+                      ? `${nameOf(h.winnerId!)} · ${t.auction.autoStamp}`
+                      : `${nameOf(h.winnerId!)} · $${h.finalPrice}`
+                    : h.skipped
+                      ? t.auction.skippedStamp
+                      : t.auction.unsoldStamp}
                 </div>
               </div>
             );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Ban, Gavel, Flame } from "lucide-react";
+import { Ban, Gavel, Flame, SkipForward } from "lucide-react";
 import type { Ack, LotState, PlayerState } from "@/game/types";
 import { minimumNextBid } from "@/game/rules";
 import { useLanguage } from "@/components/providers/LanguageProvider";
@@ -18,19 +18,25 @@ export function BidControls({
   minIncrement,
   biddingOpen,
   isSpectator,
+  teamFull,
   onBid,
+  skip,
 }: {
   lot: LotState;
   me: PlayerState | null;
   minIncrement: number;
   biddingOpen: boolean;
   isSpectator: boolean;
+  /** This player's team already has every character it needs. */
+  teamFull?: boolean;
   onBid: (lotId: string, amount: number) => Promise<Ack<unknown>>;
+  skip?: { available: boolean; voted: boolean; opponentWants: boolean; onSkip: () => Promise<Ack<unknown>> };
 }) {
   const { t } = useLanguage();
   const [custom, setCustom] = useState("");
   const [pending, setPending] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [skipping, setSkipping] = useState(false);
 
   const minBid = minimumNextBid(lot, minIncrement);
   const balance = me?.balance ?? 0;
@@ -38,6 +44,7 @@ export function BidControls({
 
   let blocked: string | null = null;
   if (isSpectator) blocked = t.auction.spectatorMsg;
+  else if (teamFull) blocked = t.auction.teamFull;
   else if (!biddingOpen) blocked = t.auction.biddingClosed;
   else if (leading) blocked = t.auction.alreadyLeading;
   else if (balance < minBid) blocked = t.auction.insufficientBalance(balance, minBid);
@@ -61,6 +68,15 @@ export function BidControls({
     setPending(null);
     if (!res.ok) setError(res.message);
     else setCustom("");
+  }
+
+  async function voteSkip() {
+    if (!skip || skipping) return;
+    setSkipping(true);
+    setError(null);
+    const res = await skip.onSkip();
+    setSkipping(false);
+    if (!res.ok) setError(res.message);
   }
 
   const base = lot.highestBid ?? lot.startingPrice - minIncrement;
@@ -122,6 +138,24 @@ export function BidControls({
           {t.auction.placeBid}
         </button>
       </form>
+      {skip && (skip.available || skip.voted) && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="btn btn-ghost !py-2"
+            onClick={voteSkip}
+            disabled={!skip.available || skip.voted || skipping}
+            title={t.auction.skipTitle}
+            data-testid="skip-button"
+          >
+            {skipping ? <Spinner className="h-4 w-4 text-white" /> : <SkipForward className="h-4 w-4" />}
+            {t.auction.skip}
+          </button>
+          <span className="text-xs text-zinc-400" role="status">
+            {skip.voted ? t.auction.skipVoted : skip.opponentWants ? t.auction.opponentWantsSkip : t.auction.skipTitle}
+          </span>
+        </div>
+      )}
       {(blocked || error) && (
         <p className={cn("flex items-center gap-2 text-sm", error ? "text-rose-300" : "text-zinc-400")} role="status">
           <Ban className="h-4 w-4 shrink-0" />

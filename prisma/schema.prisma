@@ -253,6 +253,8 @@ model Match {
   version           Int         @default(0)
   rematchVotes      String[]
   rematchCode       String?
+  /// Whose turn it is to open the next lot (opening turns alternate).
+  nextOpenerId      String?
 
   createdAt DateTime  @default(now())
   startedAt DateTime?
@@ -301,6 +303,14 @@ model AuctionLot {
   finalPrice      Int?
   highestBid      Int?
   highestBidderId String?
+  /// The player whose turn it was to open: the server placed the opening bid for them.
+  forcedOpenerId  String?
+  /// Both players chose to skip this character (no sale, it does not come back).
+  skipped         Boolean   @default(false)
+  /// Given for free by the server to a player who ran out of money.
+  autoAssigned    Boolean   @default(false)
+  /// Players who voted to skip this character.
+  skipVotes       String[]  @default([])
   /// When bidding closes (null while paused or after closing).
   endsAt          DateTime?
   startedAt       DateTime  @default(now())

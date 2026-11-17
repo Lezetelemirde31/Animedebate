@@ -29,7 +29,10 @@ export type Phase =
   | "ABANDONED";
 
 export interface RoomSettings {
+  /** Expected number of characters sold (team size × players); the match ends when every team is full. */
   totalLots: number;
+  /** Characters per team. */
+  teamSize: number;
   bidSeconds: number;
   startingBalance: number;
   minIncrement: number;
@@ -75,6 +78,14 @@ export interface LotState {
   status: "ACTIVE" | "SOLD" | "UNSOLD" | "CANCELLED";
   winnerId: string | null;
   finalPrice: number | null;
+  /** It was this player's turn to open: the server placed their opening bid. */
+  forcedOpenerId: string | null;
+  /** Players who voted to skip this character. */
+  skipVotes: string[];
+  /** Both players skipped it. */
+  skipped: boolean;
+  /** Given for free to a player who ran out of money. */
+  autoAssigned: boolean;
 }
 
 export interface LotSummary {
@@ -85,6 +96,8 @@ export interface LotSummary {
   winnerId: string | null;
   finalPrice: number | null;
   bidCount: number;
+  skipped: boolean;
+  autoAssigned: boolean;
 }
 
 /**
@@ -132,6 +145,8 @@ export interface RoomSnapshot {
   rematchVotes: string[];
   /** Set once both players accepted a rematch: the new room's code. */
   rematchCode: string | null;
+  /** Whose turn it is to open the next lot (null: whoever bids first). */
+  nextOpenerId: string | null;
   /** Number of characters still in the pool. */
   poolRemaining: number;
   /** Number of spectators currently watching. */
@@ -188,6 +203,7 @@ export type ErrorCode =
   | "ALREADY_HIGHEST"
   | "BELOW_MINIMUM"
   | "INSUFFICIENT_BALANCE"
+  | "TEAM_FULL"
   | "INVALID_INPUT"
   | "RATE_LIMITED"
   | "INVALID_STATE"
@@ -200,7 +216,6 @@ export type Ack<T = undefined> =
 
 export interface CreateRoomInput {
   isPrivate: boolean;
-  totalLots: number;
   bidSeconds: number;
   animeIds: string[];
 }
@@ -211,5 +226,6 @@ export type RoomAction =
   | { action: "sync" }
   | { action: "ready"; ready: boolean }
   | { action: "bid"; lotId: string; amount: number }
+  | { action: "skip" }
   | { action: "leave" }
   | { action: "rematch" };

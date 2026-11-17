@@ -215,6 +215,7 @@ export function AuctionRoom({ code }: { code: string }) {
           now={now}
           events={room.events}
           onBid={room.bid}
+          onSkip={room.skip}
           onLeave={() => setConfirmLeave(true)}
         />
       )}

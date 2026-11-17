@@ -33,10 +33,6 @@ export const loginSchema = z.object({
 
 export const createRoomSchema = z.object({
   isPrivate: z.boolean(),
-  totalLots: z
-    .number()
-    .int()
-    .refine((n) => (GAME_RULES.lotOptions as readonly number[]).includes(n), "Invalid number of lots."),
   bidSeconds: z
     .number()
     .int()

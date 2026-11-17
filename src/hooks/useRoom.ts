@@ -193,8 +193,9 @@ export function useRoom(code: string) {
   const setReady = useCallback((ready: boolean) => act({ action: "ready", ready }), [act]);
   const leave = useCallback(() => send({ action: "leave" }), [send]);
   const rematch = useCallback(() => act({ action: "rematch" }), [act]);
+  const skip = useCallback(() => act({ action: "skip" }), [act]);
 
-  return { snapshot, error, joining, connection, events, bid, setReady, leave, rematch };
+  return { snapshot, error, joining, connection, events, bid, setReady, leave, rematch, skip };
 }
 
 /** Re-renders at the given interval and returns the current server time. */

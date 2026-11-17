@@ -7,7 +7,6 @@ import { handleLive, ok } from "@/server/live/http";
 export const dynamic = "force-dynamic";
 
 const KEYS: Record<string, string> = {
-  totalLots: "LOTS_INVALID",
   bidSeconds: "TIMER_INVALID",
   animeIds: "ANIME_REQUIRED",
 };

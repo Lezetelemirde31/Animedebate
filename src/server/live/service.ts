@@ -28,6 +28,7 @@ import {
   saveRoom,
   seatPlayer,
   setReady,
+  skipLot,
   voteRematch,
   type Ctx,
   type EngineHooks,
@@ -126,7 +127,8 @@ async function withRoom<T>(
 
 function defaultSettings(overrides?: Partial<RoomSettings>): RoomSettings {
   return {
-    totalLots: GAME_RULES.defaultLots,
+    totalLots: GAME_RULES.teamSize * GAME_RULES.maxPlayers,
+    teamSize: GAME_RULES.teamSize,
     bidSeconds: GAME_RULES.defaultTimer,
     startingBalance: GAME_RULES.startingBalance,
     minIncrement: GAME_RULES.minIncrement,
@@ -165,7 +167,7 @@ async function freeUpForSeat(userId: string, exceptCode?: string): Promise<void>
 
 export async function createRoom(userId: string, input: CreateRoomInput): Promise<string> {
   await freeUpForSeat(userId);
-  const settings = defaultSettings({ totalLots: input.totalLots, bidSeconds: input.bidSeconds, animeIds: input.animeIds });
+  const settings = defaultSettings({ bidSeconds: input.bidSeconds, animeIds: input.animeIds });
   const catalog = await getCatalog();
   if (catalog.idsForAnime(settings.animeIds).length < settings.totalLots) {
     throw new EngineError("INVALID_INPUT", "NOT_ENOUGH_CHARACTERS");
@@ -218,6 +220,9 @@ export async function roomRequest(code: string, userId: string, act: RoomAction,
         if (typeof act.lotId !== "string") throw new EngineError("INVALID_INPUT");
         await placeBid(ctx, s, userId, act.lotId, act.amount, bidAt);
         return advance(ctx, s, now);
+      case "skip":
+        await skipLot(ctx, s, userId, now);
+        return advance(ctx, s, now);
       case "leave":
         return leaveRoom(ctx, s, userId, now);
       case "rematch":
@@ -255,6 +260,7 @@ export async function listOpenRooms(): Promise<OpenRoomDTO[]> {
       host: { username: m.players[0].user.username, avatar: avatarOf(m.players[0].user) },
       settings: {
         totalLots: m.totalLots,
+        teamSize: GAME_RULES.teamSize,
         bidSeconds: m.bidSeconds,
         startingBalance: m.startingBalance,
         minIncrement: m.minIncrement,

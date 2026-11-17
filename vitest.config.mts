@@ -12,5 +12,7 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
     environment: "node",
+    // Live engine tests play whole matches.
+    testTimeout: 60_000,
   },
 });

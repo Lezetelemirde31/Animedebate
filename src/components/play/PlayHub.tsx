@@ -165,7 +165,7 @@ export function PlayHub() {
                     <span className="rounded bg-white/5 px-1.5 font-display text-[11px] tracking-widest text-zinc-400">{r.code}</span>
                   </div>
                   <div className="mt-1 text-xs text-zinc-400">
-                    {t.play.lotsShort(r.settings.totalLots)} · {r.settings.bidSeconds}{t.auction.secLabel} ·{" "}
+                    {t.play.teamShort(r.settings.teamSize ?? 5)} · {r.settings.bidSeconds}{t.auction.secLabel} ·{" "}
                     {r.settings.animeIds.length === ENABLED_ANIME_IDS.length
                       ? t.play.allAnime
                       : r.settings.animeIds.map((id) => getAnime(id)?.shortName ?? id).join(", ")}{" "}

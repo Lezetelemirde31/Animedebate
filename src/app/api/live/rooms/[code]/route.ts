@@ -7,7 +7,7 @@ import { handleLive, ok } from "@/server/live/http";
 
 export const dynamic = "force-dynamic";
 
-const ACTIONS = new Set(["join", "sync", "ready", "bid", "leave", "rematch"]);
+const ACTIONS = new Set(["join", "sync", "ready", "bid", "skip", "leave", "rematch"]);
 
 /**
  * Every room interaction: the body is `{ action, ... }`. The answer is the

@@ -18,6 +18,7 @@
  */
 import type { Prisma } from "@prisma/client";
 import { GAME_RULES } from "@/game/config";
+import { RARITY_INFO } from "@/game/rarity";
 import {
   applyOvertime,
   buildPool,
@@ -65,6 +66,7 @@ export class EngineError extends Error {
 export interface Timing {
   startCountdownMs: number;
   intermissionMs: number;
+  quickIntermissionMs: number;
   reconnectGraceMs: number;
   lobbySeatGraceMs: number;
   minResumeMs: number;
@@ -75,6 +77,7 @@ export interface Timing {
 export const DEFAULT_TIMING: Timing = {
   startCountdownMs: GAME_RULES.startCountdownMs,
   intermissionMs: GAME_RULES.intermissionMs,
+  quickIntermissionMs: GAME_RULES.quickIntermissionMs,
   reconnectGraceMs: GAME_RULES.reconnectGraceMs,
   lobbySeatGraceMs: GAME_RULES.lobbySeatGraceMs,
   minResumeMs: GAME_RULES.minResumeMs,
@@ -109,6 +112,10 @@ export interface LotS {
   status: LotState["status"];
   winnerId: string | null;
   finalPrice: number | null;
+  forcedOpenerId: string | null;
+  skipVotes: string[];
+  skipped: boolean;
+  autoAssigned: boolean;
 }
 
 export interface RoomS {
@@ -129,6 +136,7 @@ export interface RoomS {
   version: number;
   rematchVotes: string[];
   rematchCode: string | null;
+  nextOpenerId: string | null;
   winnerId: string | null;
   endReason: string | null;
   resultDetail: MatchResultDetail;
@@ -205,6 +213,7 @@ export async function loadRoom(tx: Tx, matchId: string): Promise<RoomS | null> {
     hostId: m.hostId,
     settings: {
       totalLots: m.totalLots,
+      teamSize: GAME_RULES.teamSize,
       bidSeconds: m.bidSeconds,
       startingBalance: m.startingBalance,
       minIncrement: m.minIncrement,
@@ -222,6 +231,7 @@ export async function loadRoom(tx: Tx, matchId: string): Promise<RoomS | null> {
     version: m.version,
     rematchVotes: [...(m.rematchVotes ?? [])],
     rematchCode: m.rematchCode ?? null,
+    nextOpenerId: m.nextOpenerId ?? null,
     winnerId: m.winnerId ?? null,
     endReason: m.endReason ?? null,
     resultDetail: parseDetail(m.resultDetail),
@@ -258,6 +268,10 @@ export async function loadRoom(tx: Tx, matchId: string): Promise<RoomS | null> {
           status: latest.status,
           winnerId: latest.winnerId ?? null,
           finalPrice: latest.finalPrice ?? null,
+          forcedOpenerId: latest.forcedOpenerId ?? null,
+          skipVotes: [...(latest.skipVotes ?? [])],
+          skipped: !!latest.skipped,
+          autoAssigned: !!latest.autoAssigned,
         }
       : null,
     dirty: false,
@@ -282,6 +296,7 @@ export async function saveRoom(tx: Tx, s: RoomS): Promise<void> {
       version: s.version,
       rematchVotes: s.rematchVotes,
       rematchCode: s.rematchCode,
+      nextOpenerId: s.nextOpenerId,
       hostId: s.hostId,
     },
   });
@@ -427,33 +442,76 @@ async function beginMatch(ctx: Ctx, s: RoomS, at: number): Promise<void> {
   const ownerCount = new Map(owners.map((o) => [o.characterId, o._count._all]));
   s.pool = buildPool(ids, (id) => ownerCount.get(id) ?? 0, ctx.random);
   s.status = "IN_PROGRESS";
+  s.nextOpenerId = null; // the first lot is open to whoever bids first
   s.phase = "COUNTDOWN";
   s.phaseEndsAt = at + ctx.timing.startCountdownMs;
   s.dirty = true;
   await ctx.tx.match.update({ where: { id: s.id }, data: { startedAt: new Date(at) } });
 }
 
+// ─── Team rules ─────────────────────────────────────────────────────────────
+
+/** Cheapest opening price of any character: below this a player can no longer buy. */
+const CHEAPEST_START = Math.min(...Object.values(RARITY_INFO).map((r) => r.startingPrice));
+/** When only one player still needs characters, a lot closes this quickly unless they skip it. */
+const SOLO_LOT_MS = 5_000;
+
+export const isTeamFull = (s: RoomS, p: PlayerS) => p.wonCharacterIds.length >= s.settings.teamSize;
+const needsCharacters = (s: RoomS) => s.players.filter((p) => !isTeamFull(s, p));
+const canOpen = (ctx: Ctx, p: PlayerS, characterId: string) => {
+  const rarity = ctx.catalog.rarity(characterId);
+  return !!rarity && p.balance >= startingPriceFor(rarity);
+};
+
+/**
+ * Between lots: the match ends once every team is full. A player who still
+ * needs characters but cannot afford any gets one for free from the pool;
+ * otherwise the next character goes up for auction.
+ */
 async function proceed(ctx: Ctx, s: RoomS, at: number): Promise<void> {
-  if (s.lotsCompleted >= s.settings.totalLots) return finish(ctx, s, "COMPLETED", null, {}, at);
-  if (s.players.every((p) => p.balance <= 0)) return finish(ctx, s, "COMPLETED", null, { note: "all_spent" }, at);
+  const open = needsCharacters(s);
+  if (open.length === 0) return finish(ctx, s, "COMPLETED", null, {}, at);
+  const broke = open.find((p) => p.balance < CHEAPEST_START);
+  if (broke) return autoAssign(ctx, s, broke, at);
   await startNextLot(ctx, s, at);
 }
 
 async function startNextLot(ctx: Ctx, s: RoomS, at: number): Promise<void> {
-  const idx = s.pool.findIndex((id) => {
-    const rarity = ctx.catalog.rarity(id);
-    return !!rarity && s.players.some((p) => p.balance >= startingPriceFor(rarity));
-  });
+  const open = needsCharacters(s);
+  // Whose turn it is to open. With one team already full, the other player always opens.
+  const designated = open.find((p) => p.userId === s.nextOpenerId) ?? (open.length === 1 ? open[0] : null);
+  // Prefer a character the player on turn can afford, so the turn order holds.
+  let idx = designated ? s.pool.findIndex((id) => canOpen(ctx, designated, id)) : -1;
+  if (idx === -1) idx = s.pool.findIndex((id) => open.some((p) => canOpen(ctx, p, id)));
   if (idx === -1) {
-    const anyMoney = s.players.some((p) => p.balance > 0);
-    return finish(ctx, s, anyMoney ? "POOL_EXHAUSTED" : "COMPLETED", null, { note: anyMoney ? "pool_empty" : "all_spent" }, at);
+    // Nobody can afford what is left: hand out free characters while the pool lasts.
+    if (s.pool.length > 0) return autoAssign(ctx, s, open[0], at);
+    return finish(ctx, s, "POOL_EXHAUSTED", null, { note: "pool_empty" }, at);
   }
   const characterId = s.pool[idx];
   const lotNumber = s.lotsCompleted + 1;
   const startingPrice = startingPriceFor(ctx.catalog.rarity(characterId)!);
-  const endsAt = at + s.settings.bidSeconds * 1000;
+  const opener = !designated
+    ? null
+    : canOpen(ctx, designated, characterId)
+      ? designated
+      : open.find((p) => p !== designated && canOpen(ctx, p, characterId)) ?? null;
+  const rivals = open.filter((p) => p !== opener);
+  // Alone at the table: no need to run the full clock, but leave time to skip.
+  const lotMs = opener && rivals.length === 0 ? Math.min(SOLO_LOT_MS, s.settings.bidSeconds * 1000) : s.settings.bidSeconds * 1000;
+  const endsAt = at + lotMs;
   const row = await ctx.tx.auctionLot.create({
-    data: { matchId: s.id, lotNumber, characterId, startingPrice, startedAt: new Date(at), endsAt: new Date(endsAt) },
+    data: {
+      matchId: s.id,
+      lotNumber,
+      characterId,
+      startingPrice,
+      startedAt: new Date(at),
+      endsAt: new Date(endsAt),
+      forcedOpenerId: opener?.userId ?? null,
+      highestBid: opener ? startingPrice : null,
+      highestBidderId: opener?.userId ?? null,
+    },
   });
   s.pool = s.pool.filter((_, i) => i !== idx);
   s.lot = {
@@ -469,52 +527,120 @@ async function startNextLot(ctx: Ctx, s: RoomS, at: number): Promise<void> {
     status: "ACTIVE",
     winnerId: null,
     finalPrice: null,
+    forcedOpenerId: opener?.userId ?? null,
+    skipVotes: [],
+    skipped: false,
+    autoAssigned: false,
   };
+  if (opener) {
+    // It is this player's turn: the server opens for them at the starting price.
+    const bid = await ctx.tx.bid.create({ data: { lotId: row.id, userId: opener.userId, amount: startingPrice, createdAt: new Date(at) } });
+    s.lot.bids.push({ id: bid.id, userId: opener.userId, username: opener.username, amount: startingPrice, at });
+    s.lot.highestBid = startingPrice;
+    s.lot.highestBidderId = opener.userId;
+  }
   s.phase = "BIDDING";
   s.phaseEndsAt = null;
+  s.dirty = true;
+}
+
+/** Adds a character to a player's team (balance, score, collection). */
+async function awardCharacter(ctx: Ctx, s: RoomS, winner: PlayerS, characterId: string, price: number, at: number): Promise<void> {
+  const { tx } = ctx;
+  const points = scoreForRarity(ctx.catalog.rarity(characterId) ?? "COMMON");
+  // A sale can never take a balance below zero.
+  const debit = await tx.matchPlayer.updateMany({
+    where: { id: winner.rowId, balance: { gte: price } },
+    data: { balance: { decrement: price }, score: { increment: points } },
+  });
+  if (debit.count !== 1) throw new Error(`Balance check failed for ${winner.userId}`);
+  await tx.ownedCharacter.upsert({
+    where: { userId_characterId: { userId: winner.userId, characterId } },
+    create: { userId: winner.userId, characterId, lastPrice: price, totalSpent: price, sourceMatchId: s.id },
+    update: {
+      copies: { increment: 1 },
+      lastPrice: price,
+      totalSpent: { increment: price },
+      lastAcquiredAt: new Date(at),
+      sourceMatchId: s.id,
+    },
+  });
+  winner.balance -= price;
+  winner.score += points;
+  winner.wonCharacterIds.push(characterId);
+}
+
+/** Gives a player who ran out of money the next character from the pool, for free. */
+async function autoAssign(ctx: Ctx, s: RoomS, p: PlayerS, at: number): Promise<void> {
+  const characterId = s.pool[0];
+  if (!characterId) return finish(ctx, s, "POOL_EXHAUSTED", null, { note: "pool_empty" }, at);
+  const lotNumber = s.lotsCompleted + 1;
+  const startingPrice = startingPriceFor(ctx.catalog.rarity(characterId) ?? "COMMON");
+  const row = await ctx.tx.auctionLot.create({
+    data: {
+      matchId: s.id,
+      lotNumber,
+      characterId,
+      startingPrice,
+      status: "SOLD",
+      winnerId: p.userId,
+      finalPrice: 0,
+      autoAssigned: true,
+      startedAt: new Date(at),
+      endedAt: new Date(at),
+      endsAt: null,
+    },
+  });
+  s.pool = s.pool.slice(1);
+  await awardCharacter(ctx, s, p, characterId, 0, at);
+  s.lot = {
+    id: row.id,
+    lotNumber,
+    characterId,
+    startingPrice,
+    highestBid: null,
+    highestBidderId: null,
+    bids: [],
+    startedAt: at,
+    endsAt: null,
+    status: "SOLD",
+    winnerId: p.userId,
+    finalPrice: 0,
+    forcedOpenerId: null,
+    skipVotes: [],
+    skipped: false,
+    autoAssigned: true,
+  };
+  s.lotsCompleted += 1;
+  s.phase = "INTERMISSION";
+  s.phaseEndsAt = at + ctx.timing.quickIntermissionMs;
   s.dirty = true;
 }
 
 async function closeLot(ctx: Ctx, s: RoomS, at: number): Promise<void> {
   const lot = s.lot!;
   const { tx } = ctx;
-  const rarity = ctx.catalog.rarity(lot.characterId) ?? "COMMON";
   if (lot.highestBidderId && lot.highestBid !== null) {
     const winner = s.players.find((p) => p.userId === lot.highestBidderId)!;
     const price = lot.highestBid;
-    const points = scoreForRarity(rarity);
     const loserIds = [...new Set(lot.bids.map((b) => b.userId))].filter((id) => id !== winner.userId);
-    // A lot can be settled only once…
+    // A lot can be settled only once.
     const updated = await tx.auctionLot.updateMany({
       where: { id: lot.id, status: "ACTIVE" },
       data: { status: "SOLD", winnerId: winner.userId, finalPrice: price, endsAt: null, endedAt: new Date(at) },
     });
     if (updated.count !== 1) throw new Error(`Lot ${lot.id} is not active`);
-    // …and a sale can never take a balance below zero.
-    const debit = await tx.matchPlayer.updateMany({
-      where: { id: winner.rowId, balance: { gte: price } },
-      data: { balance: { decrement: price }, score: { increment: points } },
-    });
-    if (debit.count !== 1) throw new Error(`Balance check failed for ${winner.userId}`);
-    await tx.ownedCharacter.upsert({
-      where: { userId_characterId: { userId: winner.userId, characterId: lot.characterId } },
-      create: { userId: winner.userId, characterId: lot.characterId, lastPrice: price, totalSpent: price, sourceMatchId: s.id },
-      update: {
-        copies: { increment: 1 },
-        lastPrice: price,
-        totalSpent: { increment: price },
-        lastAcquiredAt: new Date(at),
-        sourceMatchId: s.id,
-      },
-    });
+    await awardCharacter(ctx, s, winner, lot.characterId, price, at);
     await tx.user.update({ where: { id: winner.userId }, data: { auctionWins: { increment: 1 }, totalSpent: { increment: price } } });
     if (loserIds.length) await tx.user.updateMany({ where: { id: { in: loserIds } }, data: { auctionLosses: { increment: 1 } } });
-    winner.balance -= price;
-    winner.score += points;
-    winner.wonCharacterIds.push(lot.characterId);
     lot.status = "SOLD";
     lot.winnerId = winner.userId;
     lot.finalPrice = price;
+    // Opening turns alternate: whoever opened this lot, the other player opens the next one.
+    const openedBy = lot.forcedOpenerId ?? lot.bids[0]?.userId ?? null;
+    if (GAME_RULES.alternatingOpenings && openedBy) {
+      s.nextOpenerId = s.players.find((p) => p.userId !== openedBy)?.userId ?? null;
+    }
     const hook = ctx.hooks?.lotWon;
     if (hook) s.after.push(() => hook({ userId: winner.userId, lotId: lot.id, matchId: s.id }));
   } else {
@@ -525,6 +651,11 @@ async function closeLot(ctx: Ctx, s: RoomS, at: number): Promise<void> {
     lot.status = "UNSOLD";
     // Nobody bid: the character goes back into the pool.
     s.pool = returnToPool(s.pool, lot.characterId, ctx.random);
+    // Nobody took the free opening either: draw who opens next, so the match always moves on.
+    if (GAME_RULES.alternatingOpenings && !s.nextOpenerId) {
+      const open = needsCharacters(s);
+      s.nextOpenerId = open[Math.floor(ctx.random() * open.length)]?.userId ?? null;
+    }
   }
   lot.endsAt = null;
   s.lotsCompleted += 1;
@@ -688,6 +819,7 @@ export async function setReady(ctx: Ctx, s: RoomS, userId: string, ready: boolea
 export async function placeBid(ctx: Ctx, s: RoomS, userId: string, lotId: string, amount: unknown, receivedAt: number): Promise<number> {
   const p = s.players.find((x) => x.userId === userId);
   const lot = s.lot;
+  if (p && isTeamFull(s, p) && s.phase === "BIDDING") throw new EngineError("TEAM_FULL", "TEAM_FULL", { size: s.settings.teamSize });
   const check = validateBid({
     phase: s.phase,
     now: receivedAt,
@@ -705,16 +837,67 @@ export async function placeBid(ctx: Ctx, s: RoomS, userId: string, lotId: string
   lot!.highestBid = check.amount;
   lot!.highestBidderId = userId;
   lot!.endsAt = applyOvertime(lot!.endsAt!, receivedAt, s.settings.overtimeSeconds).endsAt;
-  const opponents = s.players.filter((o) => o.userId !== userId);
+  // A real bid means the character is wanted: skipping is off the table.
+  lot!.skipVotes = [];
+  const opponents = s.players.filter((o) => o.userId !== userId && !isTeamFull(s, o));
   if (opponents.every((o) => !canAffordNextBid(o.balance, lot!, s.settings.minIncrement))) {
     lot!.endsAt = Math.min(lot!.endsAt, receivedAt + ctx.timing.unopposedCloseMs);
   }
   await ctx.tx.auctionLot.update({
     where: { id: lot!.id },
-    data: { highestBid: check.amount, highestBidderId: userId, endsAt: date(lot!.endsAt) },
+    data: { highestBid: check.amount, highestBidderId: userId, endsAt: date(lot!.endsAt), skipVotes: [] },
   });
   s.dirty = true;
   return check.amount;
+}
+
+/**
+ * Votes to skip the character on the block. Allowed until someone places a
+ * real bid (the automatic opening bid does not count). Once every player who
+ * still needs characters agreed, the character is dropped — it does not come
+ * back — and the opening turn stays with the same player.
+ */
+export async function skipLot(ctx: Ctx, s: RoomS, userId: string, now: number): Promise<void> {
+  const p = s.players.find((x) => x.userId === userId);
+  if (!p) throw new EngineError("NOT_A_PLAYER");
+  const lot = s.lot;
+  if (s.phase !== "BIDDING" || !lot || lot.status !== "ACTIVE" || lot.endsAt === null || now >= lot.endsAt) {
+    throw new EngineError("NOT_BIDDING");
+  }
+  if (isTeamFull(s, p)) throw new EngineError("TEAM_FULL", "TEAM_FULL", { size: s.settings.teamSize });
+  const realBids = lot.bids.length - (lot.forcedOpenerId ? 1 : 0);
+  if (realBids > 0) throw new EngineError("INVALID_STATE", "SKIP_AFTER_BID");
+  if (!lot.skipVotes.includes(userId)) lot.skipVotes = [...lot.skipVotes, userId];
+  s.dirty = true;
+  const voters = needsCharacters(s);
+  if (!voters.every((v) => lot.skipVotes.includes(v.userId))) {
+    await ctx.tx.auctionLot.update({ where: { id: lot.id }, data: { skipVotes: lot.skipVotes } });
+    return;
+  }
+  const updated = await ctx.tx.auctionLot.updateMany({
+    where: { id: lot.id, status: "ACTIVE" },
+    data: {
+      status: "UNSOLD",
+      skipped: true,
+      skipVotes: lot.skipVotes,
+      highestBid: null,
+      highestBidderId: null,
+      endsAt: null,
+      endedAt: new Date(now),
+    },
+  });
+  if (updated.count !== 1) throw new Error(`Lot ${lot.id} is not active`);
+  // The automatic opening bid is withdrawn with the character.
+  await ctx.tx.bid.deleteMany({ where: { lotId: lot.id } });
+  lot.bids = [];
+  lot.highestBid = null;
+  lot.highestBidderId = null;
+  lot.status = "UNSOLD";
+  lot.skipped = true;
+  lot.endsAt = null;
+  s.lotsCompleted += 1;
+  s.phase = "INTERMISSION";
+  s.phaseEndsAt = now + ctx.timing.quickIntermissionMs;
 }
 
 /** Records a rematch vote; once everyone agreed, creates the new room. */
@@ -809,6 +992,8 @@ export async function buildSnapshot(ctx: Ctx, s: RoomS, now: number): Promise<Ro
           winnerId: l.winnerId ?? null,
           finalPrice: l.finalPrice ?? null,
           bidCount: l._count.bids,
+          skipped: !!l.skipped,
+          autoAssigned: !!l.autoAssigned,
         }]
       : [];
   });
@@ -862,6 +1047,10 @@ export async function buildSnapshot(ctx: Ctx, s: RoomS, now: number): Promise<Ro
           status: lot.status,
           winnerId: lot.winnerId,
           finalPrice: lot.finalPrice,
+          forcedOpenerId: lot.forcedOpenerId,
+          skipVotes: lot.skipVotes,
+          skipped: lot.skipped,
+          autoAssigned: lot.autoAssigned,
         }
       : null,
     phaseEndsAt: s.phaseEndsAt,
@@ -872,6 +1061,7 @@ export async function buildSnapshot(ctx: Ctx, s: RoomS, now: number): Promise<Ro
       : null,
     rematchVotes: s.rematchVotes,
     rematchCode: s.rematchCode,
+    nextOpenerId: s.nextOpenerId,
     poolRemaining: s.pool.length,
     spectators,
   };

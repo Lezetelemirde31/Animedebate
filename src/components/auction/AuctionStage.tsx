@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Eye, Layers, PauseCircle, Sparkles, Timer, Zap } from "lucide-react";
+import { Bot, Eye, Layers, PauseCircle, SkipForward, Sparkles, Timer, Zap } from "lucide-react";
 import type { Ack, CharacterDTO, RoomSnapshot } from "@/game/types";
 import { RARITY_INFO } from "@/game/rarity";
 import { minimumNextBid } from "@/game/rules";
@@ -111,6 +111,7 @@ export function AuctionStage({
   now,
   events,
   onBid,
+  onSkip,
   onLeave,
 }: {
   snapshot: RoomSnapshot;
@@ -118,6 +119,7 @@ export function AuctionStage({
   now: number;
   events: RoomEventWithMeta[];
   onBid: (lotId: string, amount: number) => Promise<Ack<unknown>>;
+  onSkip: () => Promise<Ack<unknown>>;
   onLeave: () => void;
 }) {
   const { locale, t } = useLanguage();
@@ -145,6 +147,25 @@ export function AuctionStage({
   const leaderSide = lot?.highestBidderId ? sideOf(lot.highestBidderId) : null;
   const disconnected = snapshot.players.filter((p) => !p.connected);
   const lotNumber = lot?.lotNumber ?? snapshot.lotsCompleted + 1;
+  const teamSize = snapshot.settings.teamSize;
+  const meFull = !!me && me.wonCharacterIds.length >= teamSize;
+  // Skipping is possible until someone places a real bid (the automatic opening bid doesn't count).
+  const realBids = lot ? lot.bids.length - (lot.forcedOpenerId ? 1 : 0) : 0;
+  const canSkip = bidding && !!me && !meFull && realBids === 0 && remainingMs > 0;
+  const skipVoted = !!lot && !!myId && lot.skipVotes.includes(myId);
+  const opponentWantsSkip = !!lot && lot.skipVotes.some((id) => id !== myId);
+  const turnNotice =
+    bidding && lot
+      ? lot.forcedOpenerId
+        ? lot.forcedOpenerId === myId
+          ? t.auction.forcedOpeningYou
+          : t.auction.forcedOpening(nameOf(lot.forcedOpenerId))
+        : t.auction.freeLot
+      : phase === "INTERMISSION" && snapshot.nextOpenerId
+        ? snapshot.nextOpenerId === myId
+          ? t.auction.nextOpenerYou
+          : t.auction.nextOpener(nameOf(snapshot.nextOpenerId))
+        : null;
 
   return (
     <div className="space-y-5">
@@ -162,7 +183,7 @@ export function AuctionStage({
         </div>
         <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-400">
           <span className="flex items-center gap-1.5" data-testid="lot-counter">
-            <Layers className="h-3.5 w-3.5 text-purple-300" /> {t.auction.lotCounter(Math.min(lotNumber, snapshot.settings.totalLots), snapshot.settings.totalLots)}
+            <Layers className="h-3.5 w-3.5 text-purple-300" /> {t.auction.roundLabel(lotNumber)}
           </span>
           <span className="flex items-center gap-1.5">
             <Timer className="h-3.5 w-3.5 text-purple-300" /> {t.auction.perLot(snapshot.settings.bidSeconds)}
@@ -193,7 +214,10 @@ export function AuctionStage({
               <div className="min-w-0">
                 <div className="truncate text-xs text-zinc-300">{p.userId === myId ? t.auction.you : p.username}</div>
                 <div className={cn("font-display text-lg font-bold leading-none tabular-nums", i === 0 ? "text-purple-200" : "text-rose-200")}>
-                  ${p.balance} <span className="text-xs font-normal text-zinc-500">· {p.score} {t.home.points}</span>
+                  ${p.balance}{" "}
+                  <span className="text-xs font-normal text-zinc-500">
+                    · {p.score} {t.home.points} · {p.wonCharacterIds.length}/{teamSize}
+                  </span>
                 </div>
               </div>
             </div>
@@ -212,6 +236,7 @@ export function AuctionStage({
               leading={!!lot && lot.status === "ACTIVE" && lot.highestBidderId === left.userId}
               startingBalance={snapshot.settings.startingBalance}
               wonCharacters={won(left.wonCharacterIds)}
+              teamSize={teamSize}
             />
           )}
           <div className="glass hidden rounded-2xl p-4 text-xs leading-relaxed text-zinc-400 lg:block">
@@ -219,6 +244,10 @@ export function AuctionStage({
               <Sparkles className="h-3.5 w-3.5 text-purple-300" /> {t.auction.rules}
             </div>
             <ul className="space-y-1.5">
+              <li>{t.auction.ruleTeam(teamSize)}</li>
+              <li>{t.auction.ruleTurns}</li>
+              <li>{t.auction.ruleSkip}</li>
+              <li>{t.auction.ruleBroke}</li>
               <li>{t.auction.ruleMinRaise(snapshot.settings.minIncrement)}</li>
               <li>{t.auction.ruleOvertime(snapshot.settings.overtimeSeconds)}</li>
               <li>{t.auction.tieBreakRule}</li>
@@ -258,7 +287,7 @@ export function AuctionStage({
 
             <div className="relative min-h-[320px]">
               {lot ? (
-                <CharacterShowcase character={lot.character} lotKey={lot.id} dimmed={phase === "INTERMISSION" && lot.status === "UNSOLD"} locale={locale} t={t} />
+                <CharacterShowcase character={lot.character} lotKey={lot.id} dimmed={phase === "INTERMISSION" && (lot.status === "UNSOLD" || lot.skipped)} locale={locale} t={t} />
               ) : (
                 <div className="flex h-[320px] flex-col items-center justify-center text-center">
                   <div className="font-display text-7xl font-bold text-gradient animate-pop-in" key={Math.ceil(remainingMs / 1000)}>
@@ -271,7 +300,25 @@ export function AuctionStage({
               {/* Result overlay */}
               {phase === "INTERMISSION" && lot && lot.status !== "ACTIVE" && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/55 backdrop-blur-[2px]">
-                  {lot.status === "SOLD" && lot.winnerId ? (
+                  {lot.status === "SOLD" && lot.winnerId && lot.autoAssigned ? (
+                    <div className="px-4 text-center" data-testid="lot-result">
+                      <div className="inline-flex items-center gap-3 rounded-2xl border-4 border-sky-400 px-6 py-3 font-display text-3xl font-black uppercase tracking-widest text-sky-200 animate-stamp sm:text-4xl">
+                        <Bot className="h-8 w-8" /> {t.auction.autoStamp}
+                      </div>
+                      <p className="mt-4 text-sm text-zinc-200">
+                        {lot.winnerId === myId
+                          ? t.auction.autoAssignedYou(lot.character.name)
+                          : t.auction.autoAssignedOther(nameOf(lot.winnerId), lot.character.name)}
+                      </p>
+                    </div>
+                  ) : lot.skipped ? (
+                    <div className="px-4 text-center" data-testid="lot-result">
+                      <div className="inline-flex items-center gap-3 rounded-2xl border-4 border-zinc-500 px-6 py-3 font-display text-3xl font-black uppercase tracking-widest text-zinc-300 animate-stamp sm:text-4xl">
+                        <SkipForward className="h-8 w-8" /> {t.auction.skippedStamp}
+                      </div>
+                      <p className="mt-4 text-sm text-zinc-300">{t.auction.skippedText(lot.character.name)}</p>
+                    </div>
+                  ) : lot.status === "SOLD" && lot.winnerId ? (
                     <div className="px-4 text-center" data-testid="lot-result">
                       <div
                         className={cn(
@@ -361,6 +408,12 @@ export function AuctionStage({
               </div>
             )}
 
+            {turnNotice && (
+              <p className="relative mt-3 rounded-xl border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-xs text-purple-100" data-testid="turn-notice">
+                {turnNotice}
+              </p>
+            )}
+
             {lot && lot.status === "ACTIVE" && (
               <div className="relative mt-4">
                 <BidControls
@@ -369,7 +422,9 @@ export function AuctionStage({
                   minIncrement={snapshot.settings.minIncrement}
                   biddingOpen={bidding && remainingMs > 0}
                   isSpectator={!me}
+                  teamFull={meFull}
                   onBid={onBid}
+                  skip={{ available: canSkip, voted: skipVoted, opponentWants: opponentWantsSkip, onSkip }}
                 />
               </div>
             )}
@@ -386,13 +441,14 @@ export function AuctionStage({
               leading={!!lot && lot.status === "ACTIVE" && lot.highestBidderId === right.userId}
               startingBalance={snapshot.settings.startingBalance}
               wonCharacters={won(right.wonCharacterIds)}
+              teamSize={teamSize}
             />
           ) : null}
           <BidFeed bids={lot?.bids ?? []} sideOf={sideOf} now={now} />
         </div>
       </div>
 
-      <LotHistoryStrip history={snapshot.history} totalLots={snapshot.settings.totalLots} sideOf={sideOf} nameOf={nameOf} />
+      <LotHistoryStrip history={snapshot.history} sideOf={sideOf} nameOf={nameOf} />
     </div>
   );
 }

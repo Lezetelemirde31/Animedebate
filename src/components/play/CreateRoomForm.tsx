@@ -14,13 +14,14 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
   const router = useRouter();
   const { t } = useLanguage();
   const [isPrivate, setPrivate] = useState(true);
-  const [totalLots, setLots] = useState<number>(GAME_RULES.defaultLots);
   const [bidSeconds, setTimer] = useState<number>(GAME_RULES.defaultTimer);
   const [animeIds, setAnime] = useState<string[]>(ENABLED_ANIME.map((a) => a.id));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const poolSize = animeIds.reduce((sum, id) => sum + (characterCounts[id] ?? 0), 0);
+  // Both teams must be fillable from the selected anime.
+  const needed = GAME_RULES.teamSize * GAME_RULES.maxPlayers;
 
   function toggleAnime(id: string) {
     setAnime((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
@@ -31,7 +32,7 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
     setError(null);
     if (animeIds.length === 0) return setError(t.play.pickOneAnime);
     setPending(true);
-    const res = await api<{ code: string }>("/api/live/rooms", { body: { isPrivate, totalLots, bidSeconds, animeIds } });
+    const res = await api<{ code: string }>("/api/live/rooms", { body: { isPrivate, bidSeconds, animeIds } });
     if (!res.ok) {
       setError(res.message || t.play.couldNotCreateRoom);
       setPending(false);
@@ -108,14 +109,9 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
 
         <section className="glass grid gap-6 rounded-3xl p-6 sm:grid-cols-2">
           <div>
-            <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.play.lotsPerMatch}</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {GAME_RULES.lotOptions.map((n) => (
-                <button type="button" key={n} className="chip !px-4 !py-2" data-active={totalLots === n} onClick={() => setLots(n)}>
-                  {n}
-                </button>
-              ))}
-            </div>
+            <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.play.teamSizeTitle}</h2>
+            <div className="mt-3 font-display text-2xl font-bold text-white">{t.play.teamSizeValue(GAME_RULES.teamSize)}</div>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-400">{t.play.teamSizeDesc(GAME_RULES.teamSize)}</p>
           </div>
           <div>
             <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">{t.play.bidTimer}</h2>
@@ -142,8 +138,8 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
             <dd className="text-white">{t.play.eachBal(GAME_RULES.startingBalance)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-zinc-400">{t.play.lotsLabel}</dt>
-            <dd className="text-white">{totalLots}</dd>
+            <dt className="text-zinc-400">{t.play.teamSizeTitle}</dt>
+            <dd className="text-white">{t.play.teamSizeValue(GAME_RULES.teamSize)}</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-zinc-400">{t.play.timerLabel}</dt>
@@ -151,14 +147,14 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
           </div>
           <div className="flex justify-between">
             <dt className="text-zinc-400">{t.play.characterPool}</dt>
-            <dd className={cn(poolSize < totalLots ? "text-rose-300" : "text-white")}>{t.home.charactersCount(poolSize)}</dd>
+            <dd className={cn(poolSize < needed ? "text-rose-300" : "text-white")}>{t.home.charactersCount(poolSize)}</dd>
           </div>
         </dl>
-        <FormError message={poolSize < totalLots && animeIds.length > 0 ? t.play.notEnoughChars : error} />
+        <FormError message={poolSize < needed && animeIds.length > 0 ? t.play.notEnoughChars : error} />
         <button
           type="submit"
           className="btn btn-primary mt-6 w-full !py-3.5"
-          disabled={pending || animeIds.length === 0 || poolSize < totalLots}
+          disabled={pending || animeIds.length === 0 || poolSize < needed}
           data-testid="create-room-submit"
         >
           {pending ? <Spinner className="h-4 w-4 text-white" /> : <Plus className="h-4 w-4" />}

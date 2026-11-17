@@ -7,9 +7,12 @@ export const GAME_RULES = {
   startingBalance: 20,
   /** Minimum amount a new bid must exceed the current highest bid by. */
   minIncrement: 1,
-  /** Allowed number of auction lots (characters) per match. */
-  lotOptions: [6, 8, 10, 12] as const,
-  defaultLots: 8,
+  /**
+   * Every player builds a team of this many characters. The match runs until
+   * both teams are full; a player who runs out of money gets the missing
+   * characters for free.
+   */
+  teamSize: 5,
   /** Allowed bidding timer lengths in seconds. */
   timerOptions: [10, 15, 20, 30] as const,
   defaultTimer: 20,
@@ -22,6 +25,8 @@ export const GAME_RULES = {
   startCountdownMs: 3500,
   /** Pause between lots while the result is shown. */
   intermissionMs: 5000,
+  /** Shorter pause after a skipped character or a free (bot) assignment. */
+  quickIntermissionMs: 2500,
   /** How long a disconnected player has to come back before forfeiting. */
   reconnectGraceMs: 60_000,
   /** Lobby: how long a disconnected player keeps their seat. */
@@ -37,6 +42,12 @@ export const GAME_RULES = {
   presenceTimeoutMs: 8_000,
   /** How often the room page asks the server for the latest state. */
   pollIntervalMs: 1_000,
+  /**
+   * Opening turns alternate: whoever opened the last sold lot, the other
+   * player must open the next one — the server places their opening bid at
+   * the starting price automatically.
+   */
+  alternatingOpenings: true,
   /** Characters can be sold at most once per match. Unsold ones return to the pool. */
   uniquePerMatch: true,
   maxPlayers: 2,

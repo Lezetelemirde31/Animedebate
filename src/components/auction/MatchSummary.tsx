@@ -123,7 +123,7 @@ export function MatchSummary({
         })}
       </div>
 
-      <LotHistoryStrip history={snapshot.history} totalLots={snapshot.settings.totalLots} sideOf={sideOf} nameOf={nameOf} />
+      <LotHistoryStrip history={snapshot.history} sideOf={sideOf} nameOf={nameOf} />
 
       <div className="glass flex flex-col items-center justify-between gap-4 rounded-3xl p-5 md:flex-row">
         <p className="text-sm text-zinc-400">

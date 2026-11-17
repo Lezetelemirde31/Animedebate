@@ -61,7 +61,7 @@ export default async function MatchReportPage({ params }: { params: Promise<{ ma
                   : t.history.draw}
           </h1>
           <p className="mt-2 text-sm text-zinc-400">
-            {match.endReason ? t.history.reasons[match.endReason] ?? match.endReason : t.history.stillRunning} · {t.history.lotsWord(match.totalLots)} · {match.bidSeconds}s ·{" "}
+            {match.endReason ? t.history.reasons[match.endReason] ?? match.endReason : t.history.stillRunning} · {t.auction.roundsCount(match.lots.length)} · {match.bidSeconds}s ·{" "}
             {match.animeIds.map((id) => getAnime(id)?.shortName ?? id).join(", ")}
             {match.endedAt ? ` · ${match.endedAt.toLocaleString(locale === "tr" ? "tr-TR" : "en-US")}` : ""}
           </p>
@@ -130,12 +130,12 @@ export default async function MatchReportPage({ params }: { params: Promise<{ ma
               <div className="text-right md:w-40">
                 {lot.status === "SOLD" ? (
                   <>
-                    <div className="font-display text-xl font-bold text-white">${lot.finalPrice}</div>
+                    <div className="font-display text-xl font-bold text-white">{lot.autoAssigned ? t.auction.autoStamp : `$${lot.finalPrice}`}</div>
                     <div className={cn("text-sm", colorOf(lot.winnerId))}>{winner?.user.username ?? "—"}</div>
                   </>
                 ) : (
                   <div className="font-display text-sm uppercase tracking-widest text-zinc-500">
-                    {lot.status === "UNSOLD" ? t.history.unsold : lot.status === "CANCELLED" ? t.history.cancelled : t.history.live}
+                    {lot.skipped ? t.auction.skippedStamp : lot.status === "UNSOLD" ? t.history.unsold : lot.status === "CANCELLED" ? t.history.cancelled : t.history.live}
                   </div>
                 )}
               </div>

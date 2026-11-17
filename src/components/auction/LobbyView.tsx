@@ -215,8 +215,8 @@ export function LobbyView({
               <dd className="mt-1 font-display text-xl font-bold text-white">${snapshot.settings.startingBalance}</dd>
             </div>
             <div className="rounded-xl bg-white/5 p-3">
-              <dt className="flex items-center gap-1.5 text-xs text-zinc-400"><Layers className="h-3.5 w-3.5" /> {t.play.lotsLabel}</dt>
-              <dd className="mt-1 font-display text-xl font-bold text-white">{snapshot.settings.totalLots}</dd>
+              <dt className="flex items-center gap-1.5 text-xs text-zinc-400"><Layers className="h-3.5 w-3.5" /> {t.play.teamSizeTitle}</dt>
+              <dd className="mt-1 font-display text-xl font-bold text-white">{t.play.teamSizeValue(snapshot.settings.teamSize)}</dd>
             </div>
             <div className="rounded-xl bg-white/5 p-3">
               <dt className="flex items-center gap-1.5 text-xs text-zinc-400"><Timer className="h-3.5 w-3.5" /> {t.play.bidTimer}</dt>
@@ -248,7 +248,7 @@ export function LobbyView({
             <li><b className="text-white">1.</b> {t.auction.lobby.playStep1}</li>
             <li><b className="text-white">2.</b> {t.auction.lobby.playStep2(snapshot.settings.overtimeSeconds)}</li>
             <li><b className="text-white">3.</b> {t.auction.lobby.playStep3}</li>
-            <li><b className="text-white">4.</b> {t.auction.lobby.playStep4(snapshot.settings.totalLots)}</li>
+            <li><b className="text-white">4.</b> {t.auction.lobby.playStep4(snapshot.settings.teamSize)}</li>
           </ol>
           <div className="mt-4 grid grid-cols-2 gap-1.5 text-center text-[10px] sm:grid-cols-5">
             {RARITIES.map((r) => (

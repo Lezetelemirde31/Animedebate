@@ -47,10 +47,10 @@ async function failure(p: Promise<unknown>): Promise<EngineError> {
 }
 
 /** Creates a room with two seated, ready players; returns once lot 1 is open. */
-async function startedMatch(totalLots = 6) {
+async function startedMatch() {
   const a = await makeUser();
   const b = await makeUser();
-  const code = await createRoom(a, { isPrivate: true, totalLots, bidSeconds: 10, animeIds: ["naruto", "one-piece"] });
+  const code = await createRoom(a, { isPrivate: true, bidSeconds: 10, animeIds: ["naruto", "one-piece"] });
   await act(code, a, { action: "join" });
   const joined = await act(code, b, { action: "join" });
   expect(joined.players.map((p) => p.userId).sort()).toEqual([a, b].sort());
@@ -62,6 +62,19 @@ async function startedMatch(totalLots = 6) {
   expect(snap?.currentLot?.lotNumber).toBe(1);
   return { a, b, code, snap: snap! };
 }
+
+/** Polls with both players until the match is over. */
+async function playOut(code: string, a: string, b: string, each?: (s: RoomSnapshot) => Promise<void>): Promise<RoomSnapshot> {
+  let s: RoomSnapshot | null = null;
+  for (let i = 0; i < 400 && s?.phase !== "FINISHED"; i++) {
+    s = await tick(code, [a, b], 1000);
+    if (s && each) await each(s);
+  }
+  expect(s?.phase).toBe("FINISHED");
+  return s!;
+}
+
+const teamOf = (s: RoomSnapshot, id: string) => s.players.find((p) => p.userId === id)!;
 
 beforeAll(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -84,40 +97,116 @@ const remoteDb = !!dbUrl && !/@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(dbUrl)
 const suite = remoteDb && process.env.ALLOW_REMOTE_TEST_DB !== "1" ? describe.skip : describe;
 
 suite("live auction engine", () => {
-  it("plays a full match: bids, sales, balances, collection and result", async () => {
-    const { a, b, code, snap } = await startedMatch(6);
+  it("plays a full match: teams of five, alternating forced openings", async () => {
+    const { a, b, code, snap } = await startedMatch();
     const lot = snap.currentLot!;
+    // Lot 1 is open: nobody is forced.
+    expect(lot.forcedOpenerId).toBeNull();
+    expect(lot.highestBid).toBeNull();
+    expect(snap.settings.teamSize).toBe(5);
 
-    // A opens at the starting price, B raises, A cannot bid an equal amount.
+    // A opens, B raises, A re-raises and wins (the scenario from the rules).
     let s = await act(code, a, { action: "bid", lotId: lot.id, amount: lot.startingPrice });
     expect(s.currentLot?.highestBidderId).toBe(a);
     s = await act(code, b, { action: "bid", lotId: lot.id, amount: lot.startingPrice + 1 });
-    expect(s.currentLot?.highestBid).toBe(lot.startingPrice + 1);
     const equal = await failure(act(code, a, { action: "bid", lotId: lot.id, amount: lot.startingPrice + 1 }));
     expect(equal.key).toBe("BELOW_MINIMUM");
-    // The leader cannot raise their own bid.
     const self = await failure(act(code, b, { action: "bid", lotId: lot.id, amount: lot.startingPrice + 3 }));
     expect(self.code).toBe("ALREADY_HIGHEST");
+    s = await act(code, a, { action: "bid", lotId: lot.id, amount: lot.startingPrice + 2 });
 
-    // Clock runs out → B buys lot 1.
     s = (await tick(code, [a, b], 11_000))!;
-    expect(s.history[0]).toMatchObject({ lotNumber: 1, status: "SOLD", winnerId: b, finalPrice: lot.startingPrice + 1 });
-    const pb = s.players.find((p) => p.userId === b)!;
-    expect(pb.balance).toBe(20 - (lot.startingPrice + 1));
-    expect(pb.wonCharacterIds).toEqual([lot.character.id]);
-    const owned = await prisma.ownedCharacter.findMany({ where: { userId: b } });
+    expect(s.history[0]).toMatchObject({ lotNumber: 1, status: "SOLD", winnerId: a, finalPrice: lot.startingPrice + 2 });
+    expect(teamOf(s, a).balance).toBe(20 - (lot.startingPrice + 2));
+    const owned = await prisma.ownedCharacter.findMany({ where: { userId: a } });
     expect(owned.map((o) => o.characterId)).toContain(lot.character.id);
+    // A opened lot 1, so B must open lot 2.
+    expect(s.nextOpenerId).toBe(b);
 
-    // Remaining lots: nobody bids → unsold, match completes after the last lot.
-    for (let i = 0; i < 40 && s.phase !== "FINISHED"; i++) s = (await tick(code, [a, b], 2000))!;
-    expect(s.phase).toBe("FINISHED");
-    expect(s.lotsCompleted).toBe(6);
-    expect(s.result?.winnerId).toBe(b);
-    expect(s.result?.detail.decision?.kind).toBe("score");
+    s = (await tick(code, [a, b], 6000))!;
+    expect(s.phase).toBe("BIDDING");
+    expect(s.currentLot).toMatchObject({ lotNumber: 2, forcedOpenerId: b, highestBidderId: b });
+    expect(s.currentLot!.highestBid).toBe(s.currentLot!.startingPrice);
+    expect(s.currentLot!.bids).toHaveLength(1);
+
+    // Nobody else bids: every lot goes to the player whose turn it was, turns alternate.
+    const openers: string[] = [];
+    const final = await playOut(code, a, b, async (x) => {
+      const l = x.currentLot;
+      if (x.phase === "BIDDING" && l?.forcedOpenerId && openers.at(-1) !== `${l.lotNumber}:${l.forcedOpenerId}`) {
+        openers.push(`${l.lotNumber}:${l.forcedOpenerId}`);
+      }
+    });
+    expect(teamOf(final, a).wonCharacterIds).toHaveLength(5);
+    expect(teamOf(final, b).wonCharacterIds).toHaveLength(5);
+    expect(final.lotsCompleted).toBe(10);
+    const who = openers.map((o) => o.split(":")[1]);
+    for (let i = 1; i < who.length; i++) expect(who[i]).not.toBe(who[i - 1]);
     const match = await prisma.match.findUnique({ where: { code } });
     expect(match?.status).toBe("FINISHED");
     expect(match?.endReason).toBe("COMPLETED");
-    expect(match?.winnerId).toBe(b);
+  });
+
+  it("skips a character only when both players vote, and keeps the opening turn", async () => {
+    const { a, b, code, snap } = await startedMatch();
+    // Lot 1 (no bids): both skip.
+    let s = await act(code, a, { action: "skip" });
+    expect(s.currentLot?.skipVotes).toEqual([a]);
+    expect(s.currentLot?.status).toBe("ACTIVE");
+    const poolBefore = s.poolRemaining;
+    s = await act(code, b, { action: "skip" });
+    expect(s.currentLot).toMatchObject({ status: "UNSOLD", skipped: true });
+    expect(s.history[0]).toMatchObject({ skipped: true, status: "UNSOLD" });
+    expect(s.poolRemaining).toBe(poolBefore); // skipped characters do not come back
+    expect(snap.currentLot!.id).toBe(s.history[0].id);
+
+    // Lot 2 is free too; B opens, A outbids and B lets it go → A must open lot 3.
+    s = (await tick(code, [a, b], 3000))!;
+    let lot = s.currentLot!;
+    expect(lot.lotNumber).toBe(2);
+    await act(code, b, { action: "bid", lotId: lot.id, amount: lot.startingPrice });
+    // Once a real bid is in, skipping is off.
+    expect((await failure(act(code, a, { action: "skip" }))).key).toBe("SKIP_AFTER_BID");
+    s = (await tick(code, [a, b], 16_000))!;
+    expect(s.nextOpenerId).toBe(a);
+    lot = s.currentLot!;
+    expect(lot).toMatchObject({ lotNumber: 3, forcedOpenerId: a, highestBidderId: a });
+    const balanceA = teamOf(s, a).balance;
+
+    // Both skip the forced lot: A's automatic bid is withdrawn and A still owes the next opening.
+    await act(code, b, { action: "skip" });
+    s = await act(code, a, { action: "skip" });
+    expect(s.currentLot).toMatchObject({ skipped: true, highestBid: null, bids: [] });
+    expect(teamOf(s, a).balance).toBe(balanceA);
+    s = (await tick(code, [a, b], 3000))!;
+    expect(s.currentLot).toMatchObject({ lotNumber: 4, forcedOpenerId: a });
+  });
+
+  it("gives free characters to a player who ran out of money, then lets the other finish alone", async () => {
+    const { a, b, code, snap } = await startedMatch();
+    const lot = snap.currentLot!;
+    // A spends everything on lot 1.
+    await act(code, a, { action: "bid", lotId: lot.id, amount: 20 });
+    let s = (await tick(code, [a, b], 11_000))!;
+    expect(teamOf(s, a).balance).toBe(0);
+
+    // The rest of A's team is assigned for free; B buys the rest on their own (and can't be outbid).
+    let triedFullBid = false;
+    s = await playOut(code, a, b, async (x) => {
+      const l = x.currentLot;
+      if (!triedFullBid && x.phase === "BIDDING" && l && teamOf(x, a).wonCharacterIds.length === 5) {
+        triedFullBid = true;
+        expect((await failure(act(code, a, { action: "bid", lotId: l.id, amount: l.startingPrice + 1 }))).code).toBe("TEAM_FULL");
+      }
+    });
+    expect(triedFullBid).toBe(true);
+    const free = s.history.filter((h) => h.autoAssigned);
+    expect(free).toHaveLength(4);
+    expect(free.every((h) => h.winnerId === a && h.finalPrice === 0)).toBe(true);
+    expect(teamOf(s, a).wonCharacterIds).toHaveLength(5);
+    expect(teamOf(s, a).balance).toBe(0);
+    expect(teamOf(s, b).wonCharacterIds).toHaveLength(5);
+    expect(s.history.filter((h) => h.status === "SOLD")).toHaveLength(10);
   });
 
   it("rejects bids it cannot accept", async () => {
@@ -178,12 +267,9 @@ suite("live auction engine", () => {
   });
 
   it("starts a rematch room once both players accept", async () => {
-    const { a, b, code } = await startedMatch(6);
-    let s: RoomSnapshot | null = null;
-    for (let i = 0; i < 60 && s?.phase !== "FINISHED"; i++) s = await tick(code, [a, b], 2000);
-    expect(s?.phase).toBe("FINISHED");
-    expect(s?.result?.winnerId).toBeNull(); // nothing sold, equal balances → draw
-    expect(s?.result?.detail.decision?.kind).toBe("tie");
+    const { a, b, code } = await startedMatch();
+    let s = await playOut(code, a, b);
+    expect(s.result?.detail.decision).toBeTruthy();
     s = await act(code, a, { action: "rematch" });
     expect(s.rematchVotes).toEqual([a]);
     expect(s.rematchCode).toBeNull();
