@@ -1,14 +1,21 @@
 import "server-only";
+import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE } from "./tokens";
 import { getUserBySessionToken, type SessionUser } from "./session-store";
+import { PREVIEW_COOKIE, previewModeActive, restorePreviewSession } from "./preview-session";
 
 /** Returns the signed-in user for the current request (server components / route handlers). */
-export async function getCurrentUser(): Promise<SessionUser | null> {
+export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const store = await cookies();
-  return getUserBySessionToken(store.get(SESSION_COOKIE)?.value);
-}
+  const token = store.get(SESSION_COOKIE)?.value;
+  const user = await getUserBySessionToken(token);
+  if (user || !token || !previewModeActive()) return user;
+  // Demo mode (no database): this server instance may not have seen the account yet.
+  const restored = await restorePreviewSession(token, store.get(PREVIEW_COOKIE)?.value);
+  return restored ? getUserBySessionToken(token) : null;
+});
 
 /** Like getCurrentUser but redirects to the login page when signed out. */
 export async function requireUser(nextPath: string): Promise<SessionUser> {

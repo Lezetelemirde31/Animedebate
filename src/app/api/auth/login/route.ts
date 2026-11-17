@@ -2,7 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { DUMMY_HASH, verifyPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session-store";
-import { setSessionCookie } from "@/lib/auth/cookie";
+import { setPreviewCookie, setSessionCookie } from "@/lib/auth/cookie";
+import {
+  PREVIEW_COOKIE,
+  encodePreviewAccount,
+  previewModeActive,
+  restorePreviewAccountForLogin,
+} from "@/lib/auth/preview-session";
 import { isSecureRequest } from "@/lib/auth/server";
 import { authErrorMessage, authSuspendedMessage, getAuthRequestLocale, localizeAuthZodError } from "@/lib/auth/messages";
 import { loginSchema } from "@/lib/validation";
@@ -21,6 +27,8 @@ export async function POST(req: NextRequest) {
     return jsonError(authErrorMessage(locale, "tooManyLogin"), 429);
   }
 
+  // Demo mode: this server instance may not have seen the account yet.
+  await restorePreviewAccountForLogin(key, req.cookies.get(PREVIEW_COOKIE)?.value);
   const user = await prisma.user.findUnique({ where: { usernameKey: key } });
   // Always run bcrypt so response time does not reveal whether the user exists.
   const valid = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
@@ -31,6 +39,8 @@ export async function POST(req: NextRequest) {
 
   const session = await createSession(user.id);
   const res = NextResponse.json({ ok: true, user: { id: user.id, username: user.username, role: user.role } });
-  setSessionCookie(res, session.token, session.expiresAt, await isSecureRequest());
+  const secure = await isSecureRequest();
+  setSessionCookie(res, session.token, session.expiresAt, secure);
+  if (previewModeActive()) setPreviewCookie(res, encodePreviewAccount(user, session.token), session.expiresAt, secure);
   return res;
 }

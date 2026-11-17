@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Chakra_Petch, Outfit } from "next/font/google";
 import { getCurrentUser } from "@/lib/auth/server";
+import { isDatabaseConfigured } from "@/lib/db";
+import { DemoModeBanner } from "@/components/layout/DemoModeBanner";
 import { getServerTranslations } from "@/lib/i18n-server";
 import { LanguageProvider } from "@/components/providers/LanguageProvider";
 import { SessionProvider } from "@/components/providers/SessionProvider";
@@ -36,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SessionProvider user={user}>
             <SocketProvider>
               <Navbar />
+              {!isDatabaseConfigured() && <DemoModeBanner locale={locale} />}
               <main className="mx-auto min-h-[calc(100svh-4rem)] max-w-7xl px-4 pb-20 pt-8">{children}</main>
               <ScrollToTop />
               <footer className="border-t border-white/5 py-8 text-sm text-zinc-500">

@@ -3,7 +3,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session-store";
-import { setSessionCookie } from "@/lib/auth/cookie";
+import { setPreviewCookie, setSessionCookie } from "@/lib/auth/cookie";
+import { encodePreviewAccount, previewModeActive } from "@/lib/auth/preview-session";
 import { isSecureRequest } from "@/lib/auth/server";
 import { authErrorMessage, getAuthRequestLocale, localizeAuthZodError } from "@/lib/auth/messages";
 import { registerSchema } from "@/lib/validation";
@@ -42,7 +43,10 @@ export async function POST(req: NextRequest) {
     });
     const session = await createSession(user.id);
     const res = NextResponse.json({ ok: true, user: { id: user.id, username: user.username, role: user.role } });
-    setSessionCookie(res, session.token, session.expiresAt, await isSecureRequest());
+    const secure = await isSecureRequest();
+    setSessionCookie(res, session.token, session.expiresAt, secure);
+    // Demo mode: lets any server instance recognise this account (see preview-session.ts).
+    if (previewModeActive()) setPreviewCookie(res, encodePreviewAccount(user, session.token), session.expiresAt, secure);
     return res;
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
