@@ -25,6 +25,7 @@ const AUTH_API_ERRORS = {
     passwordRequired: "Şifreni gir.",
     invalidAvatar: "Geçersiz amblem seçimi.",
     invalidInput: "Geçersiz giriş bilgisi.",
+    genericError: "Kayıt sırasında beklenmeyen bir hata oluştu. Lütfen tekrar dene.",
   },
   en: {
     crossSiteBlocked: "Cross-site request blocked.",
@@ -44,6 +45,7 @@ const AUTH_API_ERRORS = {
     passwordRequired: "Enter your password.",
     invalidAvatar: "Invalid avatar style.",
     invalidInput: "Invalid input.",
+    genericError: "Unexpected server error. Please try again.",
   },
 } as const;
 

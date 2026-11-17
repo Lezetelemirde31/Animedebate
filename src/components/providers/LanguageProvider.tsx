@@ -31,7 +31,8 @@ export function LanguageProvider({
       if (next === locale) return;
       setLocaleState(next);
       if (typeof document !== "undefined") {
-        document.cookie = `${LANG_COOKIE_NAME}=${next}; path=/; max-age=31536000; SameSite=Lax`;
+        const secureAttrs = window.location.protocol === "https:" ? "; SameSite=None; Secure" : "; SameSite=Lax";
+        document.cookie = `${LANG_COOKIE_NAME}=${next}; path=/; max-age=31536000${secureAttrs}`;
         document.documentElement.lang = next;
       }
       router.refresh();

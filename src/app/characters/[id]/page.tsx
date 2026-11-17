@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getServerTranslations } from "@/lib/i18n-server";
 import { RARITY_INFO } from "@/game/rarity";
+import { POWER_TIER_INFO, formatPowerTier } from "@/game/power-tier";
+import { getCharacterScaling } from "@/data/characters";
 import { CharacterArt } from "@/components/character/CharacterArt";
 import { AnimeBadge, RarityBadge } from "@/components/character/badges";
 import { StatTile } from "@/components/ui/primitives";
@@ -34,6 +36,8 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
   if (!character) notFound();
   const user = await getCurrentUser();
   const info = RARITY_INFO[character.rarity];
+  const scaling = getCharacterScaling(character.id);
+  const tierMeta = scaling ? POWER_TIER_INFO[scaling.tierCode] : null;
 
   const [sales, stats, owners, mine, me, myFav, comparisons, relatedDebates, commentsRaw, myCommentReactions] = await Promise.all([
     prisma.auctionLot.findMany({
@@ -160,6 +164,20 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
                   </span>
                 ))}
               </div>
+              {scaling && tierMeta && (
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5">
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">{t.characters.primeFormLabel}</div>
+                    <div className="mt-0.5 text-sm font-semibold text-white">{scaling.primeForm}</div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5">
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">{t.characters.powerTierLabel}</div>
+                    <div className="mt-0.5 text-sm font-semibold" style={{ color: tierMeta.color }}>
+                      {formatPowerTier(scaling.tierCode, locale)}
+                    </div>
+                  </div>
+                </div>
+              )}
               {character.powerLevel !== null && (
                 <div className="mt-5">
                   <div className="mb-1 flex justify-between text-xs text-zinc-400">

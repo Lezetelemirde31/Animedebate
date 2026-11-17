@@ -23,14 +23,14 @@ export async function POST(req: NextRequest) {
   const { username, password, avatarStyle } = parsed.data;
   const usernameKey = username.toLowerCase();
 
-  const existing = await prisma.user.findUnique({ where: { usernameKey }, select: { id: true } });
-  if (existing) {
-    return jsonError(authErrorMessage(locale, "usernameTaken"), 409);
-  }
-
-  const styles = Object.keys(AVATAR_STYLES);
-  const chosenStyle = avatarStyle ?? styles[Math.floor(Math.random() * styles.length)];
   try {
+    const existing = await prisma.user.findUnique({ where: { usernameKey }, select: { id: true } });
+    if (existing) {
+      return jsonError(authErrorMessage(locale, "usernameTaken"), 409);
+    }
+
+    const styles = Object.keys(AVATAR_STYLES);
+    const chosenStyle = avatarStyle ?? styles[Math.floor(Math.random() * styles.length)];
     const isFirstUser = (await prisma.user.count()) === 0;
     const user = await prisma.user.create({
       data: {
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       return jsonError(authErrorMessage(locale, "usernameTaken"), 409);
     }
-    throw err;
+    console.error("[auth/register] failed:", err);
+    return jsonError(authErrorMessage(locale, "genericError"), 500);
   }
 }

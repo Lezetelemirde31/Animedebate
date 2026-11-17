@@ -51,6 +51,7 @@ export function Navbar() {
     { href: "/debates", label: t.nav.debates },
     { href: "/comparisons", label: t.nav.comparisons },
     { href: "/play", label: t.nav.play },
+    { href: "/arena", label: t.nav.arena },
     { href: "/characters", label: t.nav.characters },
     { href: "/leaderboard", label: t.nav.leaderboard },
   ];
@@ -73,12 +74,12 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-ink-950/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4">
-        <Link href="/" className="group flex shrink-0 items-center gap-2.5">
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-rose-600 shadow-[0_0_24px_-4px_rgba(168,85,247,0.9)]">
-            <Gavel className="h-5 w-5 text-white transition group-hover:-rotate-12" />
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-4 sm:px-4">
+        <Link href="/" className="group flex shrink-0 items-center gap-2 sm:gap-2.5">
+          <span className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-rose-600 shadow-[0_0_24px_-4px_rgba(168,85,247,0.9)] sm:h-9 sm:w-9">
+            <Gavel className="h-4 w-4 text-white transition group-hover:-rotate-12 sm:h-5 sm:w-5" />
           </span>
-          <span className="font-display text-lg font-bold tracking-wider text-white">
+          <span className="font-display text-base font-bold tracking-wider text-white sm:text-lg">
             ANIME<span className="text-gradient">DEBATE</span>
           </span>
         </Link>
@@ -91,13 +92,13 @@ export function Navbar() {
                 key={l.href}
                 href={l.href}
                 className={cn(
-                  "relative rounded-lg px-3 py-2 text-sm font-medium transition",
+                  "relative whitespace-nowrap shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium transition",
                   active ? "text-white" : "text-zinc-400 hover:text-white",
                 )}
               >
                 {l.label}
                 {active && (
-                  <span className="absolute inset-x-3 -bottom-[14px] h-0.5 rounded-full bg-gradient-to-r from-purple-500 to-rose-500 shadow-[0_0_10px_rgba(168,85,247,0.9)]" />
+                  <span className="absolute inset-x-2.5 -bottom-[14px] h-0.5 rounded-full bg-gradient-to-r from-purple-500 to-rose-500 shadow-[0_0_10px_rgba(168,85,247,0.9)]" />
                 )}
               </Link>
             );
@@ -106,19 +107,19 @@ export function Navbar() {
             <Link
               href="/collection"
               className={cn(
-                "relative rounded-lg px-3 py-2 text-sm font-medium transition",
+                "relative whitespace-nowrap shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium transition",
                 pathname === "/collection" ? "text-white" : "text-zinc-400 hover:text-white",
               )}
             >
               {t.nav.collection}
               {pathname === "/collection" && (
-                <span className="absolute inset-x-3 -bottom-[14px] h-0.5 rounded-full bg-gradient-to-r from-purple-500 to-rose-500 shadow-[0_0_10px_rgba(168,85,247,0.9)]" />
+                <span className="absolute inset-x-2.5 -bottom-[14px] h-0.5 rounded-full bg-gradient-to-r from-purple-500 to-rose-500 shadow-[0_0_10px_rgba(168,85,247,0.9)]" />
               )}
             </Link>
           )}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
           <div
             className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300 xl:flex"
             title={status === "connected" ? t.nav.liveServerConnected : t.nav.liveServerStatus}

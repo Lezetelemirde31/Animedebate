@@ -1,132 +1,159 @@
 "use client";
 
-/**
- * Live connection to the game server over plain HTTP polling, so it works on
- * every host — including serverless ones such as Vercel, which cannot keep
- * WebSocket connections open. (The file keeps its historical name.)
- *
- * Provides site stats, the player's matchmaking status and live match, and a
- * server-clock offset used by every countdown.
- */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PresenceDTO, PresenceStats } from "@/game/types";
-import { api } from "@/lib/client-api";
+import { api, isNetworkFailure } from "@/lib/client-api";
+import { useCurrentUser } from "./SessionProvider";
 
 export type ConnectionStatus = "connecting" | "connected" | "reconnecting";
 
-interface LiveContextValue {
-  status: ConnectionStatus;
-  stats: PresenceStats | null;
-  queue: { inQueue: boolean; since: number | null };
-  /** The started match the signed-in user is playing in, if any. */
-  active: PresenceDTO["active"];
-  /** serverTime ≈ Date.now() + clockOffset */
-  clockOffset: number;
-  /** Ask the server for fresh presence data now (e.g. after joining the queue). */
-  refresh: () => void;
-  /** Feed a server timestamp from any API answer to keep the clock in sync. */
-  observeServerTime: (serverNow: number, roundTripMs: number) => void;
+interface QueueState {
+  inQueue: boolean;
+  since: number | null;
 }
 
-const LiveContext = createContext<LiveContextValue>({
+interface ActiveMatchState {
+  code: string;
+  phase: string;
+}
+
+interface SocketContextValue {
+  status: ConnectionStatus;
+  stats: PresenceStats | null;
+  /** serverTime ≈ Date.now() + clockOffset */
+  clockOffset: number;
+  observeServerTime: (serverNow: number, rttMs?: number) => void;
+  queue: QueueState;
+  active: ActiveMatchState | null;
+  refreshPresence: () => Promise<void>;
+}
+
+const SocketContext = createContext<SocketContextValue>({
   status: "connecting",
   stats: null,
+  clockOffset: 0,
+  observeServerTime: () => undefined,
   queue: { inQueue: false, since: null },
   active: null,
-  clockOffset: 0,
-  refresh: () => undefined,
-  observeServerTime: () => undefined,
+  refreshPresence: async () => undefined,
 });
 
-const IDLE_INTERVAL_MS = 8_000;
-const QUEUE_INTERVAL_MS = 1_500;
+const IDLE_POLL_MS = 5_000;
+const QUEUE_POLL_MS = 2_000;
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
+  const user = useCurrentUser();
+  const userId = user?.id ?? null;
 
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
-  const [data, setData] = useState<PresenceDTO | null>(null);
+  const [stats, setStats] = useState<PresenceStats | null>(null);
   const [clockOffset, setClockOffset] = useState(0);
-  const bestRtt = useRef(Number.POSITIVE_INFINITY);
-  const offsetRef = useRef(0);
-  const inQueueRef = useRef(false);
-  const kick = useRef<() => void>(() => undefined);
+  const [queue, setQueue] = useState<QueueState>({ inQueue: false, since: null });
+  const [active, setActive] = useState<ActiveMatchState | null>(null);
 
-  const observeServerTime = useCallback((serverNow: number, roundTripMs: number) => {
-    // Keep the sample with the shortest round trip; let it age so drift gets corrected.
-    bestRtt.current += 2;
-    if (roundTripMs > bestRtt.current) return;
-    bestRtt.current = roundTripMs;
-    const offset = serverNow + roundTripMs / 2 - Date.now();
-    if (Math.abs(offset - offsetRef.current) > 40) {
-      offsetRef.current = offset;
-      setClockOffset(offset);
+  const routerRef = useRef(router);
+  routerRef.current = router;
+  const bestRttRef = useRef<number>(Infinity);
+  const offsetRef = useRef<number>(0);
+  const inQueueRef = useRef(false);
+  inQueueRef.current = queue.inQueue;
+  const wakeRef = useRef<() => Promise<void>>(async () => undefined);
+
+  const observeServerTime = useCallback((serverNow: number, rttMs = 0) => {
+    const safeRtt = Math.max(0, rttMs);
+    const estimate = serverNow + safeRtt / 2 - Date.now();
+    // Accept lower-RTT samples or update if clock drifted notably since last best sample
+    if (safeRtt <= bestRttRef.current + 40 || Math.abs(estimate - offsetRef.current) > 2_000) {
+      bestRttRef.current = Math.min(bestRttRef.current, safeRtt || 50);
+      if (Math.abs(estimate - offsetRef.current) >= 40) {
+        offsetRef.current = estimate;
+        setClockOffset(estimate);
+      }
     }
   }, []);
 
   useEffect(() => {
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let busy = false;
     let failures = 0;
-    let running = false;
 
-    const tick = async () => {
-      if (stopped || running) return;
-      running = true;
+    setStatus("connecting");
+    setQueue({ inQueue: false, since: null });
+    setActive(null);
+
+    const schedule = () => {
+      if (stopped) return;
       if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void poll(), inQueueRef.current ? QUEUE_POLL_MS : IDLE_POLL_MS);
+    };
+
+    const poll = async () => {
+      if (stopped || busy) return;
+      busy = true;
       const t0 = Date.now();
       const res = await api<PresenceDTO>("/api/live/presence");
-      running = false;
+      const rtt = Date.now() - t0;
+      busy = false;
       if (stopped) return;
+
       if (res.ok) {
         failures = 0;
         setStatus("connected");
-        observeServerTime(res.data.serverNow, Date.now() - t0);
-        inQueueRef.current = res.data.queue.inQueue;
-        setData(res.data);
-        if (res.data.queue.matchedCode) routerRef.current.push(`/room/${res.data.queue.matchedCode}`);
-      } else if (++failures >= 2) {
-        setStatus("reconnecting");
+        observeServerTime(res.data.serverNow, rtt);
+        setStats(res.data.stats);
+        setActive(res.data.active);
+
+        if (res.data.queue.matchedCode) {
+          inQueueRef.current = false;
+          setQueue({ inQueue: false, since: null });
+          routerRef.current.push(`/room/${res.data.queue.matchedCode}`);
+        } else {
+          const nextQueue = {
+            inQueue: res.data.queue.inQueue,
+            since: res.data.queue.since,
+          };
+          inQueueRef.current = nextQueue.inQueue;
+          setQueue(nextQueue);
+        }
+      } else if (isNetworkFailure(res) || res.code === "RATE_LIMITED" || res.code === "SERVER_ERROR") {
+        if (++failures >= 2) setStatus("reconnecting");
       }
-      if (document.visibilityState === "visible") {
-        timer = setTimeout(tick, inQueueRef.current ? QUEUE_INTERVAL_MS : IDLE_INTERVAL_MS);
-      }
+
+      schedule();
     };
-    kick.current = () => void tick();
+
+    wakeRef.current = poll;
+
     const onVisible = () => {
-      if (document.visibilityState === "visible") void tick();
+      if (document.visibilityState === "visible") void poll();
     };
     document.addEventListener("visibilitychange", onVisible);
-    void tick();
+    void poll();
+
     return () => {
       stopped = true;
       if (timer) clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [observeServerTime]);
+  }, [userId, observeServerTime]);
 
-  const refresh = useCallback(() => kick.current(), []);
+  const refreshPresence = useCallback(async () => {
+    await wakeRef.current();
+  }, []);
 
-  const value = useMemo<LiveContextValue>(
-    () => ({
-      status,
-      stats: data?.stats ?? null,
-      queue: { inQueue: data?.queue.inQueue ?? false, since: data?.queue.since ?? null },
-      active: data?.active ?? null,
-      clockOffset,
-      refresh,
-      observeServerTime,
-    }),
-    [status, data, clockOffset, refresh, observeServerTime],
+  const value = useMemo(
+    () => ({ status, stats, clockOffset, observeServerTime, queue, active, refreshPresence }),
+    [status, stats, clockOffset, observeServerTime, queue, active, refreshPresence],
   );
-  return <LiveContext.Provider value={value}>{children}</LiveContext.Provider>;
+
+  return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
 }
 
-export function useSocket(): LiveContextValue {
-  return useContext(LiveContext);
+export function useSocket() {
+  return useContext(SocketContext);
 }
 
 /** Returns a function giving the current server time. */

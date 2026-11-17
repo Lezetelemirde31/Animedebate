@@ -44,3 +44,12 @@ export function getCatalog(): CatalogCharacter[] {
   }
   return out;
 }
+
+let scalingCache: Map<string, Pick<CatalogCharacter, "primeForm" | "tierCode">> | null = null;
+
+export function getCharacterScaling(id: string): Pick<CatalogCharacter, "primeForm" | "tierCode"> | null {
+  if (!scalingCache) {
+    scalingCache = new Map(getCatalog().map((c) => [c.id, { primeForm: c.primeForm, tierCode: c.tierCode }]));
+  }
+  return scalingCache.get(id) ?? null;
+}

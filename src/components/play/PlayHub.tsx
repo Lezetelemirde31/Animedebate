@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { DoorOpen, Globe, KeyRound, Plus, Radar, Swords, Users, X, Zap } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { DoorOpen, Globe, KeyRound, Plus, Radar, RefreshCw, Swords, Users, X, Zap } from "lucide-react";
 import type { OpenRoomDTO } from "@/game/types";
+import { api } from "@/lib/client-api";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { useSocket } from "@/components/providers/SocketProvider";
-import { api } from "@/lib/client-api";
 import { Avatar } from "@/components/ui/Avatar";
 import { FormError, Spinner, StatTile } from "@/components/ui/primitives";
 import { getAnime, ENABLED_ANIME_IDS } from "@/data/anime";
@@ -29,45 +29,74 @@ function useElapsed(since: number | null) {
 export function PlayHub() {
   const router = useRouter();
   const { locale, t } = useLanguage();
-  const { stats, queue, refresh, clockOffset } = useSocket();
+  const { status, stats, queue, active, refreshPresence } = useSocket();
   const [rooms, setRooms] = useState<OpenRoomDTO[] | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const elapsed = useElapsed(queue.inQueue && queue.since ? queue.since - clockOffset : null);
+  const elapsed = useElapsed(queue.inQueue ? queue.since : null);
 
-  // Open public rooms, refreshed every few seconds while the page is visible.
-  useEffect(() => {
-    let stopped = false;
-    const load = async () => {
-      if (document.visibilityState !== "visible") return;
-      const res = await api<OpenRoomDTO[]>("/api/live/rooms");
-      if (!stopped) setRooms((prev) => (res.ok ? res.data : prev ?? []));
-    };
-    void load();
-    const id = setInterval(load, 4_000);
-    return () => {
-      stopped = true;
-      clearInterval(id);
-    };
+  const loadRooms = useCallback(async () => {
+    setRefreshing(true);
+    const res = await api<OpenRoomDTO[]>("/api/live/rooms");
+    setRefreshing(false);
+    if (res.ok) setRooms(res.data);
+    else setRooms((prev) => prev ?? []);
   }, []);
+
+  useEffect(() => {
+    void loadRooms();
+    const id = setInterval(() => void loadRooms(), 5_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void loadRooms();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [loadRooms]);
 
   async function findMatch() {
     setPending(true);
     setError(null);
-    const res = await api<{ matchedCode: string | null }>("/api/live/queue", { method: "POST" });
-    setPending(false);
-    if (!res.ok) return setError(res.message || t.play.queueError);
-    if (res.data.matchedCode) router.push(`/room/${res.data.matchedCode}`);
-    else refresh();
+    try {
+      const res = await api<{ matchedCode: string | null }>("/api/live/queue", { method: "POST" });
+      if (!res.ok) {
+        setError(res.message || t.play.queueError);
+      } else if (res.data.matchedCode) {
+        router.push(`/room/${res.data.matchedCode}`);
+      } else {
+        await refreshPresence();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.play.queueError);
+    } finally {
+      setPending(false);
+    }
   }
 
   async function cancel() {
     await api("/api/live/queue", { method: "DELETE" });
-    refresh();
+    await refreshPresence();
   }
+
+  const activeCode = active?.code ?? null;
 
   return (
     <div className="space-y-8">
+      {activeCode && (
+        <div className="glass-strong flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-500/40 px-5 py-3.5 neon-border animate-slide-up">
+          <div className="flex items-center gap-2.5 text-sm text-purple-100">
+            <DoorOpen className="h-5 w-5 shrink-0 text-purple-300" />
+            <span>{t.play.activeRoomBanner(activeCode)}</span>
+          </div>
+          <Link href={`/room/${activeCode}`} className="btn btn-primary !py-2">
+            {t.play.returnToRoom}
+          </Link>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatTile label={t.play.playersOnline} value={stats?.online ?? "—"} icon={Users} accent="green" />
         <StatTile label={t.play.inQueue} value={stats?.inQueue ?? "—"} icon={Radar} accent="purple" />
@@ -103,10 +132,15 @@ export function PlayHub() {
                   </button>
                 </div>
               ) : (
-                <button className="btn btn-primary w-full !py-3.5 !text-base" onClick={findMatch} disabled={pending} data-testid="find-match">
-                  {pending ? <Spinner className="h-4 w-4 text-white" /> : <Swords className="h-5 w-5" />}
-                  {t.play.findMatch}
-                </button>
+                <>
+                  <button className="btn btn-primary w-full !py-3.5 !text-base" onClick={findMatch} disabled={pending} data-testid="find-match">
+                    {pending ? <Spinner className="h-4 w-4 text-white" /> : <Swords className="h-5 w-5" />}
+                    {t.play.findMatch}
+                  </button>
+                  {status === "reconnecting" && (
+                    <p className="mt-2 text-center text-xs text-amber-300">{t.play.connectingLiveServer}</p>
+                  )}
+                </>
               )}
               <FormError message={error} />
             </div>
@@ -133,12 +167,37 @@ export function PlayHub() {
         </div>
       </div>
 
+      {/* Collection Deck Arena Feature Banner */}
+      <div className="glass-strong flex flex-col justify-between gap-4 rounded-3xl border border-purple-500/30 p-6 sm:flex-row sm:items-center">
+        <div>
+          <div className="flex items-center gap-2 font-display text-xs font-semibold uppercase tracking-widest text-purple-300">
+            <Swords className="h-4 w-4" /> {t.arena.eyebrow}
+          </div>
+          <h2 className="mt-1.5 font-display text-xl font-bold text-white">{t.play.deckArenaTitle}</h2>
+          <p className="mt-1 max-w-2xl text-sm text-zinc-400">{t.play.deckArenaDesc}</p>
+        </div>
+        <Link href="/arena" className="btn btn-primary min-h-[44px] whitespace-nowrap shrink-0">
+          <Swords className="h-4 w-4" /> {t.play.deckArenaCta}
+        </Link>
+      </div>
+
       <section>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-display text-xl font-bold text-white">
             <Globe className="h-5 w-5 text-purple-300" /> {t.play.openPublicRooms}
           </h2>
-          <span className="text-xs text-zinc-500">{t.play.updatesLive}</span>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-xs text-zinc-500 sm:inline">{t.play.updatesLive}</span>
+            <button
+              type="button"
+              onClick={() => void loadRooms()}
+              disabled={refreshing}
+              className="btn btn-ghost !px-3 !py-1.5 !text-xs"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              {t.play.refreshRooms}
+            </button>
+          </div>
         </div>
         {rooms === null ? (
           <div className="grid gap-3 md:grid-cols-2">

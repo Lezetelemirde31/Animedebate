@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Bot, Eye, Layers, PauseCircle, SkipForward, Sparkles, Timer, Zap } from "lucide-react";
 import type { Ack, CharacterDTO, RoomSnapshot } from "@/game/types";
 import { RARITY_INFO } from "@/game/rarity";
+import { POWER_TIER_INFO, formatPowerTier } from "@/game/power-tier";
 import { minimumNextBid } from "@/game/rules";
 import { GAME_RULES } from "@/game/config";
 import { useLanguage } from "@/components/providers/LanguageProvider";
@@ -86,11 +87,28 @@ function CharacterShowcase({
         </div>
         {character.powerLevel !== null && (
           <div className="mt-auto pt-4">
+            {(character.primeForm || character.tierCode) && (
+              <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
+                {character.primeForm && (
+                  <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-zinc-200">
+                    {t.characters.primeFormLabel}: <strong className="font-semibold text-white">{character.primeForm}</strong>
+                  </span>
+                )}
+                {character.tierCode && (
+                  <span
+                    className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 font-semibold"
+                    style={{ color: POWER_TIER_INFO[character.tierCode].color }}
+                  >
+                    {formatPowerTier(character.tierCode, locale)}
+                  </span>
+                )}
+              </div>
+            )}
             <div className="mb-1 flex items-center justify-between text-xs text-zinc-400">
               <span className="flex items-center gap-1">
                 <Zap className="h-3.5 w-3.5 text-amber-300" /> {t.characters.powerLevel}
               </span>
-              <span className="font-display font-semibold text-white">{character.powerLevel}</span>
+              <span className="font-display font-semibold text-white">{character.powerLevel} / 100</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-white/5">
               <div

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Coins, Gem, Library, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { Coins, Gem, Library, Sparkles, Swords } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth/server";
 import { enabledCharacterWhere, toCharacterDTO } from "@/lib/characters";
@@ -44,6 +45,11 @@ export default async function CollectionPage() {
           </>
         }
         description={t.collection.description}
+        actions={
+          <Link href="/arena" className="btn btn-primary whitespace-nowrap shrink-0">
+            <Swords className="h-4 w-4" /> {t.collection.fightInArena}
+          </Link>
+        }
       />
       {owned.length === 0 ? (
         <EmptyState

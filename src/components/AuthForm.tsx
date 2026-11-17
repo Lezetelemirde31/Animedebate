@@ -183,8 +183,13 @@ export function AuthForm({
     e.preventDefault();
     setError(null);
 
-    if (!trimmedUsername || !password) {
-      setError(t.auth.genericError);
+    if (!trimmedUsername) {
+      setError(t.auth.usernameInvalid);
+      return;
+    }
+
+    if (!password) {
+      setError(isLogin ? t.auth.passwordPlaceholderLogin : t.auth.passwordPlaceholderReg);
       return;
     }
 
@@ -216,6 +221,7 @@ export function AuthForm({
       const res = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify(payload),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
@@ -642,12 +648,7 @@ export function AuthForm({
               <button
                 type="submit"
                 className="btn btn-primary min-h-[48px] w-full text-sm sm:text-base"
-                disabled={
-                  loading ||
-                  !trimmedUsername ||
-                  !password ||
-                  (!isLogin && (!confirmPassword || usernameStatus === "taken" || usernameStatus === "invalid"))
-                }
+                disabled={loading}
               >
                 {loading ? <Spinner className="h-4 w-4 text-white" /> : null}
                 <span>{isLogin ? t.auth.loginBtn : t.auth.registerBtn}</span>

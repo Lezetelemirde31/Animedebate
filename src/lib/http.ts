@@ -6,17 +6,52 @@ export function jsonError(message: string, status = 400) {
 
 /**
  * CSRF defence for state-changing requests: browsers always send Origin on
- * cross-site POST/PATCH, so it must match the host serving this request.
+ * cross-site POST/PATCH and modern browsers send unspoofable Sec-Fetch-Site.
+ * Behind reverse proxies (Cloud Run, AI Studio, Vercel), internal Host may
+ * differ from public Origin when x-forwarded-host is omitted or chained.
  */
 export function isSameOrigin(req: NextRequest): boolean {
+  const secFetchSite = req.headers.get("sec-fetch-site")?.toLowerCase();
+  if (secFetchSite === "same-origin") return true;
+  if (secFetchSite === "cross-site") return false;
+
   const origin = req.headers.get("origin");
   if (!origin) return true; // non-browser clients
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+
+  let originUrl: URL;
   try {
-    return new URL(origin).host === host;
+    originUrl = new URL(origin);
   } catch {
     return false;
   }
+  const originHost = originUrl.host.toLowerCase();
+
+  const candidates = [
+    req.headers.get("x-forwarded-host"),
+    req.headers.get("host"),
+    req.nextUrl.host,
+  ]
+    .filter(Boolean)
+    .flatMap((v) => v!.split(",").map((s) => s.trim().toLowerCase()))
+    .filter(Boolean);
+
+  if (candidates.includes(originHost)) return true;
+
+  const allInternal =
+    candidates.length > 0 &&
+    candidates.every(
+      (h) => h.startsWith("localhost") || h.startsWith("127.0.0.1") || h.startsWith("0.0.0.0") || h.startsWith("[::1]"),
+    );
+  const referer = req.headers.get("referer");
+  if (allInternal && referer) {
+    try {
+      return new URL(referer).origin.toLowerCase() === originUrl.origin.toLowerCase();
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
 }
 
 export function clientIp(req: NextRequest): string {
