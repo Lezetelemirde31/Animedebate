@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth/server";
 import { getServerTranslations } from "@/lib/i18n-server";
 import { PageHeader } from "@/components/ui/primitives";
 import { NotificationsList } from "@/components/community/NotificationsList";
+import { notificationText } from "@/lib/notification-text";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NotificationsPage() {
-  const [user, { t }] = await Promise.all([requireUser("/notifications"), getServerTranslations()]);
+  const [user, { locale, t }] = await Promise.all([requireUser("/notifications"), getServerTranslations()]);
   const rows = await prisma.notification.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
@@ -23,8 +24,7 @@ export default async function NotificationsPage() {
   const items = rows.map((r) => ({
     id: r.id,
     type: r.type,
-    title: r.title,
-    message: r.message,
+    ...notificationText(r, locale),
     linkUrl: r.linkUrl,
     isRead: r.isRead,
     createdAt: r.createdAt.toISOString(),

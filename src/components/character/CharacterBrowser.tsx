@@ -8,6 +8,7 @@ import { ENABLED_ANIME } from "@/data/anime";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { RARITY_LABELS } from "@/lib/i18n";
 import { CharacterCard } from "./CharacterCard";
+import { localizeCharacter } from "@/lib/character-text";
 
 export interface BrowserItem extends CharacterDTO {
   owned?: { copies: number; lastPrice: number; totalSpent: number; acquiredAt: number };
@@ -30,9 +31,10 @@ export function CharacterBrowser({
   const [rarity, setRarity] = useState<Rarity[]>([]);
   const [sort, setSort] = useState<SortKey>(mode === "collection" ? "recent" : "rarity");
 
+  const localized = useMemo(() => items.map((c) => localizeCharacter(c, locale)), [items, locale]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = items.filter((c) => {
+    const list = localized.filter((c) => {
       if (anime.length && !anime.includes(c.animeId)) return false;
       if (rarity.length && !rarity.includes(c.rarity)) return false;
       if (!q) return true;
@@ -54,7 +56,7 @@ export function CharacterBrowser({
       price: (a, b) => (b.owned?.lastPrice ?? 0) - (a.owned?.lastPrice ?? 0),
     };
     return list.sort(by[sort]);
-  }, [items, query, anime, rarity, sort]);
+  }, [localized, query, anime, rarity, sort]);
 
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
   const sortOptions: { key: SortKey; label: string }[] = [

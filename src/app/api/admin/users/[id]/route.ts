@@ -73,6 +73,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       type: "MODERATION",
       title: "Account restored",
       message: "Your account suspension has been lifted.",
+      params: { kind: "restored" },
       linkUrl: "/profile",
     });
   }

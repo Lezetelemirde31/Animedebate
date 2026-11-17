@@ -6,9 +6,10 @@ import type { Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { CharacterArt } from "./CharacterArt";
 import { AnimeBadge, RarityBadge } from "./badges";
+import { localizeCharacter } from "@/lib/character-text";
 
 export function CharacterCard({
-  character,
+  character: original,
   href,
   footer,
   className,
@@ -22,6 +23,7 @@ export function CharacterCard({
   compact?: boolean;
   locale?: Locale;
 }) {
+  const character = localizeCharacter(original, locale);
   const info = RARITY_INFO[character.rarity];
   const body = (
     <div

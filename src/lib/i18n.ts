@@ -741,6 +741,8 @@ export const MESSAGES = {
       autoAssignedYou: (name: string) => `Paran bittiği için ${name} ücretsiz olarak takımına eklendi.`,
       autoAssignedOther: (user: string, name: string) => `${user} oyuncusunun parası bittiği için ${name} ücretsiz olarak takımına eklendi.`,
       roundsCount: (n: number) => `${n} tur`,
+      scoreHidden: "Skorlar maç bitince açıklanır",
+      ruleHidden: "Maç boyunca karakterlerin gücü ve takım skorları gizli; maç bitince açıklanır.",
       lobby: {
         privateRoom: "Gizli oda",
         matchmadeRoom: "Eşleşmeli oda",
@@ -1602,6 +1604,8 @@ export const MESSAGES = {
       autoAssignedYou: (name: string) => `You ran out of money, so ${name} joined your team for free.`,
       autoAssignedOther: (user: string, name: string) => `${user} ran out of money, so ${name} joined their team for free.`,
       roundsCount: (n: number) => `${n} rounds`,
+      scoreHidden: "Scores are revealed when the match ends",
+      ruleHidden: "Character power and team scores stay hidden during the match and are revealed at the end.",
       lobby: {
         privateRoom: "Private room",
         matchmadeRoom: "Matchmade room",

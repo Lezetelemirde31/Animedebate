@@ -104,6 +104,10 @@ suite("live auction engine", () => {
     expect(lot.forcedOpenerId).toBeNull();
     expect(lot.highestBid).toBeNull();
     expect(snap.settings.teamSize).toBe(5);
+    // Power and scores stay hidden while the match runs.
+    expect(lot.character.powerLevel).toBeNull();
+    expect(lot.character.tierCode).toBeUndefined();
+    expect(snap.players.every((p) => p.score === null)).toBe(true);
 
     // A opens, B raises, A re-raises and wins (the scenario from the rules).
     let s = await act(code, a, { action: "bid", lotId: lot.id, amount: lot.startingPrice });
@@ -140,6 +144,9 @@ suite("live auction engine", () => {
     expect(teamOf(final, a).wonCharacterIds).toHaveLength(5);
     expect(teamOf(final, b).wonCharacterIds).toHaveLength(5);
     expect(final.lotsCompleted).toBe(10);
+    // …and are revealed once it is over.
+    expect(final.players.every((p) => typeof p.score === "number" && p.score > 0)).toBe(true);
+    expect(final.history.some((h) => h.character.powerLevel !== null)).toBe(true);
     const who = openers.map((o) => o.split(":")[1]);
     for (let i = 1; i < who.length; i++) expect(who[i]).not.toBe(who[i - 1]);
     const match = await prisma.match.findUnique({ where: { code } });

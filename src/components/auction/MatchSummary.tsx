@@ -105,7 +105,7 @@ export function MatchSummary({
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] uppercase tracking-widest text-zinc-400">{t.auction.score}</div>
-                  <div className={cn("font-display text-3xl font-bold", s.text)}>{p.score}</div>
+                  <div className={cn("font-display text-3xl font-bold", s.text)}>{p.score ?? "?"}</div>
                   <div className="text-xs text-zinc-400">{t.auction.summary.balanceLeft(p.balance)}</div>
                 </div>
               </div>

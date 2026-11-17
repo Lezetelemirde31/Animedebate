@@ -133,6 +133,7 @@ export async function POST(req: NextRequest) {
       type: "COMMENT_REPLY",
       title: `${user.username} replied to your comment`,
       message: body.slice(0, 120),
+      params: { actor: user.username },
       linkUrl,
     });
   } else if (ownerId && ownerId !== user.id) {
@@ -142,6 +143,7 @@ export async function POST(req: NextRequest) {
       type: targetType === "DEBATE" ? "COMMENT_ON_DEBATE" : "COMMENT_ON_COMPARISON",
       title: `${user.username} commented on "${targetTitle.slice(0, 50)}"`,
       message: body.slice(0, 120),
+      params: { actor: user.username, target: targetTitle.slice(0, 50) },
       linkUrl,
     });
   }

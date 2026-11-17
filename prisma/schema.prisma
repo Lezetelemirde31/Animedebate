@@ -538,6 +538,9 @@ model Notification {
   type      NotificationType
   title     String
   message   String
+  /// Values for the localized text (level, badge slug, names…). Rows without
+  /// params are shown with the stored title/message.
+  params    Json?
   linkUrl   String?
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())

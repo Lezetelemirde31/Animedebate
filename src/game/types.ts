@@ -51,7 +51,8 @@ export interface PlayerState {
   avatar: AvatarDTO;
   seat: number;
   balance: number;
-  score: number;
+  /** Team score; null while the match is running (scores are revealed at the end). */
+  score: number | null;
   ready: boolean;
   connected: boolean;
   isHost: boolean;

@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { BidControls } from "./BidControls";
 import { BidFeed, LotHistoryStrip, PlayerPanel, SIDE_STYLES, TimerRing, type Side } from "./parts";
 import type { RoomEventWithMeta } from "@/hooks/useRoom";
+import { localizeCharacter } from "@/lib/character-text";
 
 function useSides(snapshot: RoomSnapshot, myId: string | null, unknownLabel: string) {
   return useMemo(() => {
@@ -30,7 +31,7 @@ function useSides(snapshot: RoomSnapshot, myId: string | null, unknownLabel: str
 }
 
 function CharacterShowcase({
-  character,
+  character: original,
   lotKey,
   dimmed,
   locale,
@@ -42,6 +43,7 @@ function CharacterShowcase({
   locale: "tr" | "en";
   t: ReturnType<typeof useLanguage>["t"];
 }) {
+  const character = localizeCharacter(original, locale);
   const info = RARITY_INFO[character.rarity];
   return (
     <div key={lotKey} className="flex flex-col gap-5 md:flex-row md:items-stretch">
@@ -69,7 +71,6 @@ function CharacterShowcase({
       <div className="flex min-w-0 flex-1 flex-col animate-slide-up" style={{ animationDelay: "120ms" }}>
         <div className="flex flex-wrap items-center gap-2">
           <AnimeBadge animeId={character.animeId} />
-          <span className="text-xs text-zinc-500">{t.auction.scoreIfWon(info.points)}</span>
         </div>
         <h2 className="mt-2 break-words font-display text-3xl font-bold leading-tight text-white md:text-4xl" data-testid="lot-character-name">
           {character.name}
@@ -234,7 +235,7 @@ export function AuctionStage({
                 <div className={cn("font-display text-lg font-bold leading-none tabular-nums", i === 0 ? "text-purple-200" : "text-rose-200")}>
                   ${p.balance}{" "}
                   <span className="text-xs font-normal text-zinc-500">
-                    · {p.score} {t.home.points} · {p.wonCharacterIds.length}/{teamSize}
+                    · {p.wonCharacterIds.length}/{teamSize}
                   </span>
                 </div>
               </div>
@@ -263,6 +264,7 @@ export function AuctionStage({
             </div>
             <ul className="space-y-1.5">
               <li>{t.auction.ruleTeam(teamSize)}</li>
+              <li>{t.auction.ruleHidden}</li>
               <li>{t.auction.ruleTurns}</li>
               <li>{t.auction.ruleSkip}</li>
               <li>{t.auction.ruleBroke}</li>

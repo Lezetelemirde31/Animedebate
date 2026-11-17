@@ -87,7 +87,9 @@ export default async function MatchReportPage({ params }: { params: Promise<{ ma
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] uppercase tracking-widest text-zinc-500">{t.history.scoreLabel}</div>
-                  <div className={cn("font-display text-2xl font-bold", i === 0 ? "text-purple-200" : "text-rose-200")}>{p.score}</div>
+                  <div className={cn("font-display text-2xl font-bold", i === 0 ? "text-purple-200" : "text-rose-200")}>
+                    {match.status === "IN_PROGRESS" ? "?" : p.score}
+                  </div>
                 </div>
               </div>
             ))}

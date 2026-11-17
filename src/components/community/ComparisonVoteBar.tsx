@@ -8,6 +8,7 @@ import { useLanguage } from "@/components/providers/LanguageProvider";
 import { CharacterArt } from "@/components/character/CharacterArt";
 import { AnimeBadge } from "@/components/character/badges";
 import { cn } from "@/lib/utils";
+import { characterTitle } from "@/lib/character-text";
 
 interface FighterCard {
   id: string;
@@ -38,7 +39,7 @@ export function ComparisonVoteBar({
   locked: boolean;
 }) {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { locale, t } = useLanguage();
   const [votesA, setVotesA] = useState(initialVotesA);
   const [votesB, setVotesB] = useState(initialVotesB);
   const [side, setSide] = useState<"A" | "B" | null>(initialSide);
@@ -96,7 +97,7 @@ export function ComparisonVoteBar({
               <Link href={`/characters/${charA.id}`} className="mt-1.5 block font-display text-xl font-bold text-white hover:underline">
                 {charA.name}
               </Link>
-              <p className="truncate text-xs text-zinc-400">{charA.title}</p>
+              <p className="truncate text-xs text-zinc-400">{characterTitle(charA.id, charA.title, locale)}</p>
               {charA.powerLevel !== null && (
                 <div className="mt-1.5 inline-flex items-center gap-1 text-xs text-amber-300">
                   <Zap className="h-3.5 w-3.5" /> {t.comparisons.powerShort} {charA.powerLevel}
@@ -139,7 +140,7 @@ export function ComparisonVoteBar({
               <Link href={`/characters/${charB.id}`} className="mt-1.5 block font-display text-xl font-bold text-white hover:underline">
                 {charB.name}
               </Link>
-              <p className="truncate text-xs text-zinc-400">{charB.title}</p>
+              <p className="truncate text-xs text-zinc-400">{characterTitle(charB.id, charB.title, locale)}</p>
               {charB.powerLevel !== null && (
                 <div className="mt-1.5 inline-flex items-center gap-1 text-xs text-amber-300">
                   <Zap className="h-3.5 w-3.5" /> {t.comparisons.powerShort} {charB.powerLevel}

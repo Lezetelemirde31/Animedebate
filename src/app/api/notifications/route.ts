@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/server";
 import { isSameOrigin, jsonError } from "@/lib/http";
+import { getServerLocale } from "@/lib/i18n-server";
+import { notificationText } from "@/lib/notification-text";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -23,7 +25,9 @@ export async function GET() {
     },
   });
   const unreadCount = notifications.filter((n) => !n.isRead).length;
-  return NextResponse.json({ ok: true, notifications, unreadCount });
+  const locale = await getServerLocale();
+  const localized = notifications.map((n) => ({ ...n, ...notificationText(n, locale) }));
+  return NextResponse.json({ ok: true, notifications: localized, unreadCount });
 }
 
 export async function PATCH(req: NextRequest) {

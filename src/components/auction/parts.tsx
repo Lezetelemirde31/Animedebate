@@ -142,7 +142,9 @@ export function PlayerPanel({
         </div>
         <div className="text-right">
           <div className="text-[10px] uppercase tracking-widest text-zinc-400">{t.auction.score}</div>
-          <div className="font-display text-xl font-bold text-white tabular-nums">{player.score}</div>
+          <div className="font-display text-xl font-bold text-white tabular-nums" title={player.score === null ? t.auction.scoreHidden : undefined}>
+            {player.score ?? "?"}
+          </div>
         </div>
       </div>
       <div className="relative mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">

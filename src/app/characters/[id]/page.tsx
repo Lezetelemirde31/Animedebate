@@ -16,6 +16,7 @@ import { SetAvatarButton } from "@/components/SetAvatarButton";
 import { FavoriteButton } from "@/components/community/FavoriteButton";
 import { CommentSection, type CommentItemDTO } from "@/components/community/CommentSection";
 import { timeAgo } from "@/lib/utils";
+import { localizeCharacter } from "@/lib/character-text";
 
 async function load(id: string) {
   return prisma.character.findFirst({
@@ -32,8 +33,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function CharacterPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [character, { locale, t }] = await Promise.all([load(id), getServerTranslations()]);
-  if (!character) notFound();
+  const [loaded, { locale, t }] = await Promise.all([load(id), getServerTranslations()]);
+  if (!loaded) notFound();
+  const character = localizeCharacter(loaded, locale);
   const user = await getCurrentUser();
   const info = RARITY_INFO[character.rarity];
   const scaling = getCharacterScaling(character.id);

@@ -30,6 +30,8 @@ export async function notifyUser(input: {
   type: NotificationType;
   title: string;
   message: string;
+  /** Values for the localized text, see `notificationText`. */
+  params?: Record<string, string | number>;
   linkUrl?: string | null;
 }): Promise<void> {
   if (input.actorId && input.actorId === input.userId) return;
@@ -41,6 +43,7 @@ export async function notifyUser(input: {
         type: input.type,
         title: input.title,
         message: input.message,
+        params: input.params ?? undefined,
         linkUrl: input.linkUrl ?? null,
       },
     });
@@ -107,6 +110,7 @@ export async function syncUserBadges(userId: string): Promise<string[]> {
         type: "BADGE_EARNED",
         title: `Badge Unlocked: ${b.name}`,
         message: b.description,
+        params: { badge: b.slug, name: b.name, description: b.description },
         linkUrl: `/profile`,
       });
     }
@@ -141,6 +145,7 @@ export async function awardXp(input: {
       type: "LEVEL_UP",
       title: `Level ${nextLevel} Reached!`,
       message: `You earned enough XP to advance to Level ${nextLevel}.`,
+      params: { level: nextLevel },
       linkUrl: "/profile",
     });
   }

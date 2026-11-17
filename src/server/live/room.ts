@@ -33,6 +33,7 @@ import {
 import type {
   AvatarDTO,
   BidDTO,
+  CharacterDTO,
   ErrorCode,
   LotState,
   LotSummary,
@@ -572,8 +573,9 @@ async function awardCharacter(ctx: Ctx, s: RoomS, winner: PlayerS, characterId: 
 
 /** Gives a player who ran out of money the next character from the pool, for free. */
 async function autoAssign(ctx: Ctx, s: RoomS, p: PlayerS, at: number): Promise<void> {
-  const characterId = s.pool[0];
-  if (!characterId) return finish(ctx, s, "POOL_EXHAUSTED", null, { note: "pool_empty" }, at);
+  if (s.pool.length === 0) return finish(ctx, s, "POOL_EXHAUSTED", null, { note: "pool_empty" }, at);
+  const pick = Math.floor(ctx.random() * s.pool.length);
+  const characterId = s.pool[pick];
   const lotNumber = s.lotsCompleted + 1;
   const startingPrice = startingPriceFor(ctx.catalog.rarity(characterId) ?? "COMMON");
   const row = await ctx.tx.auctionLot.create({
@@ -591,7 +593,7 @@ async function autoAssign(ctx: Ctx, s: RoomS, p: PlayerS, at: number): Promise<v
       endsAt: null,
     },
   });
-  s.pool = s.pool.slice(1);
+  s.pool = s.pool.filter((_, i) => i !== pick);
   await awardCharacter(ctx, s, p, characterId, 0, at);
   s.lot = {
     id: row.id,
@@ -971,8 +973,18 @@ export async function createRoomTx(
 
 // ─── Snapshot ───────────────────────────────────────────────────────────────
 
+/**
+ * While a match runs, players judge characters on their own: power level,
+ * power tier, prime form and team scores are not sent until it is over.
+ */
+function hideStats(c: CharacterDTO): CharacterDTO {
+  return { ...c, powerLevel: null, primeForm: undefined, tierCode: undefined };
+}
+
 export async function buildSnapshot(ctx: Ctx, s: RoomS, now: number): Promise<RoomSnapshot> {
   const { tx, catalog, timing } = ctx;
+  const reveal = isEndedPhase(s.phase);
+  const shown = (c: CharacterDTO) => (reveal ? c : hideStats(c));
   const [historyRows, spectators] = await Promise.all([
     tx.auctionLot.findMany({
       where: { matchId: s.id, status: { in: ["SOLD", "UNSOLD"] } },
@@ -987,7 +999,7 @@ export async function buildSnapshot(ctx: Ctx, s: RoomS, now: number): Promise<Ro
       ? [{
           id: l.id,
           lotNumber: l.lotNumber,
-          character,
+          character: shown(character),
           status: l.status as "SOLD" | "UNSOLD",
           winnerId: l.winnerId ?? null,
           finalPrice: l.finalPrice ?? null,
@@ -1018,7 +1030,7 @@ export async function buildSnapshot(ctx: Ctx, s: RoomS, now: number): Promise<Ro
         avatar: p.avatar,
         seat: p.seat,
         balance: p.balance,
-        score: p.score,
+        score: reveal ? p.score : null,
         ready: p.ready,
         connected,
         isHost: p.userId === s.hostId,
@@ -1037,7 +1049,7 @@ export async function buildSnapshot(ctx: Ctx, s: RoomS, now: number): Promise<Ro
       ? {
           id: lot.id,
           lotNumber: lot.lotNumber,
-          character,
+          character: shown(character),
           startingPrice: lot.startingPrice,
           highestBid: lot.highestBid,
           highestBidderId: lot.highestBidderId,

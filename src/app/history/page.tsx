@@ -130,7 +130,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                 </div>
                 <div className="flex items-center gap-6 text-sm md:w-64 md:justify-end">
                   <div className="text-right">
-                    <div className="font-display font-semibold text-white">{mp.score} {t.home.points}</div>
+                    <div className="font-display font-semibold text-white">{live ? "?" : mp.score} {t.home.points}</div>
                     <div className="text-xs text-zinc-500">${m.startingBalance - mp.balance}</div>
                   </div>
                   <div className="text-right text-xs text-zinc-500">
