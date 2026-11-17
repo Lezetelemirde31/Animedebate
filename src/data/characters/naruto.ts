@@ -146,7 +146,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "Possessing a Hashirama-cell White Zetsu body, perfected Edo Tensei, and mastery over five chakra natures, Boruto-era Orochimaru stands at his deadliest prime.",
       abilities: ["Eight Branches Technique", "Edo Tensei", "White Zetsu Regeneration", "Sword of Kusanagi"],
-      rarity: "EPIC",
+      rarity: "LEGENDARY",
       powerLevel: 73,
     },
     {
@@ -182,7 +182,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "Paired with Elder Toads Fukasaku and Shima, Sage Mode Jiraiya combines Ultra-Big Ball Rasengan with Demonic Illusion: Toad Confrontation Chant.",
       abilities: ["Sage Mode", "Ultra-Big Ball Rasengan", "Toad Confrontation Chant", "Dark Swamp"],
-      rarity: "EPIC",
+      rarity: "LEGENDARY",
       powerLevel: 70,
     },
     {
@@ -331,7 +331,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "Hagoromo's prodigious elder son, the first to awaken the Mangekyō Sharingan. His Perfect Susanoo and Indra's Arrow clashed for centuries with Asura's reincarnations.",
       abilities: ["Perfect Susanoo", "Indra's Arrow", "Mangekyō Sharingan", "Chidori Prototype"],
-      rarity: "LEGENDARY",
+      rarity: "MYTHIC",
       powerLevel: 81,
     },
     {
@@ -344,7 +344,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "The Sage's younger son who earned his power through effort. Granted his father's chakra, he rivaled Indra with Sage Mode, a towering chakra avatar and the Asura Path arsenal.",
       abilities: ["Six Paths Chakra Mode", "Chakra Avatar", "Sage Mode", "Asura Path Arsenal"],
-      rarity: "LEGENDARY",
+      rarity: "MYTHIC",
       powerLevel: 80,
     },
     {
@@ -356,7 +356,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "The fastest shinobi of his era. Tobirama invented Flying Raijin, Shadow Clones and Edo Tensei, and floods battlefields with Water Release without a source nearby.",
       abilities: ["Flying Thunder God", "Water Release: Water Dragon", "Edo Tensei", "Shadow Clone Jutsu"],
-      rarity: "EPIC",
+      rarity: "LEGENDARY",
       powerLevel: 74,
     },
     {
@@ -369,7 +369,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "In complete harmony with Gyūki, B transforms into the Eight-Tails at will, fires Tailed Beast Bombs and fights with seven swords at once while rapping mid-battle.",
       abilities: ["Full Tailed Beast Mode", "Tailed Beast Bomb", "Seven Swords Dance", "Lariat"],
-      rarity: "EPIC",
+      rarity: "LEGENDARY",
       powerLevel: 74,
     },
     {
@@ -381,7 +381,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "Known as the Professor for mastering every jutsu of the Leaf, prime Hiruzen wields all five natures, the shape-shifting Monkey King Enma and the Reaper Death Seal.",
       abilities: ["Five Nature Mastery", "Monkey King Enma", "Reaper Death Seal", "Shadow Shuriken"],
-      rarity: "EPIC",
+      rarity: "LEGENDARY",
       powerLevel: 71,
     },
     {
@@ -454,7 +454,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "The demigod leader of Amegakure who named the Legendary Sannin. Hanzō fights with a poison sac in his body, a kusarigama and the venom-breathing salamander Ibuse.",
       abilities: ["Summoning: Ibuse", "Poison Mist", "Kusarigama Mastery", "Tactical Genius"],
-      rarity: "RARE",
+      rarity: "LEGENDARY",
       powerLevel: 63,
       searchName: "Hanzou",
     },
@@ -479,7 +479,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "Kaguya's secret will, who rewrote the Uchiha tablet and steered history for a thousand years. He phases through the ground and takes over bodies to manipulate them from within.",
       abilities: ["Body Possession", "Mayfly", "Spore Clones", "Manipulation"],
-      rarity: "COMMON",
+      rarity: "MYTHIC",
       powerLevel: 57,
       searchName: "Zetsu",
     },
@@ -492,7 +492,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "The orange-haired orphan who dreamed of peace and founded the original Akatsuki with Nagato and Konan. Trained by Jiraiya, he fought with Wind Release and fierce resolve.",
       abilities: ["Wind Release", "Jiraiya's Training", "Leadership", "Unbreakable Resolve"],
-      rarity: "COMMON",
+      rarity: "EPIC",
       powerLevel: 42,
     },
   ],
