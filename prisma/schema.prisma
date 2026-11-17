@@ -596,3 +596,18 @@ model QueueEntry {
   /// Set when another player was paired with this one; read once by the waiting player.
   matchedCode String?
 }
+
+/// 1v1 Counter-Pick Arena room. The whole room lives in `state` (JSON) so any
+/// server instance (e.g. a serverless function) can serve it; every request
+/// locks the row while it changes the room.
+model ArenaRoom {
+  code      String   @id
+  phase     String
+  /// Seated players, for "is this user already in a room?" lookups.
+  playerIds String[] @default([])
+  state     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phase, updatedAt])
+}

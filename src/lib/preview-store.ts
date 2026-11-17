@@ -36,6 +36,7 @@ interface StoreTables {
   moderationLog: Row[];
   matchSpectator: Row[];
   queueEntry: Row[];
+  arenaRoom: Row[];
 }
 
 const g = globalThis as unknown as { __aaPreviewTables?: StoreTables };
@@ -275,6 +276,7 @@ function buildInitialTables(): StoreTables {
     moderationLog: [],
     matchSpectator: [],
     queueEntry: [],
+    arenaRoom: [],
   };
 }
 
@@ -285,6 +287,7 @@ function getTables(): StoreTables {
   // Tables added after the store was first created (e.g. across hot reloads).
   g.__aaPreviewTables.matchSpectator ??= [];
   g.__aaPreviewTables.queueEntry ??= [];
+  g.__aaPreviewTables.arenaRoom ??= [];
   return g.__aaPreviewTables;
 }
 
@@ -294,6 +297,7 @@ function matchScalar(val: any, cond: any): boolean {
     if (val instanceof Date && cond instanceof Date) return val.getTime() === cond.getTime();
     return val === cond;
   }
+  if ("has" in cond) return Array.isArray(val) && val.includes(cond.has);
   if ("in" in cond) return (cond.in as any[]).includes(val);
   if ("notIn" in cond) return !(cond.notIn as any[]).includes(val);
   if ("not" in cond) {
@@ -829,6 +833,7 @@ export function createPreviewPrisma(): PrismaClient {
     moderationLog: makeDelegate(tables, "moderationLog"),
     matchSpectator: makeDelegate(tables, "matchSpectator"),
     queueEntry: makeDelegate(tables, "queueEntry"),
+    arenaRoom: makeDelegate(tables, "arenaRoom"),
     async $transaction(fn: ((tx: any) => Promise<any>) | Promise<any>[]) {
       if (Array.isArray(fn)) return Promise.all(fn);
       return fn(client);

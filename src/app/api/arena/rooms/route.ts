@@ -26,7 +26,7 @@ const DECK_ERRORS: Record<Locale, Record<ArenaHttpError["reason"], string>> = {
 export async function GET(req: NextRequest) {
   return handleLive(req, async () => {
     const manager = await getArenaManager();
-    return ok(manager.listOpenRooms());
+    return ok(await manager.listOpenRooms());
   });
 }
 

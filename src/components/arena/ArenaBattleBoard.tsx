@@ -214,6 +214,30 @@ export function ArenaBattleBoard({
     });
   }
 
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState(`/arena/${snapshot.code}`);
+  useEffect(() => setInviteUrl(`${window.location.origin}/arena/${snapshot.code}`), [snapshot.code]);
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  async function copyInviteLink() {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 1800);
+    } catch {
+      // ignore clipboard block
+    }
+  }
+
+  async function shareInviteLink() {
+    try {
+      await navigator.share({ title: "Anime Debate", text: t.arena.shareText(snapshot.code), url: inviteUrl });
+    } catch {
+      // cancelled or unsupported: fall back to copying
+      await copyInviteLink();
+    }
+  }
+
   async function copyRoomCode() {
     try {
       await navigator.clipboard.writeText(snapshot.code);
@@ -300,6 +324,30 @@ export function ArenaBattleBoard({
             >
               {copiedCode ? t.arena.copied : t.arena.copyCode}
             </button>
+          </div>
+          <div className="mx-auto mt-5 max-w-xl text-left">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">{t.arena.inviteLink}</div>
+            <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
+              <input
+                readOnly
+                value={inviteUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                className="input min-w-0 flex-1 !py-2 text-sm"
+                aria-label={t.arena.inviteLink}
+                data-testid="arena-invite-link"
+              />
+              <div className="flex gap-2">
+                <button type="button" onClick={() => void copyInviteLink()} className="btn btn-primary flex-1 !py-2 !text-xs sm:flex-none" data-testid="arena-copy-link">
+                  {copiedLink ? t.arena.copied : t.arena.copyLink}
+                </button>
+                {canShare && (
+                  <button type="button" onClick={() => void shareInviteLink()} className="btn btn-ghost flex-1 !py-2 !text-xs sm:flex-none">
+                    {t.arena.shareLink}
+                  </button>
+                )}
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-zinc-500">{t.arena.inviteHint}</p>
           </div>
         </div>
       ) : (

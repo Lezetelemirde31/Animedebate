@@ -50,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
           return ok(await manager.joinRoom(code, user.id, deckIds));
         }
         case "sync":
-          return ok(manager.syncRoom(code, user.id));
+          return ok(await manager.syncRoom(code, user.id));
         case "play":
           if (typeof body.cardId !== "string") throw new EngineError("INVALID_INPUT");
           return ok(await manager.playCard(code, user.id, body.cardId));

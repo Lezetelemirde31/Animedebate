@@ -77,7 +77,7 @@ async function makeCtx(tx: Tx): Promise<Ctx> {
 }
 
 /** Runs `fn` alone for the given key inside this server instance. */
-function localLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+export function localLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
   const locks = (state.__aaLiveLocks ??= new Map());
   const previous = locks.get(key) ?? Promise.resolve();
   const run = previous.then(fn, fn);
