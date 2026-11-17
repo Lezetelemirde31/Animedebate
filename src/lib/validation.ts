@@ -1,13 +1,16 @@
 import { z } from "zod";
 import { GAME_RULES } from "@/game/config";
 import { ENABLED_ANIME_IDS } from "@/data/anime";
+import { isAvatarStyle } from "@/lib/avatars";
+
+export const USERNAME_REGEX = /^[A-Za-z0-9_]+$/;
 
 export const usernameSchema = z
   .string()
   .trim()
   .min(3, "Username must be at least 3 characters.")
   .max(20, "Username must be at most 20 characters.")
-  .regex(/^[A-Za-z0-9_]+$/, "Use only letters, numbers and underscores.");
+  .regex(USERNAME_REGEX, "Use only letters, numbers and underscores.");
 
 export const passwordSchema = z
   .string()
@@ -17,6 +20,10 @@ export const passwordSchema = z
 export const registerSchema = z.object({
   username: usernameSchema,
   password: passwordSchema,
+  avatarStyle: z
+    .string()
+    .refine((v) => isAvatarStyle(v), "Invalid avatar style.")
+    .optional(),
 });
 
 export const loginSchema = z.object({
