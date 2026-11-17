@@ -18,7 +18,18 @@ if (!dbUrl) {
   process.exit(0);
 }
 
-const env = { ...process.env, DATABASE_URL: dbUrl };
+// Same rule as src/lib/db.ts: APP_DATABASE_NAME selects this app's own database
+// on a shared Postgres server, leaving any other database on it untouched.
+function withAppDatabaseName(url) {
+  const name = process.env.APP_DATABASE_NAME?.trim();
+  if (!name || !/^[A-Za-z0-9_-]+$/.test(name)) return url;
+  const parsed = new URL(url);
+  parsed.pathname = `/${name}`;
+  return parsed.toString();
+}
+
+const env = { ...process.env, DATABASE_URL: withAppDatabaseName(dbUrl) };
+if (process.env.APP_DATABASE_NAME) console.log(`[vercel-prepare] Using database "${process.env.APP_DATABASE_NAME}".`);
 
 console.log("[vercel-prepare] Database URL detected — running Prisma migrate deploy & seed...");
 execSync("npx prisma migrate deploy", { stdio: "inherit", env });

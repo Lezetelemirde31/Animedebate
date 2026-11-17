@@ -20,7 +20,24 @@ export function getDatabaseUrl(): string | null {
     process.env.POSTGRES_PRISMA_URL?.trim() ||
     process.env.POSTGRES_URL?.trim() ||
     "";
-  return url || null;
+  return url ? withAppDatabaseName(url) : null;
+}
+
+/**
+ * APP_DATABASE_NAME lets this app use its own database on a shared Postgres
+ * server (e.g. a Neon project that another app also uses): the connection
+ * string from the hosting integration is kept, only the database name changes.
+ */
+export function withAppDatabaseName(url: string): string {
+  const name = process.env.APP_DATABASE_NAME?.trim();
+  if (!name || !/^[A-Za-z0-9_-]+$/.test(name)) return url;
+  try {
+    const parsed = new URL(url);
+    parsed.pathname = `/${name}`;
+    return parsed.toString();
+  } catch {
+    return url;
+  }
 }
 
 export function isDatabaseConfigured(): boolean {
