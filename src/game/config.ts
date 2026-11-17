@@ -33,6 +33,10 @@ export const GAME_RULES = {
    * this quickly instead of running out the full clock.
    */
   unopposedCloseMs: 2_500,
+  /** A player whose browser hasn't checked in for this long counts as disconnected. */
+  presenceTimeoutMs: 8_000,
+  /** How often the room page asks the server for the latest state. */
+  pollIntervalMs: 1_000,
   /** Characters can be sold at most once per match. Unsold ones return to the pool. */
   uniquePerMatch: true,
   maxPlayers: 2,

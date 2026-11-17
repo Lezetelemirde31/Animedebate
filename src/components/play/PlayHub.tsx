@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DoorOpen, Globe, KeyRound, Plus, Radar, Swords, Users, X, Zap } from "lucide-react";
-import type { Ack, OpenRoomDTO } from "@/game/types";
+import type { OpenRoomDTO } from "@/game/types";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import { emitWithAck, useSocket } from "@/components/providers/SocketProvider";
+import { useSocket } from "@/components/providers/SocketProvider";
+import { api } from "@/lib/client-api";
 import { Avatar } from "@/components/ui/Avatar";
 import { FormError, Spinner, StatTile } from "@/components/ui/primitives";
 import { getAnime, ENABLED_ANIME_IDS } from "@/data/anime";
@@ -28,41 +29,41 @@ function useElapsed(since: number | null) {
 export function PlayHub() {
   const router = useRouter();
   const { locale, t } = useLanguage();
-  const { socket, status, stats, queue } = useSocket();
+  const { stats, queue, refresh, clockOffset } = useSocket();
   const [rooms, setRooms] = useState<OpenRoomDTO[] | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const elapsed = useElapsed(queue.inQueue ? queue.since : null);
+  const elapsed = useElapsed(queue.inQueue && queue.since ? queue.since - clockOffset : null);
 
+  // Open public rooms, refreshed every few seconds while the page is visible.
   useEffect(() => {
-    if (!socket || status !== "connected") return;
-    socket.emit("rooms:list", (res: Ack<OpenRoomDTO[]>) => {
-      if (res.ok) setRooms(res.data);
-      else setRooms([]);
-    });
-    const onUpdate = (list: OpenRoomDTO[]) => setRooms(list);
-    socket.on("rooms:updated", onUpdate);
-    return () => {
-      socket.off("rooms:updated", onUpdate);
+    let stopped = false;
+    const load = async () => {
+      if (document.visibilityState !== "visible") return;
+      const res = await api<OpenRoomDTO[]>("/api/live/rooms");
+      if (!stopped) setRooms((prev) => (res.ok ? res.data : prev ?? []));
     };
-  }, [socket, status]);
+    void load();
+    const id = setInterval(load, 4_000);
+    return () => {
+      stopped = true;
+      clearInterval(id);
+    };
+  }, []);
 
   async function findMatch() {
     setPending(true);
     setError(null);
-    try {
-      const res = await emitWithAck<Ack<{ matchedCode: string | null }>>(socket, (s, ack) => s.emit("queue:join", ack as never));
-      if (!res.ok) setError(res.message);
-      else if (res.data.matchedCode) router.push(`/room/${res.data.matchedCode}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.play.queueError);
-    } finally {
-      setPending(false);
-    }
+    const res = await api<{ matchedCode: string | null }>("/api/live/queue", { method: "POST" });
+    setPending(false);
+    if (!res.ok) return setError(res.message || t.play.queueError);
+    if (res.data.matchedCode) router.push(`/room/${res.data.matchedCode}`);
+    else refresh();
   }
 
   async function cancel() {
-    await emitWithAck<Ack>(socket, (s, ack) => s.emit("queue:leave", ack as never)).catch(() => undefined);
+    await api("/api/live/queue", { method: "DELETE" });
+    refresh();
   }
 
   return (
@@ -102,7 +103,7 @@ export function PlayHub() {
                   </button>
                 </div>
               ) : (
-                <button className="btn btn-primary w-full !py-3.5 !text-base" onClick={findMatch} disabled={pending || status !== "connected"} data-testid="find-match">
+                <button className="btn btn-primary w-full !py-3.5 !text-base" onClick={findMatch} disabled={pending} data-testid="find-match">
                   {pending ? <Spinner className="h-4 w-4 text-white" /> : <Swords className="h-5 w-5" />}
                   {t.play.findMatch}
                 </button>

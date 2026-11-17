@@ -3,18 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Check, Globe, Lock, Plus } from "lucide-react";
-import type { Ack } from "@/game/types";
 import { GAME_RULES } from "@/game/config";
 import { ENABLED_ANIME } from "@/data/anime";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import { emitWithAck, useSocket } from "@/components/providers/SocketProvider";
+import { api } from "@/lib/client-api";
 import { FormError, Spinner } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
 export function CreateRoomForm({ characterCounts }: { characterCounts: Record<string, number> }) {
   const router = useRouter();
   const { t } = useLanguage();
-  const { socket, status } = useSocket();
   const [isPrivate, setPrivate] = useState(true);
   const [totalLots, setLots] = useState<number>(GAME_RULES.defaultLots);
   const [bidSeconds, setTimer] = useState<number>(GAME_RULES.defaultTimer);
@@ -33,20 +31,13 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
     setError(null);
     if (animeIds.length === 0) return setError(t.play.pickOneAnime);
     setPending(true);
-    try {
-      const res = await emitWithAck<Ack<{ code: string }>>(socket, (s, ack) =>
-        s.emit("room:create", { isPrivate, totalLots, bidSeconds, animeIds }, ack as never),
-      );
-      if (!res.ok) {
-        setError(res.message);
-        setPending(false);
-        return;
-      }
-      router.push(`/room/${res.data.code}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.play.couldNotCreateRoom);
+    const res = await api<{ code: string }>("/api/live/rooms", { body: { isPrivate, totalLots, bidSeconds, animeIds } });
+    if (!res.ok) {
+      setError(res.message || t.play.couldNotCreateRoom);
       setPending(false);
+      return;
     }
+    router.push(`/room/${res.data.code}`);
   }
 
   return (
@@ -167,13 +158,12 @@ export function CreateRoomForm({ characterCounts }: { characterCounts: Record<st
         <button
           type="submit"
           className="btn btn-primary mt-6 w-full !py-3.5"
-          disabled={pending || status !== "connected" || animeIds.length === 0 || poolSize < totalLots}
+          disabled={pending || animeIds.length === 0 || poolSize < totalLots}
           data-testid="create-room-submit"
         >
           {pending ? <Spinner className="h-4 w-4 text-white" /> : <Plus className="h-4 w-4" />}
           {t.play.createRoom}
         </button>
-        {status !== "connected" && <p className="mt-2 text-center text-xs text-amber-300">{t.play.connectingLiveServer}</p>}
       </aside>
     </form>
   );

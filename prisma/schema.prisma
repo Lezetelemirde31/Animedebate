@@ -25,6 +25,18 @@ enum MatchStatus {
   ABANDONED
 }
 
+/// Live phase of an auction room. Stored in the database so that any server
+/// instance (including serverless functions) can advance the auction.
+enum MatchPhase {
+  LOBBY
+  COUNTDOWN
+  BIDDING
+  INTERMISSION
+  PAUSED
+  FINISHED
+  ABANDONED
+}
+
 enum LotStatus {
   ACTIVE
   SOLD
@@ -105,17 +117,20 @@ model User {
   avatarCustomUrl   String?
 
   /// Gamification & Community Stats
-  xp               Int       @default(0)
-  level            Int       @default(1)
-  debatesCount     Int       @default(0)
-  comparisonsCount Int       @default(0)
-  commentsCount    Int       @default(0)
-  likesReceived    Int       @default(0)
+  xp               Int @default(0)
+  level            Int @default(1)
+  debatesCount     Int @default(0)
+  comparisonsCount Int @default(0)
+  commentsCount    Int @default(0)
+  likesReceived    Int @default(0)
 
   /// Moderation & Account Safety
   isBanned          Boolean   @default(false)
   bannedReason      String?
   usernameChangedAt DateTime?
+
+  /// Last time this user's browser checked in (drives the "online" counter).
+  lastSeenAt DateTime?
 
   /// Auction Stats
   auctionWins   Int @default(0)
@@ -145,6 +160,8 @@ model User {
   actedNotifications Notification[]        @relation("NotificationActor")
   xpEvents           XpEvent[]
   moderationLogs     ModerationLog[]       @relation("ModerationAdmin")
+  queueEntry         QueueEntry?
+  spectating         MatchSpectator[]
 
   @@index([xp])
   @@index([role])
@@ -164,13 +181,13 @@ model Session {
 
 model Anime {
   /// Stable slug, e.g. "naruto".
-  id          String                @id
+  id          String      @id
   name        String
   shortName   String
   color       String
   description String
-  enabled     Boolean               @default(true)
-  sortOrder   Int                   @default(0)
+  enabled     Boolean     @default(true)
+  sortOrder   Int         @default(0)
   characters  Character[]
   debates     Debate[]
 }
@@ -220,29 +237,50 @@ model Match {
   winnerId        String?
   winner          User?       @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
   endReason       String?
-  createdAt       DateTime    @default(now())
-  startedAt       DateTime?
-  endedAt         DateTime?
-  updatedAt       DateTime    @updatedAt
+  /// JSON describing how the match was decided (rendered in the reader's language).
+  resultDetail    String?
 
-  players MatchPlayer[]
-  lots    AuctionLot[]
+  // ── Live state (authoritative; advanced lazily by any request) ──
+  phase             MatchPhase  @default(LOBBY)
+  /// End of the current timed phase (countdown, intermission, pause deadline).
+  phaseEndsAt       DateTime?
+  pausedPhase       MatchPhase?
+  pausedRemainingMs Int?
+  /// Character ids still to be auctioned, in order.
+  pool              String[]
+  lotsCompleted     Int         @default(0)
+  /// Bumped on every state change; clients use it to order snapshots.
+  version           Int         @default(0)
+  rematchVotes      String[]
+  rematchCode       String?
+
+  createdAt DateTime  @default(now())
+  startedAt DateTime?
+  endedAt   DateTime?
+  updatedAt DateTime  @updatedAt
+
+  players    MatchPlayer[]
+  lots       AuctionLot[]
+  spectators MatchSpectator[]
 
   @@index([status, isPrivate])
   @@index([createdAt])
 }
 
 model MatchPlayer {
-  id       String       @id @default(cuid())
-  matchId  String
-  match    Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  userId   String
-  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  seat     Int
-  balance  Int
-  score    Int          @default(0)
-  result   MatchResult?
-  joinedAt DateTime     @default(now())
+  id         String       @id @default(cuid())
+  matchId    String
+  match      Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seat       Int
+  balance    Int
+  score      Int          @default(0)
+  result     MatchResult?
+  ready      Boolean      @default(false)
+  /// Heartbeat from the player's browser; decides connected / disconnected.
+  lastSeenAt DateTime?
+  joinedAt   DateTime     @default(now())
 
   @@unique([matchId, userId])
   @@unique([matchId, seat])
@@ -250,19 +288,23 @@ model MatchPlayer {
 }
 
 model AuctionLot {
-  id            String     @id @default(cuid())
-  matchId       String
-  match         Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  lotNumber     Int
-  characterId   String
-  character     Character  @relation(fields: [characterId], references: [id])
-  startingPrice Int
-  status        LotStatus  @default(ACTIVE)
-  winnerId      String?
-  winner        User?      @relation("LotWinner", fields: [winnerId], references: [id], onDelete: SetNull)
-  finalPrice    Int?
-  startedAt     DateTime   @default(now())
-  endedAt       DateTime?
+  id              String    @id @default(cuid())
+  matchId         String
+  match           Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  lotNumber       Int
+  characterId     String
+  character       Character @relation(fields: [characterId], references: [id])
+  startingPrice   Int
+  status          LotStatus @default(ACTIVE)
+  winnerId        String?
+  winner          User?     @relation("LotWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  finalPrice      Int?
+  highestBid      Int?
+  highestBidderId String?
+  /// When bidding closes (null while paused or after closing).
+  endsAt          DateTime?
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
 
   bids Bid[]
 
@@ -518,4 +560,26 @@ model ModerationLog {
 
   @@index([createdAt])
   @@index([adminId])
+}
+
+// ─── Live auction support ───────────────────────────────────────────────────
+
+model MatchSpectator {
+  matchId    String
+  match      Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastSeenAt DateTime @default(now())
+
+  @@id([matchId, userId])
+}
+
+/// Matchmaking queue (one row per waiting player).
+model QueueEntry {
+  userId      String   @id
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  since       DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  /// Set when another player was paired with this one; read once by the waiting player.
+  matchedCode String?
 }

@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Ack, ErrorCode, RoomEvent, RoomSnapshot } from "@/game/types";
-import { emitWithAck, useServerClock, useSocket } from "@/components/providers/SocketProvider";
+import type { Ack, ErrorCode, RoomAction, RoomEvent, RoomSnapshot } from "@/game/types";
+import { GAME_RULES } from "@/game/config";
+import { api, isNetworkFailure } from "@/lib/client-api";
+import { useServerClock, useSocket, type ConnectionStatus } from "@/components/providers/SocketProvider";
 
 export type RoomEventWithMeta = RoomEvent & { code: string; at: number; key: number };
 
@@ -15,92 +17,184 @@ export interface RoomError {
 
 let eventKey = 0;
 
-/** Subscribes to a room: joins over the socket, keeps the snapshot in sync and exposes actions. */
+/** The latest bid landed late enough to reset the clock (overtime). */
+function isOvertimeBid(snapshot: RoomSnapshot): boolean {
+  const lot = snapshot.currentLot;
+  const last = lot?.bids.at(-1);
+  return !!lot && !!last && lot.endsAt !== null && lot.endsAt - last.at === snapshot.settings.overtimeSeconds * 1000;
+}
+
+/** What changed between two snapshots, for the toast notifications. */
+function diffEvents(prev: RoomSnapshot, next: RoomSnapshot): RoomEvent[] {
+  const events: RoomEvent[] = [];
+  const before = new Map(prev.players.map((p) => [p.userId, p]));
+  const after = new Map(next.players.map((p) => [p.userId, p]));
+  for (const p of next.players) {
+    const old = before.get(p.userId);
+    if (!old) events.push({ type: "player_joined", userId: p.userId, username: p.username });
+    else if (old.connected && !p.connected) events.push({ type: "player_disconnected", userId: p.userId, username: p.username });
+    else if (!old.connected && p.connected) events.push({ type: "player_reconnected", userId: p.userId, username: p.username });
+  }
+  if (next.phase === "LOBBY") {
+    for (const p of prev.players) {
+      if (!after.has(p.userId)) events.push({ type: "player_left", userId: p.userId, username: p.username });
+    }
+  }
+  if (prev.phase !== "PAUSED" && next.phase === "PAUSED") events.push({ type: "match_paused", userId: "" });
+  if (prev.phase === "PAUSED" && ["COUNTDOWN", "BIDDING", "INTERMISSION"].includes(next.phase)) events.push({ type: "match_resumed" });
+  const lot = next.currentLot;
+  const last = lot?.bids.at(-1);
+  const prevLast = prev.currentLot?.id === lot?.id ? prev.currentLot?.bids.at(-1) : undefined;
+  if (lot && last && last.id !== prevLast?.id) events.push({ type: "bid", bid: last, overtime: isOvertimeBid(next) });
+  return events;
+}
+
+/** How long to wait before asking the server again. */
+function pollDelay(snapshot: RoomSnapshot | null): number | null {
+  if (!snapshot) return GAME_RULES.pollIntervalMs;
+  switch (snapshot.phase) {
+    case "LOBBY":
+      return 1_500;
+    case "FINISHED":
+      return snapshot.rematchCode ? null : 2_500;
+    case "ABANDONED":
+      return null;
+    default:
+      return GAME_RULES.pollIntervalMs;
+  }
+}
+
+/**
+ * Keeps one auction room in sync over HTTP: joins, then regularly asks the
+ * server for the authoritative state (each request also tells the server this
+ * player is still here). Actions return the new state at once.
+ */
 export function useRoom(code: string) {
   const router = useRouter();
-  const { socket, status } = useSocket();
+  const { observeServerTime } = useSocket();
+  const clock = useServerClock();
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
   const [error, setError] = useState<RoomError | null>(null);
   const [joining, setJoining] = useState(true);
+  const [connection, setConnection] = useState<ConnectionStatus>("connecting");
   const [events, setEvents] = useState<RoomEventWithMeta[]>([]);
-  const versionRef = useRef(-1);
-  const listeners = useRef(new Set<(e: RoomEventWithMeta) => void>());
+
+  const snapshotRef = useRef<RoomSnapshot | null>(null);
+  const seq = useRef(0);
+  const applied = useRef(0);
+  const clockRef = useRef(clock);
+  clockRef.current = clock;
+  const wake = useRef<() => void>(() => undefined);
+
+  const apply = useCallback(
+    (next: RoomSnapshot, requestSeq: number) => {
+      // Ignore answers that arrive out of order.
+      if (requestSeq < applied.current) return;
+      const prev = snapshotRef.current;
+      if (prev && next.version < prev.version) return;
+      applied.current = requestSeq;
+      if (prev) {
+        const fresh = diffEvents(prev, next).map((e) => ({ ...e, code, at: Date.now(), key: ++eventKey }) as RoomEventWithMeta);
+        if (fresh.length) setEvents((list) => [...list.slice(-20), ...fresh]);
+      }
+      snapshotRef.current = next;
+      setSnapshot(next);
+      if (next.rematchCode && next.players.some((p) => p.userId)) router.push(`/room/${next.rematchCode}`);
+    },
+    [code, router],
+  );
+
+  const send = useCallback(
+    async (action: RoomAction): Promise<Ack<RoomSnapshot>> => {
+      const mySeq = ++seq.current;
+      const t0 = Date.now();
+      const res = await api<RoomSnapshot>(`/api/live/rooms/${code}`, { body: action });
+      if (res.serverNow) observeServerTime(res.serverNow, Date.now() - t0);
+      if (res.ok) apply(res.data, mySeq);
+      return res;
+    },
+    [code, apply, observeServerTime],
+  );
 
   useEffect(() => {
-    if (!socket) return;
-    const onState = (s: RoomSnapshot) => {
-      if (s.code !== code || s.version <= versionRef.current) return;
-      versionRef.current = s.version;
-      setSnapshot(s);
-    };
-    const onEvent = (e: RoomEvent & { code: string; at: number }) => {
-      if (e.code !== code) return;
-      const withKey = { ...e, key: ++eventKey } as RoomEventWithMeta;
-      setEvents((list) => [...list.slice(-30), withKey]);
-      listeners.current.forEach((l) => l(withKey));
-    };
-    const onRedirect = ({ from, to }: { from: string; to: string }) => {
-      if (from === code) router.push(`/room/${to}`);
-    };
-    const join = () => {
-      setJoining(true);
-      socket.emit("room:join", { code }, (res: Ack<RoomSnapshot>) => {
-        setJoining(false);
-        if (res.ok) {
-          versionRef.current = res.data.version;
-          setSnapshot(res.data);
-          setError(null);
-        } else {
-          setError({ code: res.code, message: res.message, data: res.data });
-        }
-      });
-    };
-    socket.on("room:state", onState);
-    socket.on("room:event", onEvent);
-    socket.on("room:redirect", onRedirect);
-    socket.on("connect", join);
-    if (socket.connected) join();
-    return () => {
-      socket.off("room:state", onState);
-      socket.off("room:event", onEvent);
-      socket.off("room:redirect", onRedirect);
-      socket.off("connect", join);
-      // Navigating away keeps the seat; only an explicit "leave" gives it up.
-      if (socket.connected) socket.emit("room:detach", { code }, () => undefined);
-    };
-  }, [socket, code, router]);
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let failures = 0;
+    let joined = false;
+    let busy = false;
+    snapshotRef.current = null;
+    applied.current = 0;
+    setSnapshot(null);
+    setError(null);
+    setEvents([]);
+    setJoining(true);
+    setConnection("connecting");
 
-  const call = useCallback(
-    async <T,>(send: Parameters<typeof emitWithAck<Ack<T>>>[1]): Promise<Ack<T>> => {
-      try {
-        return await emitWithAck<Ack<T>>(socket, send);
-      } catch (err) {
-        return { ok: false, code: "SERVER_ERROR", message: err instanceof Error ? err.message : "Request failed." } as Ack<T>;
+    const schedule = () => {
+      if (stopped) return;
+      if (timer) clearTimeout(timer);
+      const snap = snapshotRef.current;
+      let delay = pollDelay(snap);
+      if (delay === null) return;
+      // Look again right after a known deadline instead of waiting a full interval.
+      const deadline = snap?.phase === "BIDDING" ? snap.currentLot?.endsAt : snap?.phaseEndsAt;
+      if (deadline) {
+        const untilDeadline = deadline - clockRef.current() + 150;
+        if (untilDeadline > 0 && untilDeadline < delay) delay = untilDeadline;
       }
-    },
-    [socket],
-  );
-
-  const bid = useCallback(
-    (lotId: string, amount: number) =>
-      call<{ amount: number }>((s, ack) => s.emit("auction:bid", { code, lotId, amount }, ack as never)),
-    [call, code],
-  );
-  const setReady = useCallback(
-    (ready: boolean) => call((s, ack) => s.emit("room:ready", { code, ready }, ack as never)),
-    [call, code],
-  );
-  const leave = useCallback(() => call((s, ack) => s.emit("room:leave", { code }, ack as never)), [call, code]);
-  const rematch = useCallback(() => call((s, ack) => s.emit("room:rematch", { code }, ack as never)), [call, code]);
-
-  const onEvent = useCallback((fn: (e: RoomEventWithMeta) => void) => {
-    listeners.current.add(fn);
-    return () => {
-      listeners.current.delete(fn);
+      timer = setTimeout(tick, delay);
     };
-  }, []);
 
-  return { snapshot, error, joining, connection: status, events, bid, setReady, leave, rematch, onEvent };
+    const tick = async () => {
+      if (stopped || busy) return;
+      busy = true;
+      const res = await send({ action: joined ? "sync" : "join" });
+      busy = false;
+      if (stopped) return;
+      if (res.ok) {
+        joined = true;
+        failures = 0;
+        setJoining(false);
+        setConnection("connected");
+        setError(null);
+      } else if (isNetworkFailure(res) || res.code === "RATE_LIMITED" || res.code === "SERVER_ERROR") {
+        if (++failures >= 2) setConnection("reconnecting");
+      } else {
+        setJoining(false);
+        setError({ code: res.code, message: res.message, data: res.data });
+        return; // nothing to keep in sync
+      }
+      schedule();
+    };
+    wake.current = () => void tick();
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    void tick();
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [code, send]);
+
+  const act = useCallback(
+    async (action: RoomAction): Promise<Ack<RoomSnapshot>> => {
+      const res = await send(action);
+      wake.current();
+      return res;
+    },
+    [send],
+  );
+
+  const bid = useCallback((lotId: string, amount: number) => act({ action: "bid", lotId, amount }), [act]);
+  const setReady = useCallback((ready: boolean) => act({ action: "ready", ready }), [act]);
+  const leave = useCallback(() => send({ action: "leave" }), [send]);
+  const rematch = useCallback(() => act({ action: "rematch" }), [act]);
+
+  return { snapshot, error, joining, connection, events, bid, setReady, leave, rematch };
 }
 
 /** Re-renders at the given interval and returns the current server time. */

@@ -10,6 +10,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { FormError, Spinner } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import { LotHistoryStrip, SIDE_STYLES, type Side } from "./parts";
+import { describeResult } from "./result-text";
 
 export function MatchSummary({
   snapshot,
@@ -31,6 +32,7 @@ export function MatchSummary({
   const nameOf = (id: string) => players.find((p) => p.userId === id)?.username ?? t.auction.unknown;
   const chars = new Map<string, CharacterDTO>(snapshot.history.map((h) => [h.character.id, h.character]));
   const abandoned = snapshot.phase === "ABANDONED";
+  const detailText = describeResult(result?.detail, locale);
 
   let headline: string = t.auction.summary.matchOver;
   let tone: "win" | "loss" | "draw" | "neutral" = "neutral";
@@ -80,7 +82,7 @@ export function MatchSummary({
           >
             {headline}
           </h1>
-          {result?.detail && <p className="mt-3 text-zinc-300">{result.detail}</p>}
+          {detailText && <p className="mt-3 text-zinc-300">{detailText}</p>}
         </div>
       </div>
 

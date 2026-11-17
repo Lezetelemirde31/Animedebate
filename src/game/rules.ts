@@ -27,7 +27,13 @@ export function canAffordNextBid(
   return balance >= minimumNextBid(lot, minIncrement);
 }
 
-export type BidCheck = { ok: true; amount: number } | { ok: false; code: ErrorCode; message: string };
+/**
+ * A rejected bid carries an error code plus the message key (under
+ * `errors.*`) and values to show the player in their own language.
+ */
+export type BidCheck =
+  | { ok: true; amount: number }
+  | { ok: false; code: ErrorCode; key: string; params?: Record<string, number> };
 
 export interface BidValidationInput {
   phase: Phase;
@@ -43,30 +49,22 @@ export interface BidValidationInput {
 
 export function validateBid(input: BidValidationInput): BidCheck {
   const { phase, now, lot, lotId, bidderId, isPlayer, balance, amount, minIncrement } = input;
-  if (!isPlayer) return { ok: false, code: "NOT_A_PLAYER", message: "Only seated players can bid." };
-  if (phase !== "BIDDING" || !lot) return { ok: false, code: "NOT_BIDDING", message: "Bidding is not open right now." };
-  if (lot.id !== lotId) return { ok: false, code: "LOT_MISMATCH", message: "That lot has already closed." };
-  if (lot.endsAt === null || now >= lot.endsAt) return { ok: false, code: "TIME_UP", message: "Time is up for this lot." };
+  const fail = (code: ErrorCode, key: string = code, params?: Record<string, number>): BidCheck => ({ ok: false, code, key, params });
+  if (!isPlayer) return fail("NOT_A_PLAYER");
+  if (phase !== "BIDDING" || !lot) return fail("NOT_BIDDING");
+  if (lot.id !== lotId) return fail("LOT_MISMATCH");
+  if (lot.endsAt === null || now >= lot.endsAt) return fail("TIME_UP");
   if (typeof amount !== "number" || !Number.isFinite(amount) || !Number.isInteger(amount) || amount <= 0) {
-    return { ok: false, code: "INVALID_AMOUNT", message: "Bids must be whole dollar amounts." };
+    return fail("INVALID_AMOUNT");
   }
-  if (lot.highestBidderId === bidderId) {
-    return { ok: false, code: "ALREADY_HIGHEST", message: "You already hold the highest bid." };
-  }
+  if (lot.highestBidderId === bidderId) return fail("ALREADY_HIGHEST");
   const min = minimumNextBid(lot, minIncrement);
   if (amount < min) {
-    return {
-      ok: false,
-      code: "BELOW_MINIMUM",
-      message:
-        lot.highestBid === null
-          ? `The opening bid is at least $${min}.`
-          : `Bids must beat $${lot.highestBid} by at least $${minIncrement} (minimum $${min}).`,
-    };
+    return lot.highestBid === null
+      ? fail("BELOW_MINIMUM", "BELOW_OPENING", { min })
+      : fail("BELOW_MINIMUM", "BELOW_MINIMUM", { current: lot.highestBid, increment: minIncrement, min });
   }
-  if (amount > balance) {
-    return { ok: false, code: "INSUFFICIENT_BALANCE", message: `You only have $${balance} available.` };
-  }
+  if (amount > balance) return fail("INSUFFICIENT_BALANCE", "INSUFFICIENT_BALANCE", { balance });
   return { ok: true, amount };
 }
 
@@ -94,23 +92,29 @@ export interface Standing {
   balance: number;
 }
 
+/** How a finished match was decided (rendered in the reader's language). */
+export type WinnerDetail =
+  | { kind: "score"; high: number; low: number }
+  | { kind: "balance"; score: number; balance: number }
+  | { kind: "tie"; score: number; balance: number }
+  | { kind: "single" };
+
 /**
  * Decides the match winner: highest collection score wins; ties go to the
  * player with more money left; otherwise it is a draw.
  */
-export function decideMatchWinner(players: Standing[]): { winnerId: string | null; detail: string } {
-  if (players.length === 0) return { winnerId: null, detail: "No players." };
-  if (players.length === 1) return { winnerId: players[0].userId, detail: "Only one player remained." };
+export function decideMatchWinner(players: Standing[]): { winnerId: string | null; detail: WinnerDetail } {
+  if (players.length < 2) return { winnerId: players[0]?.userId ?? null, detail: { kind: "single" } };
   const [a, b] = players;
   if (a.score !== b.score) {
     const w = a.score > b.score ? a : b;
-    return { winnerId: w.userId, detail: `Higher collection score (${Math.max(a.score, b.score)} vs ${Math.min(a.score, b.score)}).` };
+    return { winnerId: w.userId, detail: { kind: "score", high: Math.max(a.score, b.score), low: Math.min(a.score, b.score) } };
   }
   if (a.balance !== b.balance) {
     const w = a.balance > b.balance ? a : b;
-    return { winnerId: w.userId, detail: `Scores tied at ${a.score} — more money left ($${w.balance}) breaks the tie.` };
+    return { winnerId: w.userId, detail: { kind: "balance", score: a.score, balance: w.balance } };
   }
-  return { winnerId: null, detail: `Perfect tie: ${a.score} points and $${a.balance} each.` };
+  return { winnerId: null, detail: { kind: "tie", score: a.score, balance: a.balance } };
 }
 
 export function generateRoomCode(random: () => number = Math.random): string {

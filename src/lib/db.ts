@@ -12,6 +12,7 @@ import { createPreviewPrisma } from "./preview-store";
 const globalForPrisma = globalThis as unknown as {
   __prisma?: PrismaClient;
   __aaWarnedNoDb?: boolean;
+  __aaDbMode?: Promise<"postgres" | "preview">;
 };
 
 export function getDatabaseUrl(): string | null {
@@ -94,6 +95,9 @@ function createLocalResilientPrisma(url: string, target: { host: string; port: n
     return resolvedPromise;
   };
 
+  // Remember which kind of client we ended up with (see `dbMode`).
+  globalForPrisma.__aaDbMode = canConnectTcp(target.host, target.port).then((reachable) => (reachable ? "postgres" : "preview"));
+
   return new Proxy({} as PrismaClient, {
     get(_t, prop: string | symbol) {
       if (prop === "then") return undefined;
@@ -132,12 +136,14 @@ function initClient(): PrismaClient {
       globalForPrisma.__aaWarnedNoDb = true;
       console.warn("[db] DATABASE_URL is not set — running in in-memory preview mode. Set DATABASE_URL in .env for persistent PostgreSQL/Supabase.");
     }
+    globalForPrisma.__aaDbMode = Promise.resolve("preview");
     return createPreviewPrisma();
   }
   const localTarget = parseLocalTarget(url);
   if (localTarget) {
     return createLocalResilientPrisma(url, localTarget);
   }
+  globalForPrisma.__aaDbMode = Promise.resolve("postgres");
   return new PrismaClient({
     datasources: { db: { url } },
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
@@ -146,3 +152,11 @@ function initClient(): PrismaClient {
 
 export const prisma: PrismaClient = globalForPrisma.__prisma ?? initClient();
 globalForPrisma.__prisma = prisma;
+
+/**
+ * "postgres" when a real database is in use, "preview" for the in-memory
+ * store. Code that needs row locks or raw SQL must check this first.
+ */
+export function dbMode(): Promise<"postgres" | "preview"> {
+  return globalForPrisma.__aaDbMode ?? Promise.resolve(isDatabaseConfigured() ? "postgres" : "preview");
+}

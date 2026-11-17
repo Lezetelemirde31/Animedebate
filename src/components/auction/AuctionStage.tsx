@@ -117,7 +117,7 @@ export function AuctionStage({
   myId: string | null;
   now: number;
   events: RoomEventWithMeta[];
-  onBid: (lotId: string, amount: number) => Promise<Ack<{ amount: number }>>;
+  onBid: (lotId: string, amount: number) => Promise<Ack<unknown>>;
   onLeave: () => void;
 }) {
   const { locale, t } = useLanguage();

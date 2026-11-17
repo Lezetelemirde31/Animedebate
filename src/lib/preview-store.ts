@@ -34,6 +34,8 @@ interface StoreTables {
   notification: Row[];
   xpEvent: Row[];
   moderationLog: Row[];
+  matchSpectator: Row[];
+  queueEntry: Row[];
 }
 
 const g = globalThis as unknown as { __aaPreviewTables?: StoreTables };
@@ -271,6 +273,8 @@ function buildInitialTables(): StoreTables {
     notification: [],
     xpEvent: [],
     moderationLog: [],
+    matchSpectator: [],
+    queueEntry: [],
   };
 }
 
@@ -278,6 +282,9 @@ function getTables(): StoreTables {
   if (!g.__aaPreviewTables) {
     g.__aaPreviewTables = buildInitialTables();
   }
+  // Tables added after the store was first created (e.g. across hot reloads).
+  g.__aaPreviewTables.matchSpectator ??= [];
+  g.__aaPreviewTables.queueEntry ??= [];
   return g.__aaPreviewTables;
 }
 
@@ -626,6 +633,16 @@ function applyDefaults(tableName: keyof StoreTables, data: Row): Row {
       hostId: null,
       winnerId: null,
       endReason: null,
+      resultDetail: null,
+      phase: "LOBBY",
+      phaseEndsAt: null,
+      pausedPhase: null,
+      pausedRemainingMs: null,
+      pool: [],
+      lotsCompleted: 0,
+      version: 0,
+      rematchVotes: [],
+      rematchCode: null,
       startedAt: null,
       endedAt: null,
       createdAt: now,
@@ -634,10 +651,29 @@ function applyDefaults(tableName: keyof StoreTables, data: Row): Row {
     };
   }
   if (tableName === "matchPlayer") {
-    return { score: 0, result: null, joinedAt: now, ...base };
+    return { score: 0, result: null, ready: false, lastSeenAt: null, joinedAt: now, ...base };
   }
   if (tableName === "auctionLot") {
-    return { status: "ACTIVE", winnerId: null, finalPrice: null, startedAt: now, endedAt: null, ...base };
+    return {
+      status: "ACTIVE",
+      winnerId: null,
+      finalPrice: null,
+      highestBid: null,
+      highestBidderId: null,
+      endsAt: null,
+      startedAt: now,
+      endedAt: null,
+      ...base,
+    };
+  }
+  if (tableName === "bid") {
+    return { createdAt: now, ...base };
+  }
+  if (tableName === "matchSpectator") {
+    return { lastSeenAt: now, ...base };
+  }
+  if (tableName === "queueEntry") {
+    return { since: now, lastSeenAt: now, matchedCode: null, ...base };
   }
   if (tableName === "ownedCharacter") {
     return { copies: 1, acquiredAt: now, lastAcquiredAt: now, sourceMatchId: null, ...base };
@@ -786,12 +822,17 @@ export function createPreviewPrisma(): PrismaClient {
     notification: makeDelegate(tables, "notification"),
     xpEvent: makeDelegate(tables, "xpEvent"),
     moderationLog: makeDelegate(tables, "moderationLog"),
+    matchSpectator: makeDelegate(tables, "matchSpectator"),
+    queueEntry: makeDelegate(tables, "queueEntry"),
     async $transaction(fn: ((tx: any) => Promise<any>) | Promise<any>[]) {
       if (Array.isArray(fn)) return Promise.all(fn);
       return fn(client);
     },
     async $queryRaw() {
       return [{ "?column?": 1 }];
+    },
+    async $executeRaw() {
+      return 0;
     },
     async $disconnect() {
       return undefined;

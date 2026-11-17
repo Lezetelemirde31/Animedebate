@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, Bookmark, Gavel, Languages, LogOut, Menu, Radio, Shield, User, X } from "lucide-react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { useCurrentUser } from "@/components/providers/SessionProvider";
-import { emitWithAck, useSocket } from "@/components/providers/SocketProvider";
+import { useSocket } from "@/components/providers/SocketProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
 
@@ -17,27 +17,8 @@ async function logout() {
 
 function ActiveMatchBanner() {
   const pathname = usePathname();
-  const user = useCurrentUser();
-  const { socket, status } = useSocket();
+  const { active } = useSocket();
   const { t } = useLanguage();
-  const [active, setActive] = useState<{ code: string; phase: string } | null>(null);
-
-  useEffect(() => {
-    if (!user || status !== "connected") return;
-    let cancelled = false;
-    emitWithAck<{ ok: boolean; data?: { code: string | null; phase: string | null } }>(socket, (s, ack) =>
-      s.emit("me:active", ack as never),
-    )
-      .then((res) => {
-        if (cancelled) return;
-        const d = res.ok ? res.data : undefined;
-        setActive(d?.code && d.phase && d.phase !== "LOBBY" ? { code: d.code, phase: d.phase } : null);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [pathname, socket, status, user]);
 
   if (!active || pathname === `/room/${active.code}`) return null;
   return (

@@ -25,7 +25,7 @@ export function BidControls({
   minIncrement: number;
   biddingOpen: boolean;
   isSpectator: boolean;
-  onBid: (lotId: string, amount: number) => Promise<Ack<{ amount: number }>>;
+  onBid: (lotId: string, amount: number) => Promise<Ack<unknown>>;
 }) {
   const { t } = useLanguage();
   const [custom, setCustom] = useState("");

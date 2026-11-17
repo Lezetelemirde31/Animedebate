@@ -87,11 +87,26 @@ export interface LotSummary {
   bidCount: number;
 }
 
+/**
+ * Why a match ended, as data: the client renders it in the reader's language.
+ *  - `note`: what ended the match early (if anything)
+ *  - `names`: players the note refers to (who left / did not come back)
+ *  - `decision`: how the winner was picked when it went to the scores
+ */
+export interface MatchResultDetail {
+  note?: "left" | "no_reconnect" | "all_spent" | "pool_empty" | "everyone_left" | "both_disconnected";
+  names?: string[];
+  decision?:
+    | { kind: "score"; high: number; low: number }
+    | { kind: "balance"; score: number; balance: number }
+    | { kind: "tie"; score: number; balance: number }
+    | { kind: "single" };
+}
+
 export interface MatchResultState {
   winnerId: string | null;
   reason: "COMPLETED" | "FORFEIT" | "ABANDONED" | "POOL_EXHAUSTED";
-  /** Human readable explanation of how the winner was decided. */
-  detail: string;
+  detail: MatchResultDetail;
 }
 
 export interface RoomSnapshot {
@@ -115,12 +130,15 @@ export interface RoomSnapshot {
   history: LotSummary[];
   result: MatchResultState | null;
   rematchVotes: string[];
+  /** Set once both players accepted a rematch: the new room's code. */
+  rematchCode: string | null;
   /** Number of characters still in the pool. */
   poolRemaining: number;
   /** Number of spectators currently watching. */
   spectators: number;
 }
 
+/** UI notifications, derived on the client by comparing consecutive snapshots. */
 export type RoomEvent =
   | { type: "player_joined"; userId: string; username: string }
   | { type: "player_left"; userId: string; username: string }
@@ -148,6 +166,14 @@ export interface PresenceStats {
   openRooms: number;
 }
 
+export interface PresenceDTO {
+  serverNow: number;
+  stats: PresenceStats;
+  /** The started match the current user is playing in, if any. */
+  active: { code: string; phase: Phase } | null;
+  queue: { inQueue: boolean; since: number | null; matchedCode: string | null };
+}
+
 export type ErrorCode =
   | "UNAUTHORIZED"
   | "NOT_FOUND"
@@ -165,11 +191,12 @@ export type ErrorCode =
   | "INVALID_INPUT"
   | "RATE_LIMITED"
   | "INVALID_STATE"
+  | "FORBIDDEN"
   | "SERVER_ERROR";
 
 export type Ack<T = undefined> =
-  | ({ ok: true } & (T extends undefined ? object : { data: T }))
-  | { ok: false; code: ErrorCode; message: string; data?: { code?: string; matchId?: string } };
+  | ({ ok: true; serverNow?: number } & (T extends undefined ? object : { data: T }))
+  | { ok: false; code: ErrorCode; message: string; serverNow?: number; data?: { code?: string; matchId?: string } };
 
 export interface CreateRoomInput {
   isPrivate: boolean;
@@ -178,28 +205,11 @@ export interface CreateRoomInput {
   animeIds: string[];
 }
 
-export interface ClientToServerEvents {
-  "time:sync": (clientNow: number, ack: (serverNow: number) => void) => void;
-  "room:create": (input: CreateRoomInput, ack: (res: Ack<{ code: string }>) => void) => void;
-  "room:join": (input: { code: string }, ack: (res: Ack<RoomSnapshot>) => void) => void;
-  "room:leave": (input: { code: string }, ack: (res: Ack) => void) => void;
-  /** Stop receiving updates for a room without giving up the seat (e.g. navigating away). */
-  "room:detach": (input: { code: string }, ack: (res: Ack) => void) => void;
-  "room:ready": (input: { code: string; ready: boolean }, ack: (res: Ack) => void) => void;
-  "room:rematch": (input: { code: string }, ack: (res: Ack) => void) => void;
-  "auction:bid": (input: { code: string; lotId: string; amount: number }, ack: (res: Ack<{ amount: number }>) => void) => void;
-  "queue:join": (ack: (res: Ack<{ matchedCode: string | null }>) => void) => void;
-  "queue:leave": (ack: (res: Ack) => void) => void;
-  "rooms:list": (ack: (res: Ack<OpenRoomDTO[]>) => void) => void;
-  "me:active": (ack: (res: Ack<{ code: string | null; phase: Phase | null }>) => void) => void;
-}
-
-export interface ServerToClientEvents {
-  "room:state": (snapshot: RoomSnapshot) => void;
-  "room:event": (event: RoomEvent & { code: string; at: number }) => void;
-  "room:redirect": (input: { from: string; to: string }) => void;
-  "queue:matched": (input: { code: string }) => void;
-  "queue:status": (input: { inQueue: boolean; since: number | null }) => void;
-  "presence:stats": (stats: PresenceStats) => void;
-  "rooms:updated": (rooms: OpenRoomDTO[]) => void;
-}
+/** Room actions sent to POST /api/live/rooms/[code]. */
+export type RoomAction =
+  | { action: "join" }
+  | { action: "sync" }
+  | { action: "ready"; ready: boolean }
+  | { action: "bid"; lotId: string; amount: number }
+  | { action: "leave" }
+  | { action: "rematch" };

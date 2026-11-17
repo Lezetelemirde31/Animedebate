@@ -40,7 +40,7 @@ All tunables (timers, increments, grace periods, lot options) are in [`src/game/
 
 ## Tech stack
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Node.js custom server · Socket.IO 4 · PostgreSQL · Prisma 6 · Zod · Vitest
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · HTTP polling (serverless-friendly) · PostgreSQL · Prisma 6 · Zod · Vitest
 
 ## Getting started
 
@@ -57,16 +57,16 @@ Production:
 
 ```bash
 npm run build
-npm run start                 # serves Next.js + Socket.IO on $PORT (default 3000)
+npm run start                 # serves the app on $PORT (default 3000)
 ```
 
 To try multiplayer locally, open two different browsers (or a normal and a private window), register two accounts, create a room in one and join with the code in the other.
 
 ## Deployment
 
-The live auction runs in **one long-running Node process**: it keeps WebSocket connections open and runs per-room timers. Deploy it to a host that runs a normal Node server or a Docker container, together with a PostgreSQL database.
+The live auction is **database-authoritative**: every room's state (phase, deadlines, highest bid, balances) lives in PostgreSQL, and every request replays any timers that fell due before acting. There is no long-running process or in-memory room state, so the app runs on **Vercel** (serverless) as well as on any normal Node host, and can scale to several instances.
 
-> **Vercel cannot run this app.** Vercel deploys Next.js as serverless functions, so the Socket.IO server in `server.ts` never starts (`/socket.io` returns 404) and there is no long-lived process for auction timers. Pages also fail there unless `DATABASE_URL` points at a reachable database. Use one of the options below, and disconnect the repository from Vercel so it stops publishing broken previews.
+**Vercel:** connect the repository, add a PostgreSQL database (for example the Neon integration) so `DATABASE_URL` is set, and deploy. `scripts/vercel-prepare.mjs` applies migrations and seeds the characters during the build. Without `DATABASE_URL` the site runs in a demo mode with temporary in-memory data.
 
 **Render (one click, includes the database):** Dashboard → **New → Blueprint** → select this repository. [`render.yaml`](render.yaml) creates the web service and a PostgreSQL database and wires `DATABASE_URL` automatically. Free web services sleep when idle, which ends live matches. Use a paid instance for always-on play.
 
@@ -77,19 +77,19 @@ docker build -t anime-auction .
 docker run -p 3000:3000 -e DATABASE_URL="postgresql://user:pass@host:5432/db" anime-auction
 ```
 
-`GET /api/health` returns `200 {"ok":true}` when the server and database are up, for platform health checks. Run a **single instance**: live rooms are held in memory, so don't scale horizontally.
+`GET /api/health` returns `200 {"ok":true}` when the server and database are up, for platform health checks. Several instances can share one database: each room action locks the room's row (`SELECT … FOR UPDATE`).
 
 ### Scripts
 
 | Script | Purpose |
 | --- | --- |
-| `npm run dev` | Development server (Next.js HMR; auto-restarts when server code changes) |
+| `npm run dev` | Development server (Next.js HMR) |
 | `npm run build` / `npm run start` | Production build / run |
 | `npm run start:prod` | Migrate + seed, then start (used by the Dockerfile and Render) |
 | `npm run setup` | `prisma migrate deploy` + seed |
 | `npm run db:seed` | Re-seed anime & characters (idempotent) |
 | `npm run db:migrate` | Create/apply a new migration during development |
-| `npm test` | Unit tests for auction rules and the match engine |
+| `npm test` | Unit tests for auction rules and the live room engine |
 | `npm run typecheck` | TypeScript check |
 | `npm run images:fetch` | Look up character artwork URLs on AniList (see below) |
 
@@ -98,33 +98,31 @@ docker run -p 3000:3000 -e DATABASE_URL="postgresql://user:pass@host:5432/db" an
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `DATABASE_URL` | — | PostgreSQL connection string |
-| `PORT` | `3000` | HTTP port for the combined server |
+| `PORT` | `3000` | HTTP port for `npm run start` |
 | `HOST` | `0.0.0.0` | Bind address |
 | `COOKIE_SECURE` | auto | Session cookies are `Secure` when the request arrives over HTTPS (`x-forwarded-proto`). Set to `true` to force it. |
 
 ## Architecture
 
 ```
-server.ts                    One Node process: Next.js request handler + Socket.IO
-src/server/
-  engine.ts                  MatchEngine — per-room state machine (server-authoritative)
-  manager.ts                 RoomManager — rooms, matchmaking queue, open-room list, restore on boot
-  socket.ts                  Socket.IO transport: cookie auth, rate limiting, event routing
-  persistence.ts             All DB writes for the engine (transactions with balance guards)
-  lock.ts                    AsyncLock — serializes every action on a room
-src/game/                    Shared rules, config and socket event types (client + server)
+src/server/live/
+  room.ts                    Room engine: loads a room, replays due timers, validates actions (server-authoritative)
+  service.ts                 Room locking (SELECT … FOR UPDATE), matchmaking queue, presence
+  http.ts                    API helpers: auth, cross-site checks, localized errors
+src/app/api/live/            Live endpoints: rooms, room actions (join/sync/ready/bid/leave/rematch), queue, presence
+src/game/                    Shared rules, config and room types (client + server)
 src/data/                    Anime registry + curated character data (seed source)
 src/app/                     Next.js pages and REST routes (auth, profile)
 src/components/              UI (auction stage, lobby, cards, play hub…)
 prisma/                      Schema, migrations, seed
-tests/                       Vitest: rules + engine (fake timers, in-memory persistence)
+tests/                       Vitest: auction rules + live room engine
 ```
 
-**How a bid flows:** the client sends only an intent (`auction:bid { lotId, amount }`). The engine takes the room's lock and validates the bid against its own state: phase, lot id, the time the server received the bid, the bidder's balance, the minimum raise and who currently leads. It writes the bid to PostgreSQL and only then updates memory and broadcasts the new snapshot to everyone in the room. Settling a sale runs in one transaction that debits the balance (with a `balance >= price` guard), marks the lot sold, upserts ownership and updates stats. A lot can't be settled twice and a balance can't go negative.
+**How a bid flows:** the client sends only an intent (`POST /api/live/rooms/{code}` with `{ action: "bid", lotId, amount }`). The server locks the room row, replays any timers that expired before the bid arrived, and validates the bid against the stored state: phase, lot id, the time the server received the bid, the bidder's balance, the minimum raise and who currently leads. It writes the bid and returns the new snapshot; both players poll the room about once a second. Settling a sale runs in one transaction that debits the balance (with a `balance >= price` guard), marks the lot sold, upserts ownership and updates stats. A lot can't be settled twice and a balance can't go negative.
 
 **Phases:** `LOBBY → COUNTDOWN → BIDDING ⇄ INTERMISSION → FINISHED`. `PAUSED` can interrupt any live phase while a player is disconnected; if nobody comes back the match ends as `ABANDONED`.
 
-**Clock sync:** clients measure the offset to the server clock with a few round trips and use it to render countdowns. Only the server decides when a lot closes.
+**Clock sync:** every response carries `serverNow`; clients use it to estimate their clock offset and render countdowns. Only the server decides when a lot closes.
 
 ## Adding a new anime
 

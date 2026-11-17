@@ -11,7 +11,7 @@ export function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
-/** Minimal cookie header parser (used by the Socket.IO handshake). */
+/** Minimal cookie header parser. */
 export function parseCookies(header: string | undefined | null): Record<string, string> {
   const out: Record<string, string> = {};
   if (!header) return out;
