@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import {
   ARENA_MAX_ROUNDS,
   ARENA_WINS_TO_WIN,
+  ARENA_REVEAL_MS,
   STARTER_CHARACTER_IDS,
   buildAutoDeck,
   isStarterCharacter,
@@ -89,7 +90,7 @@ interface ArenaRoomState {
 }
 
 const EVICT_AFTER_MS = 10 * 60_000;
-const ROUND_REVEAL_MS = 1_500;
+const ROUND_REVEAL_MS = ARENA_REVEAL_MS;
 const PRESENCE_WINDOW_MS = 35_000;
 
 export class ArenaManager {

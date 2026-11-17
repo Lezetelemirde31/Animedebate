@@ -151,4 +151,94 @@ export const narutoTr: Record<string, CharacterTextTr> = {
       "Bariyer mühürleri, kunai taktikleri ve temel Yaprak ninjutsusunda usta, deneyimli bir Chūnin eğitmeni ve Akademi müdürü.",
     abilities: ["Bariyer Mühürleme", "Akademi Temelleri", "Gölge Klon Jutsu", "Taktik Etkisizleştirme"],
   },
+  "naruto-hagoromo-otsutsuki": {
+    title: "Altı Yolun Bilgesi · Ninshū'nun Kurucusu",
+    description:
+      "İlk On Kuyruk Jinchūriki'si. Kardeşi Hamura ile annesi Kaguya'yı mühürledi, On Kuyruk'u dokuz canavara böldü ve Chibaku Tensei ile ayı yarattı.",
+    abilities: ["Her Şeyin Yaratılışı", "Altı Yol Senjutsu", "Chibaku Tensei", "Hakikat Arayan Küreler"],
+  },
+  "naruto-indra-otsutsuki": {
+    title: "Bilgenin Büyük Oğlu · Uchiha'nın Atası",
+    description:
+      "Mangekyō Sharingan'ı ilk uyandıran, Hagoromo'nun dâhi büyük oğlu. Mükemmel Susanoo'su ve Indra'nın Oku ile yüzyıllar boyunca Asura'nın reenkarnasyonlarıyla çarpıştı.",
+    abilities: ["Mükemmel Susanoo", "Indra'nın Oku", "Mangekyō Sharingan", "İlk Chidori"],
+  },
+  "naruto-asura-otsutsuki": {
+    title: "Bilgenin Küçük Oğlu · Senju'nun Atası",
+    description:
+      "Gücünü emekle kazanan Bilge'nin küçük oğlu. Babasının chakrasını alan Asura, Bilge Modu, devasa bir chakra avatarı ve Asura Yolu silahlarıyla Indra'ya denk geldi.",
+    abilities: ["Altı Yol Chakra Modu", "Chakra Avatarı", "Bilge Modu", "Asura Yolu Cephaneliği"],
+  },
+  "naruto-tobirama-senju": {
+    title: "İkinci Hokage · Edo Tensei'nin Mucidi",
+    description:
+      "Çağının en hızlı shinobisi. Uçan Raijin'i, Gölge Klonları ve Edo Tensei'yi icat eden Tobirama, yakında su kaynağı olmadan savaş alanını Su Salınımı ile sular altında bırakır.",
+    abilities: ["Uçan Gök Gürültüsü Tanrısı", "Su Salınımı: Su Ejderhası", "Edo Tensei", "Gölge Klon Jutsu"],
+  },
+  "naruto-killer-b": {
+    title: "Sekiz Kuyruk'un Kusursuz Jinchūriki'si",
+    description:
+      "Gyūki ile tam uyum içindeki B, istediği an Sekiz Kuyruk'a dönüşür, Kuyruklu Canavar Bombaları atar ve savaşın ortasında rap yaparken aynı anda yedi kılıçla dövüşür.",
+    abilities: ["Tam Kuyruklu Canavar Modu", "Kuyruklu Canavar Bombası", "Yedi Kılıç Dansı", "Lariat"],
+  },
+  "naruto-hiruzen-sarutobi": {
+    title: "Üçüncü Hokage · Profesör",
+    description:
+      "Yaprak'ın tüm jutsularında ustalaştığı için Profesör denen zirvedeki Hiruzen, beş doğanın hepsini, şekil değiştiren Maymun Kral Enma'yı ve Ölüm Meleği Mührü'nü kullanır.",
+    abilities: ["Beş Doğa Ustalığı", "Maymun Kral Enma", "Ölüm Meleği Mührü", "Gölge Shuriken"],
+  },
+  "naruto-konan": {
+    title: "Amegakure'nin Meleği",
+    description:
+      "Akatsuki'nin Kâğıt Meleği. Bedenini kâğıda çeviren Konan, bir göle altı yüz milyar patlayıcı etiket gizledi ve Obito'ya karşı on dakika boyunca patlatmayı sürdürdü.",
+    abilities: ["Tanrı'nın Kâğıt İnsanı", "600 Milyar Kâğıt Bomba", "Kâğıt Shuriken", "Kâğıt Klon"],
+  },
+  "naruto-a-fourth-raikage": {
+    title: "Dördüncü Raikage · Şimşek Zırhı",
+    description:
+      "Şimşek Salınımı Chakra Modu'na bürünen Dördüncü Raikage, Minato'nun ışınlanmasına yetişecek kadar hızlı hareket eder ve çıplak elleriyle Madara'nın Susanoo'sunu göçertti.",
+    abilities: ["Şimşek Chakra Modu", "Şimşek Salınımı: Liger Bombası", "Çifte Lariat", "Cehennem Mızrağı"],
+  },
+  "naruto-sasori": {
+    title: "Kızıl Kum · Kukla Ustası",
+    description:
+      "Yüz kuklayla bir ülkeyi fetheden Akatsuki'nin usta kuklacısı; Üçüncü Kazekage'yi Demir Kum'uyla birlikte en ölümcül silahına dönüştürdü.",
+    abilities: ["Kızıl Gizli Teknik: Yüz Kukla Gösterisi", "Üçüncü Kazekage Kuklası", "Demir Kum", "Zehirli Bıçaklar"],
+  },
+  "naruto-kakuzu": {
+    title: "Akatsuki Haznedarı · Beş Kalp",
+    description:
+      "Yaşamak için kalp çalan doksan yaşında bir ödül avcısı. Beş kalbi ve maskeleriyle ateş, rüzgâr, şimşek ve su salarken derisini taş gibi sertleştirir.",
+    abilities: ["Toprak Kin Korkusu", "Beş Element Maskesi", "Toprak Mızrağı", "Basınç Hasarı"],
+  },
+  "naruto-kimimaro": {
+    title: "Kaguya Klanının Sonuncusu",
+    description:
+      "Orochimaru'nun en sadık hizmetkârı; Ölü Kemik Nabzı iskeletini kılıçlara ve zırha çevirir. Hasta ve ölmek üzereyken bile Gaara ile Lee'yi sınırlarına kadar zorladı.",
+    abilities: ["Ölü Kemik Nabzı", "Eğrelti Fidanı Dansı", "Lanet Mührü 2. Aşama", "Kemik Zırh"],
+  },
+  "naruto-hanzo": {
+    title: "Semender Hanzō",
+    description:
+      "Efsanevi Sannin'e adını veren Amegakure'nin yarı tanrı lideri. Bedenindeki zehir kesesi, kusarigaması ve zehir püskürten semenderi Ibuse ile savaşır.",
+    abilities: ["Çağırma: Ibuse", "Zehir Sisi", "Kusarigama Ustalığı", "Taktik Deha"],
+  },
+  "naruto-hidan": {
+    title: "Ölümsüz Jashin Müridi",
+    description:
+      "Jashin'in ölümsüz müridi. Rakibinin kanını tadıp ritüel dairesine girdiğinde, kendine açtığı her yara kurbanına işler.",
+    abilities: ["Ölüm Sahiplenme Kanı", "Ölümsüzlük", "Üç Bıçaklı Tırpan", "Jashin Ritüeli"],
+  },
+  "naruto-black-zetsu": {
+    title: "Kaguya'nın İradesi",
+    description:
+      "Uchiha tabletini değiştirip bin yıl boyunca tarihi yönlendiren Kaguya'nın gizli iradesi. Yerin içinden geçer ve bedenleri ele geçirip içeriden yönetir.",
+    abilities: ["Beden Ele Geçirme", "Mayıs Sineği", "Spor Klonları", "Manipülasyon"],
+  },
+  "naruto-yahiko": {
+    title: "Akatsuki'nin Kurucusu",
+    description:
+      "Barışı hayal eden ve Nagato ile Konan'la birlikte ilk Akatsuki'yi kuran turuncu saçlı yetim. Jiraiya'dan eğitim alan Yahiko, Rüzgâr Salınımı ve sarsılmaz kararlılıkla savaştı.",
+    abilities: ["Rüzgâr Salınımı", "Jiraiya'nın Eğitimi", "Liderlik", "Kırılmaz Kararlılık"],
+  },
 };

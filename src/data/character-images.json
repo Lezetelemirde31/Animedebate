@@ -1,8 +1,8 @@
 {
   "naruto-naruto-uzumaki": {
-    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b17-phjcWCkRuIhu.png",
-    "anilistId": 17,
-    "matchedName": "Naruto Uzumaki"
+    "url": "/characters/naruto-naruto-uzumaki.jpg",
+    "matchedName": "Naruto Uzumaki",
+    "source": "manual"
   },
   "naruto-sasuke-uchiha": {
     "url": "https://s4.anilist.co/file/anilistcdn/character/large/b13-SISLEw1oAD7a.png",
@@ -723,5 +723,80 @@
     "url": "https://s4.anilist.co/file/anilistcdn/character/large/b145345-zyirrSsKIDCb.png",
     "anilistId": 145345,
     "matchedName": "Ken Ryuuguji"
+  },
+  "naruto-hagoromo-otsutsuki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b57883-TrjcL1LU7qnj.png",
+    "anilistId": 57883,
+    "matchedName": "Hagoromo Ootsutsuki"
+  },
+  "naruto-indra-otsutsuki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b197843-kUcrXaFGesMU.jpg",
+    "anilistId": 197843,
+    "matchedName": "Indra Ootsutsuki"
+  },
+  "naruto-tobirama-senju": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n12465-y8ByDAvzC5cA.png",
+    "anilistId": 12465,
+    "matchedName": "Tobirama Senju"
+  },
+  "naruto-killer-b": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b18473-AiI3mk28a1Nm.png",
+    "anilistId": 18473,
+    "matchedName": "Killer Bee"
+  },
+  "naruto-hiruzen-sarutobi": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n7571-fKldLuBWUtCO.png",
+    "anilistId": 7571,
+    "matchedName": "Hiruzen Sarutobi"
+  },
+  "naruto-konan": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/3179-YVD5zJSYrnPg.jpg",
+    "anilistId": 3179,
+    "matchedName": "Konan"
+  },
+  "naruto-a-fourth-raikage": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b22894-KZQFgbnqUFrZ.png",
+    "anilistId": 22894,
+    "matchedName": "A"
+  },
+  "naruto-sasori": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1900-Dpd9wVWtlvIx.png",
+    "anilistId": 1900,
+    "matchedName": "Sasori"
+  },
+  "naruto-kakuzu": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b3178-fCqs5wyV0dlJ.jpg",
+    "anilistId": 3178,
+    "matchedName": "Kakuzu"
+  },
+  "naruto-kimimaro": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b3438-h1fxTDdwew0h.png",
+    "anilistId": 3438,
+    "matchedName": "Kimimaro Kaguya"
+  },
+  "naruto-hanzo": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/23055.jpg",
+    "anilistId": 23055,
+    "matchedName": "Hanzou"
+  },
+  "naruto-hidan": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2792-lyvtbiT4COp0.jpg",
+    "anilistId": 2792,
+    "matchedName": "Hidan"
+  },
+  "naruto-yahiko": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b23050-4PPhGLw40Lij.jpg",
+    "anilistId": 23050,
+    "matchedName": "Yahiko"
+  },
+  "naruto-asura-otsutsuki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b269851-hpIaqSiC0HnE.png",
+    "anilistId": 269851,
+    "matchedName": "Ashura Ootsutsuki"
+  },
+  "naruto-black-zetsu": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/3150.jpg",
+    "anilistId": 3150,
+    "matchedName": "Zetsu"
   }
 }

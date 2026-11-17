@@ -8,6 +8,8 @@ export const DECK_SIZE = 5;
 export const DECK_MAX_POWER = 375;
 export const ARENA_MAX_ROUNDS = 5;
 export const ARENA_WINS_TO_WIN = 3;
+/** How long a round's result stays on screen before the next round starts. */
+export const ARENA_REVEAL_MS = 5_000;
 export const ROLE_COUNTER_BONUS = 12;
 export const ANIME_RIVALRY_BONUS = 6;
 

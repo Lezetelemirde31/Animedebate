@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ARENA_MAX_ROUNDS,
+  ARENA_REVEAL_MS,
   ARENA_WINS_TO_WIN,
   DECK_SIZE,
   buildAutoDeck,
@@ -290,7 +291,7 @@ export function ArenaHubClient({
             }
             return nextState;
           });
-        }, 1250);
+        }, ARENA_REVEAL_MS);
       }, 550);
     },
     [awardBotXp],
@@ -390,7 +391,7 @@ export function ArenaHubClient({
             }
             return nextState;
           });
-        }, 1250);
+        }, ARENA_REVEAL_MS);
       }
     },
     [awardBotXp, botMatch, scheduleBotTurn],

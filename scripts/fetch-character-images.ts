@@ -17,7 +17,7 @@ import { getAnime } from "../src/data/anime";
 const OUT = path.join(__dirname, "..", "src", "data", "character-images.json");
 const ENDPOINT = "https://graphql.anilist.co";
 
-type ImageMap = Record<string, { url: string; anilistId: number; matchedName: string }>;
+type ImageMap = Record<string, { url: string; anilistId?: number; matchedName: string; source?: "manual" }>;
 
 interface AniCharacter {
   id: number;
@@ -112,7 +112,9 @@ function appearsIn(c: AniCharacter, keywords: string[]): boolean {
 async function main() {
   const refreshAll = process.argv.includes("--all");
   const existing: ImageMap = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, "utf8")) : {};
-  const out: ImageMap = refreshAll ? {} : { ...existing };
+  // Images added by hand (files in public/, e.g. "/characters/x.jpg") are always kept.
+  const manual = Object.fromEntries(Object.entries(existing).filter(([, v]) => v.url.startsWith("/")));
+  const out: ImageMap = refreshAll ? { ...manual } : { ...existing };
   const missing: string[] = [];
 
   for (const ch of getCatalog()) {
