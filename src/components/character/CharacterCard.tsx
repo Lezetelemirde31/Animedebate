@@ -48,9 +48,15 @@ export function CharacterCard({
           <RarityBadge rarity={character.rarity} locale={locale} />
         </div>
         {character.powerLevel !== null && !compact && (
-          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/80 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
-            <Zap className="h-3 w-3" />
-            {character.powerLevel}
+          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/80 px-2 py-0.5 text-[11px] font-semibold text-amber-200 backdrop-blur-sm">
+            <Zap className="h-3 w-3 shrink-0" />
+            {character.tierCode ? (
+              <span>
+                <span className="text-zinc-300">{character.tierCode}</span> · {character.powerLevel}
+              </span>
+            ) : (
+              character.powerLevel
+            )}
           </div>
         )}
       </div>

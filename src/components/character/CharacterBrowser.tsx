@@ -40,6 +40,8 @@ export function CharacterBrowser({
         c.name.toLowerCase().includes(q) ||
         c.title.toLowerCase().includes(q) ||
         c.animeName.toLowerCase().includes(q) ||
+        (c.primeForm?.toLowerCase().includes(q) ?? false) ||
+        (c.tierCode?.toLowerCase().includes(q) ?? false) ||
         c.abilities.some((a) => a.toLowerCase().includes(q))
       );
     });

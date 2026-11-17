@@ -42,5 +42,7 @@ export async function isSecureRequest(): Promise<boolean> {
   const h = await headers();
   const proto = h.get("x-forwarded-proto");
   if (proto) return proto.split(",")[0].trim() === "https";
+  const origin = h.get("origin") ?? h.get("referer");
+  if (origin?.startsWith("https://")) return true;
   return process.env.COOKIE_SECURE === "true";
 }

@@ -9,6 +9,17 @@ import { useLanguage } from "@/components/providers/LanguageProvider";
 import { FormError } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
+function extractRoomCode(raw: string): string {
+  const match = /\/room\/([A-Za-z0-9]+)/i.exec(raw.trim());
+  const source = match ? match[1] : raw;
+  return source
+    .toUpperCase()
+    .split("")
+    .filter((c) => ROOM_CODE_ALPHABET.includes(c))
+    .join("")
+    .slice(0, ROOM_CODE_LENGTH);
+}
+
 export function JoinCodeForm({ compact }: { compact?: boolean }) {
   const router = useRouter();
   const { t } = useLanguage();
@@ -26,29 +37,22 @@ export function JoinCodeForm({ compact }: { compact?: boolean }) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="space-y-3" noValidate>
       <div className={cn("flex gap-2", !compact && "flex-col sm:flex-row")}>
         <input
           className={cn("input text-center font-display font-bold uppercase tracking-[0.4em]", compact ? "text-lg" : "!py-4 text-3xl")}
           value={code}
           onChange={(e) => {
             setError(null);
-            setCode(
-              e.target.value
-                .toUpperCase()
-                .split("")
-                .filter((c) => ROOM_CODE_ALPHABET.includes(c))
-                .join("")
-                .slice(0, ROOM_CODE_LENGTH),
-            );
+            setCode(extractRoomCode(e.target.value));
           }}
-          placeholder="ABC123"
+          placeholder="ABC234"
           aria-label={t.play.roomCodeAria}
           autoComplete="off"
           spellCheck={false}
           data-testid="join-code-input"
         />
-        <button type="submit" className={cn("btn btn-primary shrink-0", !compact && "!py-4")} disabled={code.length !== ROOM_CODE_LENGTH} data-testid="join-code-submit">
+        <button type="submit" className={cn("btn btn-primary shrink-0", !compact && "!py-4")} data-testid="join-code-submit">
           {t.play.joinBtn} <ArrowRight className="h-4 w-4" />
         </button>
       </div>
