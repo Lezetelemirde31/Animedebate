@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
-import type { Ack, ArenaRoomSnapshot } from "@/game/types";
+import type { ArenaRoomSnapshot } from "@/game/types";
+import { api, isNetworkFailure } from "@/lib/client-api";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import { emitWithAck, useSocket } from "@/components/providers/SocketProvider";
 import { Spinner } from "@/components/ui/primitives";
 import { ArenaBattleBoard } from "./ArenaBattleBoard";
 
@@ -15,27 +15,20 @@ const DECK_STORAGE_KEY = "anime_arena_deck_ids";
 export function ArenaRoomClient({ code }: { code: string }) {
   const router = useRouter();
   const { t } = useLanguage();
-  const { socket, status } = useSocket();
   const [snapshot, setSnapshot] = useState<ArenaRoomSnapshot | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingCardId, setPendingCardId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!socket) return;
-    const onState = (next: ArenaRoomSnapshot) => {
-      if (next.code === code) setSnapshot(next);
-    };
-    socket.on("arena:state", onState);
-    return () => {
-      socket.off("arena:state", onState);
-    };
-  }, [socket, code]);
+  const wakeRef = useRef<() => Promise<void>>(async () => undefined);
 
   useEffect(() => {
-    if (!socket || status !== "connected") return;
-    let cancelled = false;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let joined = false;
+    let busy = false;
     let deckIds: string[] | undefined;
+
     try {
       const raw = sessionStorage.getItem(DECK_STORAGE_KEY);
       const parsed = raw ? JSON.parse(raw) : null;
@@ -44,55 +37,73 @@ export function ArenaRoomClient({ code }: { code: string }) {
       deckIds = undefined;
     }
 
-    emitWithAck<Ack<ArenaRoomSnapshot>>(socket, (s, ack) =>
-      s.emit("arena:join", { code, deckIds }, ack as never),
-    )
-      .then((res) => {
-        if (cancelled) return;
-        if (res.ok) {
-          setSnapshot(res.data);
-          setLoadError(null);
-        } else {
-          setLoadError(res.message);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setLoadError(err instanceof Error ? err.message : t.arena.roomNotFound);
+    const poll = async () => {
+      if (stopped || busy) return;
+      busy = true;
+      const res = await api<ArenaRoomSnapshot>(`/api/arena/rooms/${code}`, {
+        body: joined ? { action: "sync" } : { action: "join", deckIds },
       });
+      busy = false;
+      if (stopped) return;
+
+      let nextPhase: ArenaRoomSnapshot["phase"] | null = null;
+      if (res.ok) {
+        joined = true;
+        nextPhase = res.data.phase;
+        setSnapshot(res.data);
+        setLoadError(null);
+      } else if (!isNetworkFailure(res) && res.code !== "RATE_LIMITED" && res.code !== "SERVER_ERROR") {
+        setLoadError(res.message || t.arena.roomNotFound);
+        return;
+      }
+
+      if (nextPhase !== "FINISHED" && nextPhase !== "ABANDONED") {
+        const delay = nextPhase === "LOBBY" ? 1_500 : 850;
+        timer = setTimeout(() => void poll(), delay);
+      }
+    };
+
+    wakeRef.current = poll;
+    void poll();
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void poll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
-      cancelled = true;
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [socket, status, code, t.arena.roomNotFound]);
+  }, [code, t.arena.roomNotFound]);
 
   const handlePlayCard = useCallback(
     async (cardId: string) => {
-      if (!socket) return;
       setPendingCardId(cardId);
       setActionError(null);
       try {
-        const res = await emitWithAck<Ack<ArenaRoomSnapshot>>(socket, (s, ack) =>
-          s.emit("arena:play", { code, cardId }, ack as never),
-        );
-        if (!res.ok) setActionError(res.message);
-        else setSnapshot(res.data);
+        const res = await api<ArenaRoomSnapshot>(`/api/arena/rooms/${code}`, {
+          body: { action: "play", cardId },
+        });
+        if (!res.ok) setActionError(res.message || t.errors.wrongDesc);
+        else {
+          setSnapshot(res.data);
+          void wakeRef.current();
+        }
       } catch (err) {
         setActionError(err instanceof Error ? err.message : t.errors.wrongDesc);
       } finally {
         setPendingCardId(null);
       }
     },
-    [socket, code, t.errors.wrongDesc],
+    [code, t.errors.wrongDesc],
   );
 
   const handleLeave = useCallback(async () => {
-    if (socket && status === "connected") {
-      await emitWithAck<Ack>(socket, (s, ack) =>
-        s.emit("arena:leave", { code }, ack as never),
-      ).catch(() => undefined);
-    }
+    await api(`/api/arena/rooms/${code}`, { body: { action: "leave" } }).catch(() => undefined);
     router.push("/arena");
-  }, [socket, status, code, router]);
+  }, [code, router]);
 
   if (loadError) {
     return (

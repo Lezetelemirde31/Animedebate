@@ -11,9 +11,9 @@ import {
   resolveArenaRound,
   type ArenaCard,
 } from "@/game/arena";
-import type { Ack, ArenaRoomSnapshot, AvatarDTO, OpenArenaRoomDTO } from "@/game/types";
+import type { ArenaRoomSnapshot, AvatarDTO, OpenArenaRoomDTO } from "@/game/types";
+import { api } from "@/lib/client-api";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import { emitWithAck, useSocket } from "@/components/providers/SocketProvider";
 import { ArenaBattleBoard } from "./ArenaBattleBoard";
 import { DeckBuilderPanel } from "./DeckBuilderPanel";
 
@@ -39,7 +39,6 @@ export function ArenaHubClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useLanguage();
-  const { socket, status } = useSocket();
 
   const ownedIdSet = useMemo(() => new Set(ownedIds), [ownedIds]);
   const playableById = useMemo(() => new Map(playableCards.map((c) => [c.id, c])), [playableCards]);
@@ -82,18 +81,20 @@ export function ArenaHubClient({
     }
   }, []);
 
-  // Subscribe to open 1v1 PvP arena rooms
+  // Poll open 1v1 PvP arena rooms via HTTP
   useEffect(() => {
-    if (!socket || status !== "connected") return;
-    socket.emit("arena:list", (res: Ack<OpenArenaRoomDTO[]>) => {
-      if (res.ok) setOpenRooms(res.data);
-    });
-    const onUpdate = (list: OpenArenaRoomDTO[]) => setOpenRooms(list);
-    socket.on("arena:updated", onUpdate);
-    return () => {
-      socket.off("arena:updated", onUpdate);
+    let stopped = false;
+    const load = async () => {
+      const res = await api<OpenArenaRoomDTO[]>("/api/arena/rooms");
+      if (!stopped && res.ok) setOpenRooms(res.data);
     };
-  }, [socket, status]);
+    void load();
+    const id = setInterval(() => void load(), 4_000);
+    return () => {
+      stopped = true;
+      clearInterval(id);
+    };
+  }, []);
 
   // Clear timers on unmount
   useEffect(() => {
@@ -399,11 +400,11 @@ export function ArenaHubClient({
     setPvpPending(true);
     setError(null);
     try {
-      const res = await emitWithAck<Ack<{ code: string }>>(socket, (s, ack) =>
-        s.emit("arena:create", { deckIds: selectedDeckIds }, ack as never),
-      );
+      const res = await api<{ code: string }>("/api/arena/rooms", {
+        body: { deckIds: selectedDeckIds },
+      });
       if (!res.ok) {
-        setError(res.message);
+        setError(res.message || t.errors.wrongDesc);
       } else {
         try {
           sessionStorage.setItem(DECK_STORAGE_KEY, JSON.stringify(selectedDeckIds));
@@ -456,7 +457,7 @@ export function ArenaHubClient({
       onCreatePvpRoom={handleCreatePvpRoom}
       onJoinPvpRoom={handleJoinPvpRoom}
       openRooms={openRooms}
-      socketConnected={status === "connected"}
+      socketConnected={true}
       pvpPending={pvpPending}
       error={error}
     />

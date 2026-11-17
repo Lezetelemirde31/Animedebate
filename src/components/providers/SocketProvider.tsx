@@ -2,106 +2,153 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { io, type Socket } from "socket.io-client";
-import type { ClientToServerEvents, PresenceStats, ServerToClientEvents } from "@/game/types";
+import type { PresenceDTO, PresenceStats } from "@/game/types";
+import { api, isNetworkFailure } from "@/lib/client-api";
 import { useCurrentUser } from "./SessionProvider";
 
-export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 export type ConnectionStatus = "connecting" | "connected" | "reconnecting";
 
+interface QueueState {
+  inQueue: boolean;
+  since: number | null;
+}
+
+interface ActiveMatchState {
+  code: string;
+  phase: string;
+}
+
 interface SocketContextValue {
-  socket: AppSocket | null;
   status: ConnectionStatus;
   stats: PresenceStats | null;
   /** serverTime ≈ Date.now() + clockOffset */
   clockOffset: number;
-  queue: { inQueue: boolean; since: number | null };
+  observeServerTime: (serverNow: number, rttMs?: number) => void;
+  queue: QueueState;
+  active: ActiveMatchState | null;
+  refreshPresence: () => Promise<void>;
 }
 
 const SocketContext = createContext<SocketContextValue>({
-  socket: null,
   status: "connecting",
   stats: null,
   clockOffset: 0,
+  observeServerTime: () => undefined,
   queue: { inQueue: false, since: null },
+  active: null,
+  refreshPresence: async () => undefined,
 });
 
-/** Estimates the server clock offset using the lowest-latency of a few round trips. */
-async function syncClock(socket: AppSocket): Promise<number> {
-  let best: { rtt: number; offset: number } | null = null;
-  for (let i = 0; i < 4; i++) {
-    const t0 = Date.now();
-    const serverNow = await new Promise<number | null>((resolve) => {
-      const timer = setTimeout(() => resolve(null), 3000);
-      socket.emit("time:sync", t0, (now) => {
-        clearTimeout(timer);
-        resolve(now);
-      });
-    });
-    if (serverNow === null) continue;
-    const t1 = Date.now();
-    const rtt = t1 - t0;
-    const offset = serverNow + rtt / 2 - t1;
-    if (!best || rtt < best.rtt) best = { rtt, offset };
-  }
-  return best?.offset ?? 0;
-}
+const IDLE_POLL_MS = 5_000;
+const QUEUE_POLL_MS = 2_000;
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const user = useCurrentUser();
   const userId = user?.id ?? null;
-  const [socket, setSocket] = useState<AppSocket | null>(null);
+
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
   const [stats, setStats] = useState<PresenceStats | null>(null);
   const [clockOffset, setClockOffset] = useState(0);
-  const [queue, setQueue] = useState<{ inQueue: boolean; since: number | null }>({ inQueue: false, since: null });
+  const [queue, setQueue] = useState<QueueState>({ inQueue: false, since: null });
+  const [active, setActive] = useState<ActiveMatchState | null>(null);
+
   const routerRef = useRef(router);
   routerRef.current = router;
+  const bestRttRef = useRef<number>(Infinity);
+  const offsetRef = useRef<number>(0);
+  const inQueueRef = useRef(false);
+  inQueueRef.current = queue.inQueue;
+  const wakeRef = useRef<() => Promise<void>>(async () => undefined);
+
+  const observeServerTime = useCallback((serverNow: number, rttMs = 0) => {
+    const safeRtt = Math.max(0, rttMs);
+    const estimate = serverNow + safeRtt / 2 - Date.now();
+    // Accept lower-RTT samples or update if clock drifted notably since last best sample
+    if (safeRtt <= bestRttRef.current + 40 || Math.abs(estimate - offsetRef.current) > 2_000) {
+      bestRttRef.current = Math.min(bestRttRef.current, safeRtt || 50);
+      if (Math.abs(estimate - offsetRef.current) >= 40) {
+        offsetRef.current = estimate;
+        setClockOffset(estimate);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_DISABLE_SOCKET === "1") {
-      setStatus("reconnecting");
-      return;
-    }
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let busy = false;
+    let failures = 0;
+
     setStatus("connecting");
     setQueue({ inQueue: false, since: null });
+    setActive(null);
 
-    const s: AppSocket = io({
-      path: "/socket.io",
-      transports: ["polling", "websocket"],
-      withCredentials: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 500,
-      reconnectionDelayMax: 4000,
-      timeout: 10_000,
-    });
-    setSocket(s);
-    s.on("connect", () => {
-      setStatus("connected");
-      void syncClock(s).then(setClockOffset);
-    });
-    s.on("connect_error", () => setStatus("reconnecting"));
-    s.on("disconnect", () => setStatus("reconnecting"));
-    s.io.on("reconnect_attempt", () => setStatus("reconnecting"));
-    s.io.on("reconnect_failed", () => setStatus("reconnecting"));
-    s.on("presence:stats", setStats);
-    s.on("queue:status", setQueue);
-    s.on("queue:matched", ({ code }) => {
-      setQueue({ inQueue: false, since: null });
-      routerRef.current.push(`/room/${code}`);
-    });
-    const resync = setInterval(() => {
-      if (s.connected) void syncClock(s).then(setClockOffset);
-    }, 60_000);
-    return () => {
-      clearInterval(resync);
-      s.removeAllListeners();
-      s.disconnect();
+    const schedule = () => {
+      if (stopped) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void poll(), inQueueRef.current ? QUEUE_POLL_MS : IDLE_POLL_MS);
     };
-  }, [userId]);
 
-  const value = useMemo(() => ({ socket, status, stats, clockOffset, queue }), [socket, status, stats, clockOffset, queue]);
+    const poll = async () => {
+      if (stopped || busy) return;
+      busy = true;
+      const t0 = Date.now();
+      const res = await api<PresenceDTO>("/api/live/presence");
+      const rtt = Date.now() - t0;
+      busy = false;
+      if (stopped) return;
+
+      if (res.ok) {
+        failures = 0;
+        setStatus("connected");
+        observeServerTime(res.data.serverNow, rtt);
+        setStats(res.data.stats);
+        setActive(res.data.active);
+
+        if (res.data.queue.matchedCode) {
+          inQueueRef.current = false;
+          setQueue({ inQueue: false, since: null });
+          routerRef.current.push(`/room/${res.data.queue.matchedCode}`);
+        } else {
+          const nextQueue = {
+            inQueue: res.data.queue.inQueue,
+            since: res.data.queue.since,
+          };
+          inQueueRef.current = nextQueue.inQueue;
+          setQueue(nextQueue);
+        }
+      } else if (isNetworkFailure(res) || res.code === "RATE_LIMITED" || res.code === "SERVER_ERROR") {
+        if (++failures >= 2) setStatus("reconnecting");
+      }
+
+      schedule();
+    };
+
+    wakeRef.current = poll;
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void poll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    void poll();
+
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [userId, observeServerTime]);
+
+  const refreshPresence = useCallback(async () => {
+    await wakeRef.current();
+  }, []);
+
+  const value = useMemo(
+    () => ({ status, stats, clockOffset, observeServerTime, queue, active, refreshPresence }),
+    [status, stats, clockOffset, observeServerTime, queue, active, refreshPresence],
+  );
+
   return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
 }
 
@@ -113,23 +160,4 @@ export function useSocket() {
 export function useServerClock(): () => number {
   const { clockOffset } = useSocket();
   return useCallback(() => Date.now() + clockOffset, [clockOffset]);
-}
-
-/** Promise wrapper around an acknowledged emit, with a timeout. */
-export function emitWithAck<R>(
-  socket: AppSocket | null,
-  send: (s: AppSocket, ack: (res: R) => void) => void,
-  timeoutMs = 8000,
-): Promise<R> {
-  return new Promise((resolve, reject) => {
-    if (!socket || !socket.connected) {
-      reject(new Error("Not connected to the game server yet. Please wait a moment."));
-      return;
-    }
-    const timer = setTimeout(() => reject(new Error("The server did not respond in time.")), timeoutMs);
-    send(socket, (res) => {
-      clearTimeout(timer);
-      resolve(res);
-    });
-  });
 }

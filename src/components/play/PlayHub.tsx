@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { DoorOpen, Globe, KeyRound, Plus, Radar, RefreshCw, Swords, Users, X, Zap } from "lucide-react";
-import type { Ack, OpenRoomDTO } from "@/game/types";
+import type { OpenRoomDTO } from "@/game/types";
+import { api } from "@/lib/client-api";
 import { useLanguage } from "@/components/providers/LanguageProvider";
-import { emitWithAck, useSocket } from "@/components/providers/SocketProvider";
+import { useSocket } from "@/components/providers/SocketProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { FormError, Spinner, StatTile } from "@/components/ui/primitives";
 import { getAnime, ENABLED_ANIME_IDS } from "@/data/anime";
@@ -28,45 +29,46 @@ function useElapsed(since: number | null) {
 export function PlayHub() {
   const router = useRouter();
   const { locale, t } = useLanguage();
-  const { socket, status, stats, queue } = useSocket();
+  const { status, stats, queue, active, refreshPresence } = useSocket();
   const [rooms, setRooms] = useState<OpenRoomDTO[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeCode, setActiveCode] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const elapsed = useElapsed(queue.inQueue ? queue.since : null);
 
-  const loadRooms = useCallback(() => {
-    if (!socket || status !== "connected") return;
+  const loadRooms = useCallback(async () => {
     setRefreshing(true);
-    socket.emit("rooms:list", (res: Ack<OpenRoomDTO[]>) => {
-      setRefreshing(false);
-      if (res.ok) setRooms(res.data);
-      else setRooms([]);
-    });
-  }, [socket, status]);
+    const res = await api<OpenRoomDTO[]>("/api/live/rooms");
+    setRefreshing(false);
+    if (res.ok) setRooms(res.data);
+    else setRooms((prev) => prev ?? []);
+  }, []);
 
   useEffect(() => {
-    if (!socket || status !== "connected") return;
-    loadRooms();
-    socket.emit("me:active", (res: Ack<{ code: string | null; phase: string | null }>) => {
-      if (res.ok && res.data.code) setActiveCode(res.data.code);
-      else setActiveCode(null);
-    });
-    const onUpdate = (list: OpenRoomDTO[]) => setRooms(list);
-    socket.on("rooms:updated", onUpdate);
-    return () => {
-      socket.off("rooms:updated", onUpdate);
+    void loadRooms();
+    const id = setInterval(() => void loadRooms(), 5_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void loadRooms();
     };
-  }, [socket, status, loadRooms]);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [loadRooms]);
 
   async function findMatch() {
     setPending(true);
     setError(null);
     try {
-      const res = await emitWithAck<Ack<{ matchedCode: string | null }>>(socket, (s, ack) => s.emit("queue:join", ack as never));
-      if (!res.ok) setError(res.message);
-      else if (res.data.matchedCode) router.push(`/room/${res.data.matchedCode}`);
+      const res = await api<{ matchedCode: string | null }>("/api/live/queue", { method: "POST" });
+      if (!res.ok) {
+        setError(res.message || t.play.queueError);
+      } else if (res.data.matchedCode) {
+        router.push(`/room/${res.data.matchedCode}`);
+      } else {
+        await refreshPresence();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t.play.queueError);
     } finally {
@@ -75,8 +77,11 @@ export function PlayHub() {
   }
 
   async function cancel() {
-    await emitWithAck<Ack>(socket, (s, ack) => s.emit("queue:leave", ack as never)).catch(() => undefined);
+    await api("/api/live/queue", { method: "DELETE" });
+    await refreshPresence();
   }
+
+  const activeCode = active?.code ?? null;
 
   return (
     <div className="space-y-8">
@@ -128,11 +133,11 @@ export function PlayHub() {
                 </div>
               ) : (
                 <>
-                  <button className="btn btn-primary w-full !py-3.5 !text-base" onClick={findMatch} disabled={pending || status !== "connected"} data-testid="find-match">
+                  <button className="btn btn-primary w-full !py-3.5 !text-base" onClick={findMatch} disabled={pending} data-testid="find-match">
                     {pending ? <Spinner className="h-4 w-4 text-white" /> : <Swords className="h-5 w-5" />}
                     {t.play.findMatch}
                   </button>
-                  {status !== "connected" && (
+                  {status === "reconnecting" && (
                     <p className="mt-2 text-center text-xs text-amber-300">{t.play.connectingLiveServer}</p>
                   )}
                 </>
@@ -185,8 +190,8 @@ export function PlayHub() {
             <span className="hidden text-xs text-zinc-500 sm:inline">{t.play.updatesLive}</span>
             <button
               type="button"
-              onClick={loadRooms}
-              disabled={status !== "connected" || refreshing}
+              onClick={() => void loadRooms()}
+              disabled={refreshing}
               className="btn btn-ghost !px-3 !py-1.5 !text-xs"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />

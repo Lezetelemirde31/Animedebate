@@ -1,5 +1,6 @@
 import type { Rarity } from "./rarity";
 import type { PowerTierCode } from "./power-tier";
+import type { WinnerDetail } from "./rules";
 import type { ArenaCard, RoundResolution } from "./arena";
 
 /** Character data sent to clients. */
@@ -91,11 +92,17 @@ export interface LotSummary {
   bidCount: number;
 }
 
+export interface MatchResultDetail {
+  note?: "left" | "no_reconnect" | "all_spent" | "pool_empty" | "everyone_left" | "both_disconnected";
+  names?: string[];
+  decision?: WinnerDetail;
+}
+
 export interface MatchResultState {
   winnerId: string | null;
   reason: "COMPLETED" | "FORFEIT" | "ABANDONED" | "POOL_EXHAUSTED";
-  /** Human readable explanation of how the winner was decided. */
-  detail: string;
+  /** Structured explanation of how the winner was decided. */
+  detail: MatchResultDetail;
 }
 
 export interface RoomSnapshot {
@@ -119,6 +126,7 @@ export interface RoomSnapshot {
   history: LotSummary[];
   result: MatchResultState | null;
   rematchVotes: string[];
+  rematchCode: string | null;
   /** Number of characters still in the pool. */
   poolRemaining: number;
   /** Number of spectators currently watching. */
@@ -152,8 +160,16 @@ export interface PresenceStats {
   openRooms: number;
 }
 
+export interface PresenceDTO {
+  serverNow: number;
+  stats: PresenceStats;
+  active: { code: string; phase: string } | null;
+  queue: { inQueue: boolean; since: number | null; matchedCode: string | null };
+}
+
 export type ErrorCode =
   | "UNAUTHORIZED"
+  | "FORBIDDEN"
   | "NOT_FOUND"
   | "ROOM_FULL"
   | "MATCH_ENDED"
@@ -172,8 +188,22 @@ export type ErrorCode =
   | "SERVER_ERROR";
 
 export type Ack<T = undefined> =
-  | ({ ok: true } & (T extends undefined ? object : { data: T }))
-  | { ok: false; code: ErrorCode; message: string; data?: { code?: string; matchId?: string } };
+  | ({ ok: true; serverNow?: number } & (T extends undefined ? object : { data: T }))
+  | { ok: false; code: ErrorCode; message: string; serverNow?: number; data?: { code?: string; matchId?: string } };
+
+export type RoomAction =
+  | { action: "join" }
+  | { action: "sync" }
+  | { action: "ready"; ready: boolean }
+  | { action: "bid"; lotId: string; amount: number }
+  | { action: "leave" }
+  | { action: "rematch" };
+
+export type ArenaAction =
+  | { action: "join"; deckIds?: string[] }
+  | { action: "sync" }
+  | { action: "play"; cardId: string }
+  | { action: "leave" };
 
 export interface CreateRoomInput {
   isPrivate: boolean;

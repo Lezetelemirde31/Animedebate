@@ -17,10 +17,13 @@ import type {
   ArenaPlayerSnapshot,
   ArenaRoomSnapshot,
   AvatarDTO,
+  ErrorCode,
   OpenArenaRoomDTO,
 } from "@/game/types";
-import type { CharacterCatalog } from "./catalog";
-import { EngineError } from "./engine";
+import { getCatalog, type CharacterCatalog } from "./catalog";
+import { EngineError } from "./live/room";
+
+export { EngineError };
 
 function levelFromXp(xp: number): number {
   return Math.floor(Math.sqrt(Math.max(0, Math.floor(xp)) / 50)) + 1;
@@ -65,6 +68,7 @@ interface ArenaPlayerSeat {
   score: number;
   powerDiff: number;
   connected: boolean;
+  lastSeenAt: number;
 }
 
 interface ArenaRoomState {
@@ -80,41 +84,21 @@ interface ArenaRoomState {
   xpAwardedByUser: Record<string, number>;
   createdAt: number;
   finishedAt: number | null;
-  revealTimer: ReturnType<typeof setTimeout> | null;
-  sockets: Map<string, string>; // socketId -> userId
-}
-
-export interface ArenaTransport {
-  emitRoomState(code: string, userIds: Map<string, string>, buildSnapshot: (userId: string) => ArenaRoomSnapshot): void;
-  roomsChanged(): void;
+  revealEndsAt: number | null;
+  nextAttackerSeat: 0 | 1 | null;
 }
 
 const EVICT_AFTER_MS = 10 * 60_000;
-const ROUND_REVEAL_MS = 1_800;
+const ROUND_REVEAL_MS = 1_500;
+const PRESENCE_WINDOW_MS = 35_000;
 
 export class ArenaManager {
   private rooms = new Map<string, ArenaRoomState>();
-  private transport: ArenaTransport | null = null;
-  private sweeper: ReturnType<typeof setInterval> | null = null;
+  private lastSweepAt = 0;
 
   constructor(private readonly catalog: CharacterCatalog) {}
 
-  setTransport(transport: ArenaTransport): void {
-    this.transport = transport;
-    if (!this.sweeper) {
-      this.sweeper = setInterval(() => this.sweep(), 30_000);
-      this.sweeper.unref?.();
-    }
-  }
-
   shutdown(): void {
-    if (this.sweeper) {
-      clearInterval(this.sweeper);
-      this.sweeper = null;
-    }
-    for (const room of this.rooms.values()) {
-      if (room.revealTimer) clearTimeout(room.revealTimer);
-    }
     this.rooms.clear();
   }
 
@@ -143,7 +127,7 @@ export class ArenaManager {
       where: { id: userId },
       select: { id: true, username: true, avatarStyle: true, avatarCharacter: { select: { imageUrl: true } } },
     });
-    if (!u) throw new EngineError("NOT_FOUND", "Account not found.");
+    if (!u) throw new EngineError("NOT_FOUND", "NOT_FOUND");
     return {
       userId: u.id,
       username: u.username,
@@ -156,11 +140,38 @@ export class ArenaManager {
       const code = generateRoomCode();
       if (!this.rooms.has(code)) return code;
     }
-    throw new EngineError("SERVER_ERROR", "Could not allocate an arena code.");
+    throw new EngineError("SERVER_ERROR", "SERVER_ERROR");
+  }
+
+  private advanceIfNeeded(room: ArenaRoomState, now = Date.now()): void {
+    if (room.phase === "ROUND_REVEAL" && room.revealEndsAt !== null && now >= room.revealEndsAt) {
+      room.roundNumber += 1;
+      room.attackerSeat = room.nextAttackerSeat ?? 0;
+      room.attackerCard = null;
+      room.revealEndsAt = null;
+      room.nextAttackerSeat = null;
+      room.phase = "ATTACK";
+    }
+    for (const p of room.players) {
+      p.connected = now - p.lastSeenAt <= PRESENCE_WINDOW_MS;
+    }
+  }
+
+  private sweepIfDue(now = Date.now()): void {
+    if (now - this.lastSweepAt < 30_000) return;
+    this.lastSweepAt = now;
+    for (const [code, room] of this.rooms) {
+      if ((room.phase === "FINISHED" || room.phase === "ABANDONED") && room.finishedAt && now - room.finishedAt > EVICT_AFTER_MS) {
+        this.rooms.delete(code);
+      } else if (room.phase === "LOBBY" && now - room.createdAt > 6 * 60 * 60_000) {
+        this.rooms.delete(code);
+      }
+    }
   }
 
   activeRoomOf(userId: string): ArenaRoomState | undefined {
     for (const room of this.rooms.values()) {
+      this.advanceIfNeeded(room);
       if (room.phase === "FINISHED" || room.phase === "ABANDONED") continue;
       if (room.players.some((p) => p.userId === userId)) return room;
     }
@@ -168,8 +179,11 @@ export class ArenaManager {
   }
 
   listOpenRooms(): OpenArenaRoomDTO[] {
+    const now = Date.now();
+    this.sweepIfDue(now);
     const list: OpenArenaRoomDTO[] = [];
     for (const room of this.rooms.values()) {
+      this.advanceIfNeeded(room, now);
       if (room.phase === "LOBBY" && room.players.length === 1) {
         const host = room.players[0];
         list.push({
@@ -184,6 +198,7 @@ export class ArenaManager {
   }
 
   snapshotForUser(room: ArenaRoomState, userId: string | null): ArenaRoomSnapshot {
+    this.advanceIfNeeded(room);
     const seated = userId ? room.players.find((p) => p.userId === userId) : undefined;
     const players: ArenaPlayerSnapshot[] = room.players.map((p) => ({
       userId: p.userId,
@@ -213,10 +228,6 @@ export class ArenaManager {
     };
   }
 
-  private publish(room: ArenaRoomState): void {
-    this.transport?.emitRoomState(room.code, room.sockets, (uid) => this.snapshotForUser(room, uid));
-  }
-
   private async validatePlayerDeck(userId: string, deckIds?: string[]): Promise<{ cards: ArenaCard[]; totalPower: number }> {
     const cardMap = this.getArenaCardMap();
     const allowedIds = await this.getUserAllowedIds(userId);
@@ -230,25 +241,25 @@ export class ArenaManager {
 
     const res = validateDeck(deckIds, allowedIds, cardMap);
     if (!res.ok) {
-      const messages: Record<typeof res.reason, string> = {
-        WRONG_SIZE: "Deck must contain exactly 5 cards.",
-        DUPLICATE_CARDS: "Deck cannot contain duplicate characters.",
-        UNOWNED_CARD: "You do not own one or more selected cards.",
-        OVER_BUDGET: "Deck power exceeds the 375 cap.",
-      };
-      throw new EngineError("INVALID_INPUT", messages[res.reason]);
+      throw new ArenaHttpError("INVALID_INPUT", res.reason);
     }
     return { cards: res.cards, totalPower: res.totalPower };
   }
 
   async createRoom(userId: string, deckIds: string[]): Promise<string> {
+    this.sweepIfDue();
     const existing = this.activeRoomOf(userId);
     if (existing) {
-      throw new EngineError("ACTIVE_MATCH", `You are already in arena room ${existing.code}.`);
+      if (existing.phase === "LOBBY" && existing.players.length === 1) {
+        this.rooms.delete(existing.code);
+      } else {
+        throw new EngineError("ACTIVE_MATCH", "ACTIVE_MATCH", { code: existing.code }, { code: existing.code });
+      }
     }
 
     const [profile, deck] = await Promise.all([this.getProfile(userId), this.validatePlayerDeck(userId, deckIds)]);
     const code = this.uniqueCode();
+    const now = Date.now();
 
     const room: ArenaRoomState = {
       code,
@@ -266,6 +277,7 @@ export class ArenaManager {
           score: 0,
           powerDiff: 0,
           connected: true,
+          lastSeenAt: now,
         },
       ],
       attackerCard: null,
@@ -273,46 +285,44 @@ export class ArenaManager {
       history: [],
       winnerId: null,
       xpAwardedByUser: {},
-      createdAt: Date.now(),
+      createdAt: now,
       finishedAt: null,
-      revealTimer: null,
-      sockets: new Map(),
+      revealEndsAt: null,
+      nextAttackerSeat: null,
     };
 
     this.rooms.set(code, room);
-    this.transport?.roomsChanged();
     return code;
   }
 
-  async joinRoom(
-    rawCode: string,
-    userId: string,
-    socketId: string,
-    deckIds?: string[],
-  ): Promise<ArenaRoomSnapshot> {
+  async joinRoom(rawCode: string, userId: string, deckIds?: string[]): Promise<ArenaRoomSnapshot> {
     const code = normalizeRoomCode(rawCode);
-    if (!code) throw new EngineError("INVALID_INPUT", "Invalid arena room code.");
+    if (!code) throw new EngineError("INVALID_INPUT", "ROOM_CODE");
     const room = this.rooms.get(code);
-    if (!room) throw new EngineError("NOT_FOUND", "Arena room not found.");
+    if (!room) throw new EngineError("NOT_FOUND", "ROOM_NOT_FOUND");
+    const now = Date.now();
+    this.advanceIfNeeded(room, now);
 
     const existingSeat = room.players.find((p) => p.userId === userId);
     if (existingSeat) {
+      existingSeat.lastSeenAt = now;
       existingSeat.connected = true;
-      // Allow updating deck while alone in LOBBY if explicitly passed
       if (room.phase === "LOBBY" && room.players.length === 1 && deckIds && deckIds.length > 0) {
         const deck = await this.validatePlayerDeck(userId, deckIds);
         existingSeat.hand = deck.cards;
         existingSeat.totalPower = deck.totalPower;
       }
-      room.sockets.set(socketId, userId);
-      this.publish(room);
       return this.snapshotForUser(room, userId);
     }
 
     if (room.phase === "LOBBY" && room.players.length < 2) {
       const elsewhere = this.activeRoomOf(userId);
       if (elsewhere && elsewhere.code !== code) {
-        throw new EngineError("ACTIVE_MATCH", `You are already in arena room ${elsewhere.code}.`);
+        if (elsewhere.phase === "LOBBY" && elsewhere.players.length === 1) {
+          this.rooms.delete(elsewhere.code);
+        } else {
+          throw new EngineError("ACTIVE_MATCH", "ACTIVE_MATCH", { code: elsewhere.code }, { code: elsewhere.code });
+        }
       }
       const [profile, deck] = await Promise.all([this.getProfile(userId), this.validatePlayerDeck(userId, deckIds)]);
       room.players.push({
@@ -325,58 +335,57 @@ export class ArenaManager {
         score: 0,
         powerDiff: 0,
         connected: true,
+        lastSeenAt: now,
       });
       room.phase = "ATTACK";
       room.roundNumber = 1;
       room.attackerSeat = Math.random() < 0.5 ? 0 : 1;
-      room.sockets.set(socketId, userId);
-      this.transport?.roomsChanged();
-      this.publish(room);
       return this.snapshotForUser(room, userId);
     }
 
-    // Spectator
-    room.sockets.set(socketId, userId);
     return this.snapshotForUser(room, userId);
   }
 
-  detachSocket(code: string, userId: string | null, socketId: string): void {
+  syncRoom(rawCode: string, userId: string): ArenaRoomSnapshot {
+    const code = normalizeRoomCode(rawCode);
+    if (!code) throw new EngineError("INVALID_INPUT", "ROOM_CODE");
     const room = this.rooms.get(code);
-    if (!room) return;
-    room.sockets.delete(socketId);
-    if (userId) {
-      const player = room.players.find((p) => p.userId === userId);
-      if (player) {
-        const stillConnected = [...room.sockets.values()].includes(userId);
-        if (!stillConnected) {
-          player.connected = false;
-          this.publish(room);
-        }
-      }
+    if (!room) throw new EngineError("NOT_FOUND", "ROOM_NOT_FOUND");
+    const now = Date.now();
+    const player = room.players.find((p) => p.userId === userId);
+    if (player) {
+      player.lastSeenAt = now;
+      player.connected = true;
     }
+    this.advanceIfNeeded(room, now);
+    return this.snapshotForUser(room, userId);
   }
 
   async playCard(rawCode: string, userId: string, cardId: string): Promise<ArenaRoomSnapshot> {
     const code = normalizeRoomCode(rawCode);
-    if (!code) throw new EngineError("INVALID_INPUT", "Invalid arena room code.");
+    if (!code) throw new EngineError("INVALID_INPUT", "ROOM_CODE");
     const room = this.rooms.get(code);
-    if (!room) throw new EngineError("NOT_FOUND", "Arena room not found.");
+    if (!room) throw new EngineError("NOT_FOUND", "ROOM_NOT_FOUND");
+    const now = Date.now();
+    this.advanceIfNeeded(room, now);
 
     const player = room.players.find((p) => p.userId === userId);
-    if (!player) throw new EngineError("NOT_A_PLAYER", "You are not seated in this arena match.");
+    if (!player) throw new EngineError("NOT_A_PLAYER");
+    player.lastSeenAt = now;
+    player.connected = true;
 
     if (room.phase !== "ATTACK" && room.phase !== "DEFEND") {
-      throw new EngineError("INVALID_STATE", "Cannot play a card in the current phase.");
+      throw new EngineError("INVALID_STATE");
     }
 
     const expectedSeat: 0 | 1 = room.phase === "ATTACK" ? room.attackerSeat : room.attackerSeat === 0 ? 1 : 0;
     if (player.seat !== expectedSeat) {
-      throw new EngineError("INVALID_STATE", "Wait for your turn.");
+      throw new EngineError("INVALID_STATE");
     }
 
     const cardIdx = player.hand.findIndex((c) => c.id === cardId);
     if (cardIdx === -1) {
-      throw new EngineError("INVALID_INPUT", "Card is not in your remaining hand.");
+      throw new EngineError("INVALID_INPUT");
     }
 
     const [chosen] = player.hand.splice(cardIdx, 1);
@@ -384,14 +393,12 @@ export class ArenaManager {
     if (room.phase === "ATTACK") {
       room.attackerCard = chosen;
       room.phase = "DEFEND";
-      this.publish(room);
       return this.snapshotForUser(room, userId);
     }
 
-    // DEFEND turn -> resolve clash
     const attackerCard = room.attackerCard;
     if (!attackerCard) {
-      throw new EngineError("SERVER_ERROR", "Missing attacker card.");
+      throw new EngineError("SERVER_ERROR");
     }
 
     const resolution = resolveArenaRound(room.roundNumber, room.attackerSeat, attackerCard, chosen);
@@ -417,35 +424,17 @@ export class ArenaManager {
 
     if (matchComplete) {
       await this.finishMatch(room);
-      this.publish(room);
       return this.snapshotForUser(room, userId);
     }
 
-    // Brief clash reveal pause, then next round: round loser becomes Defender (counter-picker)
     room.phase = "ROUND_REVEAL";
-    const nextAttackerSeat: 0 | 1 =
-      resolution.winnerSeat !== null ? resolution.winnerSeat : room.attackerSeat === 0 ? 1 : 0;
-    this.publish(room);
-
-    if (room.revealTimer) clearTimeout(room.revealTimer);
-    room.revealTimer = setTimeout(() => {
-      room.revealTimer = null;
-      if (room.phase !== "ROUND_REVEAL") return;
-      room.roundNumber += 1;
-      room.attackerSeat = nextAttackerSeat;
-      room.attackerCard = null;
-      room.phase = "ATTACK";
-      this.publish(room);
-    }, ROUND_REVEAL_MS);
+    room.nextAttackerSeat = resolution.winnerSeat !== null ? resolution.winnerSeat : room.attackerSeat === 0 ? 1 : 0;
+    room.revealEndsAt = now + ROUND_REVEAL_MS;
 
     return this.snapshotForUser(room, userId);
   }
 
   private async finishMatch(room: ArenaRoomState): Promise<void> {
-    if (room.revealTimer) {
-      clearTimeout(room.revealTimer);
-      room.revealTimer = null;
-    }
     const [p0, p1] = room.players;
     let winnerId: string | null = null;
     if (p0 && p1) {
@@ -458,6 +447,8 @@ export class ArenaManager {
 
     room.phase = "FINISHED";
     room.attackerCard = null;
+    room.revealEndsAt = null;
+    room.nextAttackerSeat = null;
     room.winnerId = winnerId;
     room.finishedAt = Date.now();
 
@@ -486,42 +477,40 @@ export class ArenaManager {
       room.players.splice(idx, 1);
       if (room.players.length === 0) {
         this.rooms.delete(code);
-      } else {
-        this.publish(room);
       }
-      this.transport?.roomsChanged();
       return;
     }
 
     if (room.phase === "ATTACK" || room.phase === "DEFEND" || room.phase === "ROUND_REVEAL") {
-      if (room.revealTimer) {
-        clearTimeout(room.revealTimer);
-        room.revealTimer = null;
-      }
       const other = room.players.find((p) => p.userId !== userId) ?? null;
       room.phase = "FINISHED";
       room.attackerCard = null;
+      room.revealEndsAt = null;
+      room.nextAttackerSeat = null;
       room.winnerId = other?.userId ?? null;
       room.finishedAt = Date.now();
       if (other) {
         room.xpAwardedByUser[other.userId] = 25;
         await awardArenaXp(other.userId, 25, "ARENA_PVP_FORFEIT_WIN", room.code).catch(() => undefined);
       }
-      this.publish(room);
-      this.transport?.roomsChanged();
     }
   }
+}
 
-  private sweep(): void {
-    const now = Date.now();
-    for (const [code, room] of this.rooms) {
-      if ((room.phase === "FINISHED" || room.phase === "ABANDONED") && room.finishedAt && now - room.finishedAt > EVICT_AFTER_MS) {
-        if (room.revealTimer) clearTimeout(room.revealTimer);
-        this.rooms.delete(code);
-      } else if (room.phase === "LOBBY" && now - room.createdAt > 6 * 60 * 60_000) {
-        this.rooms.delete(code);
-        this.transport?.roomsChanged();
-      }
-    }
+export class ArenaHttpError extends Error {
+  constructor(
+    public code: ErrorCode,
+    public reason: "WRONG_SIZE" | "DUPLICATE_CARDS" | "UNOWNED_CARD" | "OVER_BUDGET",
+  ) {
+    super(reason);
   }
+}
+
+const g = globalThis as unknown as { __aaArenaManager?: ArenaManager };
+
+export async function getArenaManager(): Promise<ArenaManager> {
+  if (!g.__aaArenaManager) {
+    g.__aaArenaManager = new ArenaManager(await getCatalog());
+  }
+  return g.__aaArenaManager;
 }
