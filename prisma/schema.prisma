@@ -168,6 +168,8 @@ model User {
   avatarImage        UserAvatarImage?
   gameRatings        GameRating[]
   gameMatches        GameMatchPlayer[]
+  guessRuns          GuessRun[]
+  guessStats         GuessStats?
   moderationLogs     ModerationLog[]       @relation("ModerationAdmin")
   queueEntry         QueueEntry?
   spectating         MatchSpectator[]
@@ -739,6 +741,74 @@ model VersusMatch {
 
 /// Players looking for a ranked Anime 1v1 opponent.
 model VersusQueueEntry {
+  userId      String   @id
+  rating      Int
+  since       DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  matchedCode String?
+}
+
+// ─── Who Is This Character? ──────────────────────────────────────────────
+
+/// A solo run or a daily challenge (the whole run as JSON; answers stay on the server).
+model GuessRun {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "solo" or "daily"
+  kind       String
+  /// Daily challenge day (YYYY-MM-DD, Türkiye time); null for solo runs.
+  dayKey     String?
+  mode       String
+  difficulty String
+  animeId    String?
+  state      Json
+  score      Int      @default(0)
+  correct    Int      @default(0)
+  rounds     Int
+  finished   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, dayKey])
+  @@index([kind, dayKey, score])
+  @@index([userId, createdAt])
+}
+
+/// Lifetime numbers and the daily-challenge streak of one player.
+model GuessStats {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runs            Int      @default(0)
+  roundsPlayed    Int      @default(0)
+  roundsCorrect   Int      @default(0)
+  bestScore       Int      @default(0)
+  /// Most correct answers in a row within one run.
+  bestStreak      Int      @default(0)
+  dailyPlayed     Int      @default(0)
+  dailyStreak     Int      @default(0)
+  bestDailyStreak Int      @default(0)
+  lastDailyKey    String?
+  updatedAt       DateTime @updatedAt
+}
+
+/// A multiplayer race room (friendly or ranked).
+model GuessRoom {
+  code      String   @id
+  /// friendly or ranked
+  mode      String
+  /// LOBBY, PLAYING, FINISHED or ABANDONED
+  phase     String
+  playerIds String[] @default([])
+  state     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phase, updatedAt])
+}
+
+/// Players looking for a ranked race opponent.
+model GuessQueueEntry {
   userId      String   @id
   rating      Int
   since       DateTime @default(now())

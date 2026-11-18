@@ -7,7 +7,7 @@ import type { Locale } from "@/lib/i18n";
  * Only games that are fully playable are listed (`GAMES`); new games are added
  * here when they ship.
  */
-export type GameKey = "VERSUS" | "AUCTION";
+export type GameKey = "VERSUS" | "GUESS" | "AUCTION";
 
 export interface GameInfo {
   key: GameKey;
@@ -35,6 +35,19 @@ export const GAMES: readonly GameInfo[] = [
     modes: { tr: ["Dereceli", "Dostluk maçı", "Antrenman (bot)"], en: ["Ranked", "Friendly", "Practice (bot)"] },
     hasRanked: true,
     color: "#22d3ee",
+  },
+  {
+    key: "GUESS",
+    href: "/guess",
+    name: { tr: "Bu Karakter Kim?", en: "Who Is This Character?" },
+    tagline: { tr: "Bulanık, pikselli, gölge ya da yakın plan", en: "Blurred, pixelated, shadowed or close-up" },
+    description: {
+      tr: "Gizlenmiş görselden karakteri tanı. Her ipucunda görsel netleşir ama puan azalır. Günlük meydan okuma, seriler ve arkadaşlarınla canlı yarış.",
+      en: "Recognise the character from a disguised picture. Every hint makes it clearer but worth less. Daily challenge, streaks and live races with friends.",
+    },
+    modes: { tr: ["Günlük meydan okuma", "Tekli oyun", "Yarış odası", "Dereceli yarış"], en: ["Daily challenge", "Solo", "Race room", "Ranked race"] },
+    hasRanked: true,
+    color: "#a3e635",
   },
   {
     key: "AUCTION",

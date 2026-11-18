@@ -19,7 +19,8 @@ Açık artırma platformdaki oyunlardan yalnızca biridir; öncelik sırası aş
 | Tartışmalar, VS oylamaları, yorumlar, bildirimler, admin | ✅ Var |
 | Oyun başına ayrı rating, sezonlar, birleşik maç geçmişi | ✅ Aşama 1 tamamlandı |
 | Anime 1v1 | ✅ Aşama 2 tamamlandı (`/versus`) |
-| Bu Karakter Kim?, Quiz, Turnuvalar, Arkadaşlar | ❌ Yok |
+| Bu Karakter Kim? | ✅ Aşama 3 tamamlandı (`/guess`) |
+| Quiz, Turnuvalar, Arkadaşlar | ❌ Yok |
 
 ### Teknik ilkeler (tüm oyunlar için)
 
@@ -58,12 +59,19 @@ Açık artırma platformdaki oyunlardan yalnızca biridir; öncelik sırası aş
   3 kez hamle seçmeyen kaybeder, çekilen oyuncu ödül almaz, botta günlük 15 ödüllü maç.
   Denge testi: hiçbir tip diğerine karşı %20–80 dışına çıkmıyor; zor bot kolay botu %75+ yeniyor.
 
-### Aşama 3 — Bu Karakter Kim?
+### Aşama 3 — Bu Karakter Kim? ✅
 - Modlar: **Silüet**, **Bulanık**, **Sadece gözler**, karışık. Zorluk seviyeleri (popüler → az bilinen karakterler, ipucu sayısı).
 - Görseller sunucuda işlenir; cevap görsel adresinden veya ağ trafiğinden okunamaz.
 - Süreli oyun, **günlük meydan okuma** (herkese aynı set, günde bir kez), **seri** sistemi.
 - Çok oyunculu yarış odaları (aynı anda aynı karakter; ilk doğru bilen daha çok puan).
 - İstatistikler ve sıralamalar.
+- Uygulandı: 4 görsel stili (Bulanık, Pikselli, Gölge, Yakın plan) + Karışık; Kolay (tanınmış karakterler) / Normal / Zor;
+  tekli oyun (10 tur), günlük meydan okuma (5 tur, Türkiye saatiyle gece yarısı yenilenir, günlük seri),
+  yarış odası (2–8 oyuncu, ortak saatle netleşen görsel, ilk bilene bonus), dereceli yarış (kuyruk, reyting).
+  Görseller sunucuda sharp ile işlenip meta verisiz WebP olarak verilir; adres yalnızca oyun/oda ve aşama içerir,
+  henüz ulaşılmamış aşamalar ve başkasının görseli reddedilir.
+- Not: anime çizimlerinde güvenilir göz tespiti olmadığından "Sadece gözler" yerine göz hizasından kırpılan
+  "Yakın plan" modu kullanılıyor; bazı görsellerde kadraj saç/alın bölgesine denk gelebilir.
 
 ### Aşama 4 — Anime Quiz
 - Yapılandırılmış **soru bankası** (anime, kategori, zorluk, doğrulama durumu, kaynak).

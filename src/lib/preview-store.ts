@@ -40,6 +40,10 @@ interface StoreTables {
   gameMatchPlayer: Row[];
   versusMatch: Row[];
   versusQueueEntry: Row[];
+  guessRun: Row[];
+  guessStats: Row[];
+  guessRoom: Row[];
+  guessQueueEntry: Row[];
   moderationLog: Row[];
   matchSpectator: Row[];
   queueEntry: Row[];
@@ -288,6 +292,10 @@ function buildInitialTables(): StoreTables {
     gameMatchPlayer: [],
     versusMatch: [],
     versusQueueEntry: [],
+    guessRun: [],
+    guessStats: [],
+    guessRoom: [],
+    guessQueueEntry: [],
     moderationLog: [],
     matchSpectator: [],
     queueEntry: [],
@@ -310,6 +318,10 @@ function getTables(): StoreTables {
   g.__aaPreviewTables.gameMatchPlayer ??= [];
   g.__aaPreviewTables.versusMatch ??= [];
   g.__aaPreviewTables.versusQueueEntry ??= [];
+  g.__aaPreviewTables.guessRun ??= [];
+  g.__aaPreviewTables.guessStats ??= [];
+  g.__aaPreviewTables.guessRoom ??= [];
+  g.__aaPreviewTables.guessQueueEntry ??= [];
   return g.__aaPreviewTables;
 }
 
@@ -410,7 +422,7 @@ function resolveRow(tables: StoreTables, tableName: keyof StoreTables, row: Row,
         } else if (k === "_count") {
           target[k] = { bids: tables.bid.filter((b) => b.lotId === row.id).length };
         }
-      } else if ((tableName === "gameRating" || tableName === "gameMatchPlayer") && k === "user") {
+      } else if ((tableName === "gameRating" || tableName === "gameMatchPlayer" || tableName === "guessRun") && k === "user") {
         const u = tables.user.find((x) => x.id === row.userId) ?? null;
         target[k] = u ? resolveRow(tables, "user", u, subSpec) : null;
       } else if (tableName === "gameMatchPlayer" && k === "match") {
@@ -723,8 +735,15 @@ function applyDefaults(tableName: keyof StoreTables, data: Row): Row {
   if (tableName === "gameRating") {
     return { rating: 1000, peak: 1000, played: 0, wins: 0, losses: 0, draws: 0, streak: 0, bestStreak: 0, updatedAt: now, ...base };
   }
-  if (tableName === "versusQueueEntry") {
+  if (tableName === "versusQueueEntry" || tableName === "guessQueueEntry") {
     return { since: now, lastSeenAt: now, matchedCode: null, ...base };
+  }
+  if (tableName === "guessRun") {
+    return { dayKey: null, animeId: null, score: 0, correct: 0, finished: false, createdAt: now, updatedAt: now, ...base };
+  }
+  if (tableName === "guessStats") {
+    const zero = { runs: 0, roundsPlayed: 0, roundsCorrect: 0, bestScore: 0, bestStreak: 0, dailyPlayed: 0, dailyStreak: 0, bestDailyStreak: 0 };
+    return { ...zero, lastDailyKey: null, updatedAt: now, ...base };
   }
   if (tableName === "gameMatch") {
     return { ranked: false, seasonId: null, refId: null, winnerId: null, startedAt: null, endedAt: now, ...base };
@@ -885,6 +904,10 @@ export function createPreviewPrisma(): PrismaClient {
     gameMatchPlayer: makeDelegate(tables, "gameMatchPlayer"),
     versusMatch: makeDelegate(tables, "versusMatch"),
     versusQueueEntry: makeDelegate(tables, "versusQueueEntry"),
+    guessRun: makeDelegate(tables, "guessRun"),
+    guessStats: makeDelegate(tables, "guessStats"),
+    guessRoom: makeDelegate(tables, "guessRoom"),
+    guessQueueEntry: makeDelegate(tables, "guessQueueEntry"),
     moderationLog: makeDelegate(tables, "moderationLog"),
     matchSpectator: makeDelegate(tables, "matchSpectator"),
     queueEntry: makeDelegate(tables, "queueEntry"),
