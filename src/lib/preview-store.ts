@@ -38,6 +38,8 @@ interface StoreTables {
   gameRating: Row[];
   gameMatch: Row[];
   gameMatchPlayer: Row[];
+  versusMatch: Row[];
+  versusQueueEntry: Row[];
   moderationLog: Row[];
   matchSpectator: Row[];
   queueEntry: Row[];
@@ -284,6 +286,8 @@ function buildInitialTables(): StoreTables {
     gameRating: [],
     gameMatch: [],
     gameMatchPlayer: [],
+    versusMatch: [],
+    versusQueueEntry: [],
     moderationLog: [],
     matchSpectator: [],
     queueEntry: [],
@@ -304,6 +308,8 @@ function getTables(): StoreTables {
   g.__aaPreviewTables.gameRating ??= [];
   g.__aaPreviewTables.gameMatch ??= [];
   g.__aaPreviewTables.gameMatchPlayer ??= [];
+  g.__aaPreviewTables.versusMatch ??= [];
+  g.__aaPreviewTables.versusQueueEntry ??= [];
   return g.__aaPreviewTables;
 }
 
@@ -717,6 +723,9 @@ function applyDefaults(tableName: keyof StoreTables, data: Row): Row {
   if (tableName === "gameRating") {
     return { rating: 1000, peak: 1000, played: 0, wins: 0, losses: 0, draws: 0, streak: 0, bestStreak: 0, updatedAt: now, ...base };
   }
+  if (tableName === "versusQueueEntry") {
+    return { since: now, lastSeenAt: now, matchedCode: null, ...base };
+  }
   if (tableName === "gameMatch") {
     return { ranked: false, seasonId: null, refId: null, winnerId: null, startedAt: null, endedAt: now, ...base };
   }
@@ -874,6 +883,8 @@ export function createPreviewPrisma(): PrismaClient {
     gameRating: makeDelegate(tables, "gameRating"),
     gameMatch: makeDelegate(tables, "gameMatch"),
     gameMatchPlayer: makeDelegate(tables, "gameMatchPlayer"),
+    versusMatch: makeDelegate(tables, "versusMatch"),
+    versusQueueEntry: makeDelegate(tables, "versusQueueEntry"),
     moderationLog: makeDelegate(tables, "moderationLog"),
     matchSpectator: makeDelegate(tables, "matchSpectator"),
     queueEntry: makeDelegate(tables, "queueEntry"),

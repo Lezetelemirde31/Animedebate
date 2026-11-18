@@ -28,6 +28,12 @@ export const COIN_REWARDS: Record<string, number> = {
   ARENA_PVP_FORFEIT_WIN: 15,
   ARENA_BOT_WIN: 3,
   ARENA_BOT_PLAY: 1,
+  VERSUS_WIN: 30,
+  VERSUS_PLAY: 10,
+  VERSUS_FRIENDLY_WIN: 15,
+  VERSUS_FRIENDLY_PLAY: 5,
+  VERSUS_BOT_WIN: 3,
+  VERSUS_BOT_PLAY: 1,
 };
 /** AC for every level gained. */
 export const LEVEL_UP_COINS = 20;

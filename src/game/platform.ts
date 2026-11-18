@@ -7,7 +7,7 @@ import type { Locale } from "@/lib/i18n";
  * Only games that are fully playable are listed (`GAMES`); new games are added
  * here when they ship.
  */
-export type GameKey = "AUCTION";
+export type GameKey = "VERSUS" | "AUCTION";
 
 export interface GameInfo {
   key: GameKey;
@@ -23,6 +23,19 @@ export interface GameInfo {
 }
 
 export const GAMES: readonly GameInfo[] = [
+  {
+    key: "VERSUS",
+    href: "/versus",
+    name: { tr: "Anime 1v1", en: "Anime 1v1" },
+    tagline: { tr: "Stratejik karakter düellosu", en: "Strategic character duel" },
+    description: {
+      tr: "Karakterini seç, her turda rakibinle aynı anda gizli hamle yap: saldır, savun, odaklan ya da yeteneklerini kullan. Zar yok — kazananı kararların belirler.",
+      en: "Pick your fighter and choose a hidden move each turn, at the same time as your opponent: attack, defend, focus or use a technique. No dice — your decisions decide.",
+    },
+    modes: { tr: ["Dereceli", "Dostluk maçı", "Antrenman (bot)"], en: ["Ranked", "Friendly", "Practice (bot)"] },
+    hasRanked: true,
+    color: "#22d3ee",
+  },
   {
     key: "AUCTION",
     href: "/play",

@@ -720,3 +720,28 @@ model GameMatchPlayer {
   @@id([matchId, userId])
   @@index([userId, endedAt])
 }
+
+/// Anime 1v1 match. The whole match (picks, hidden moves, turn log) lives in
+/// `state`; every request locks the row while it changes the match.
+model VersusMatch {
+  code      String   @id
+  /// ranked, friendly or bot
+  mode      String
+  /// LOBBY, PICK, BATTLE, FINISHED or ABANDONED
+  phase     String
+  playerIds String[] @default([])
+  state     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phase, updatedAt])
+}
+
+/// Players looking for a ranked Anime 1v1 opponent.
+model VersusQueueEntry {
+  userId      String   @id
+  rating      Int
+  since       DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  matchedCode String?
+}
