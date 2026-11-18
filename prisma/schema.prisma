@@ -166,6 +166,8 @@ model User {
   xpEvents           XpEvent[]
   coinEvents         CoinEvent[]
   avatarImage        UserAvatarImage?
+  gameRatings        GameRating[]
+  gameMatches        GameMatchPlayer[]
   moderationLogs     ModerationLog[]       @relation("ModerationAdmin")
   queueEntry         QueueEntry?
   spectating         MatchSpectator[]
@@ -643,4 +645,78 @@ model UserAvatarImage {
   data      Bytes
   mime      String
   updatedAt DateTime @updatedAt
+}
+
+/// Competitive season. Ratings start fresh every season; history is kept.
+model Season {
+  id        String       @id @default(cuid())
+  number    Int          @unique
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime     @default(now())
+  ratings   GameRating[]
+  matches   GameMatch[]
+}
+
+/// A player's rating and record in one game for one season. Every game keeps
+/// its own rating, so doing well in one game never affects another.
+model GameRating {
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Game key from src/game/platform.ts (e.g. "AUCTION", "CARD_DUEL").
+  game       String
+  seasonId   String
+  season     Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  rating     Int      @default(1000)
+  peak       Int      @default(1000)
+  played     Int      @default(0)
+  wins       Int      @default(0)
+  losses     Int      @default(0)
+  draws      Int      @default(0)
+  /// Current winning streak.
+  streak     Int      @default(0)
+  bestStreak Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@id([userId, game, seasonId])
+  @@index([game, seasonId, rating])
+}
+
+/// One finished game of any kind — the platform-wide match history.
+model GameMatch {
+  id        String            @id @default(cuid())
+  game      String
+  /// "ranked", "friendly", "bot", "solo", "daily"…
+  mode      String
+  ranked    Boolean           @default(false)
+  seasonId  String?
+  season    Season?           @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  /// The game's own record (auction match id, arena room code…); makes recording idempotent.
+  refId     String?
+  winnerId  String?
+  startedAt DateTime?
+  endedAt   DateTime          @default(now())
+  players   GameMatchPlayer[]
+
+  @@unique([game, refId])
+  @@index([game, endedAt])
+}
+
+model GameMatchPlayer {
+  matchId      String
+  match        GameMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// WIN, LOSS or DRAW.
+  result       String
+  score        Int?
+  ratingBefore Int?
+  ratingAfter  Int?
+  xp           Int       @default(0)
+  coins        Int       @default(0)
+  endedAt      DateTime  @default(now())
+
+  @@id([matchId, userId])
+  @@index([userId, endedAt])
 }

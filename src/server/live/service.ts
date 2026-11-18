@@ -12,6 +12,7 @@ import { GAME_RULES } from "@/game/config";
 import type { CreateRoomInput, OpenRoomDTO, PresenceDTO, RoomAction, RoomSettings, RoomSnapshot } from "@/game/types";
 import { ENABLED_ANIME_IDS } from "@/data/anime";
 import { awardXp, XP_REWARDS } from "@/lib/gamification";
+import { recordGameResult } from "../platform/results";
 import { getCatalog } from "../catalog";
 import {
   DEFAULT_TIMING,
@@ -64,19 +65,27 @@ export function setTimingForTests(t: Partial<Timing>): void {
 /** Default follow-ups: XP (and with it levels and badges) for every character won at auction. */
 const DEFAULT_HOOKS: EngineHooks = {
   lotWon: ({ userId, lotId }) => awardXp({ userId, amount: XP_REWARDS.WIN_AUCTION, reason: "WIN_AUCTION", refType: "lot", refId: lotId }),
-  // Finishing a match pays XP and Anime Coins; walking out of one pays nothing.
-  matchFinished: async ({ matchId, playerIds, winnerId, leaverIds }) => {
-    for (const userId of playerIds) {
-      if (leaverIds.includes(userId)) continue;
-      const won = userId === winnerId;
-      await awardXp({
-        userId,
-        amount: won ? XP_REWARDS.MATCH_WIN : XP_REWARDS.MATCH_PLAY,
-        reason: won ? "MATCH_WIN" : "MATCH_PLAY",
-        refType: "match",
-        refId: matchId,
-      });
-    }
+  // Into the shared match history: season record, rating (quick match), XP and Anime Coins.
+  // Walking out of a match counts as a loss and pays nothing.
+  matchFinished: async ({ matchId, playerIds, winnerId, leaverIds, ranked, scores, startedAt }) => {
+    await recordGameResult({
+      game: "AUCTION",
+      mode: ranked ? "ranked" : "friendly",
+      ranked,
+      refId: matchId,
+      startedAt: new Date(startedAt),
+      players: playerIds.map((userId) => {
+        const result = winnerId === null ? "DRAW" : userId === winnerId ? "WIN" : "LOSS";
+        const left = leaverIds.includes(userId);
+        return {
+          userId,
+          result,
+          score: scores[userId] ?? null,
+          xp: left ? 0 : result === "WIN" ? XP_REWARDS.MATCH_WIN : XP_REWARDS.MATCH_PLAY,
+          reason: result === "WIN" ? "MATCH_WIN" : "MATCH_PLAY",
+        };
+      }),
+    });
   },
 };
 

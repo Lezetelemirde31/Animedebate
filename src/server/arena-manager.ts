@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma, dbMode } from "@/lib/db";
-import { awardXp } from "@/lib/gamification";
+import { recordGameResult, type ResultPlayer } from "./platform/results";
 import {
   ARENA_MAX_ROUNDS,
   ARENA_WINS_TO_WIN,
@@ -41,9 +41,19 @@ export { EngineError };
 
 type Tx = Prisma.TransactionClient;
 
-/** Arena XP and Anime Coins go through the shared progression (levels, ranks, badges). */
-async function awardArenaXp(userId: string, amount: number, reason: string, refId: string): Promise<void> {
-  await awardXp({ userId, amount, reason, refType: "ARENA_MATCH", refId });
+/**
+ * Arena duels go into the shared match history and progression (XP, AC,
+ * badges). Room duels are friendly until the Card Duel gets ranked matchmaking.
+ */
+async function recordArenaResult(room: ArenaRoomState, players: ResultPlayer[]): Promise<void> {
+  await recordGameResult({
+    game: "CARD_DUEL",
+    mode: "friendly",
+    ranked: false,
+    refId: `${room.code}-${room.createdAt}`,
+    startedAt: new Date(room.createdAt),
+    players,
+  });
 }
 
 interface ArenaPlayerSeat {
@@ -521,11 +531,14 @@ export class ArenaManager {
     room.winnerId = winnerId;
     room.finishedAt = Date.now();
 
-    for (const p of room.players) {
-      const amount = winnerId && p.userId === winnerId ? 35 : 15;
+    const players = room.players.map((p) => {
+      const won = !!winnerId && p.userId === winnerId;
+      const amount = won ? 35 : 15;
       room.xpAwardedByUser[p.userId] = amount;
-      after.push(() => awardArenaXp(p.userId, amount, winnerId === p.userId ? "ARENA_PVP_WIN" : "ARENA_PVP_PLAY", room.code));
-    }
+      const result: "WIN" | "LOSS" | "DRAW" = winnerId === null ? "DRAW" : won ? "WIN" : "LOSS";
+      return { userId: p.userId, result, score: p.score, xp: amount, reason: won ? "ARENA_PVP_WIN" : "ARENA_PVP_PLAY" };
+    });
+    after.push(() => recordArenaResult(room, players));
   }
 
   async leaveRoom(rawCode: string, userId: string): Promise<void> {
@@ -552,7 +565,11 @@ export class ArenaManager {
           room.finishedAt = Date.now();
           if (other) {
             room.xpAwardedByUser[other.userId] = 25;
-            after.push(() => awardArenaXp(other.userId, 25, "ARENA_PVP_FORFEIT_WIN", room.code));
+            const players = [
+              { userId: other.userId, result: "WIN" as const, score: other.score, xp: 25, reason: "ARENA_PVP_FORFEIT_WIN" },
+              { userId, result: "LOSS" as const, score: room.players.find((p) => p.userId === userId)?.score ?? 0, xp: 0, reason: "ARENA_PVP_PLAY" },
+            ];
+            after.push(() => recordArenaResult(room, players));
           }
         }
         return undefined;

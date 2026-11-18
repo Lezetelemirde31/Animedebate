@@ -159,6 +159,10 @@ export interface EngineHooks {
     reason: MatchResultState["reason"];
     /** Players who walked out (forfeit): no reward for them. */
     leaverIds: string[];
+    /** Quick-match (matchmade) games are ranked; rooms are friendly. */
+    ranked: boolean;
+    scores: Record<string, number>;
+    startedAt: number;
   }): Promise<unknown>;
 }
 
@@ -744,7 +748,10 @@ export async function finish(
     if (hook && started) {
       const playerIds = s.players.map((p) => p.userId);
       const leaverIds = reason === "FORFEIT" ? playerIds.filter((id) => id !== winnerId) : [];
-      s.after.push(() => hook({ matchId: s.id, playerIds, winnerId, reason, leaverIds }));
+      const scores = Object.fromEntries(s.players.map((p) => [p.userId, p.score]));
+      const ranked = s.isMatchmade;
+      const startedAt = s.createdAt;
+      s.after.push(() => hook({ matchId: s.id, playerIds, winnerId, reason, leaverIds, ranked, scores, startedAt }));
     }
   }
   await tx.match.update({

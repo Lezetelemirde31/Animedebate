@@ -28,6 +28,10 @@ import { getPlayerStats, winRate } from "@/lib/stats";
 import { GAME_RULES } from "@/game/config";
 import { rankProgress } from "@/game/ranks";
 import { RankBadge } from "@/components/progression/RankBadge";
+import { LeagueBadge } from "@/components/platform/LeagueBadge";
+import { RecentMatches } from "@/components/platform/RecentMatches";
+import { gameInfo } from "@/game/platform";
+import { getPlayerGameSummaries, getRecentMatches } from "@/server/platform/queries";
 import { rarityRank } from "@/game/rarity";
 import { Avatar } from "@/components/ui/Avatar";
 import { AvatarPicker } from "@/components/AvatarPicker";
@@ -124,6 +128,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const wr = stats ? winRate(stats.auctionWins, stats.auctionLosses) : null;
   const bounds = xpBoundsForLevel(profile.level);
   const rankInfo = rankProgress(profile.xp, profile.level);
+  const [gameSummaries, recentGames] = await Promise.all([getPlayerGameSummaries(profile.id), getRecentMatches(profile.id, 8)]);
   const coinHistory = isMe
     ? await prisma.coinEvent.findMany({ where: { userId: profile.id }, orderBy: { createdAt: "desc" }, take: 12 })
     : [];
@@ -229,6 +234,41 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
             })}
           </div>
         )}
+      </section>
+
+      <section className="glass rounded-3xl p-6" data-testid="game-stats">
+        <h2 className="mb-4 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-widest text-zinc-300">
+          <Swords className="h-4 w-4 text-purple-300" /> {t.games.statsTitle}
+        </h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          {gameSummaries.map((gs) => {
+            const info = gameInfo(gs.game)!;
+            return (
+              <Link key={gs.game} href={`/leaderboard?game=${gs.game}`} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 transition hover:border-white/20">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-display font-bold" style={{ color: info.color }}>
+                    {info.name[locale]}
+                  </span>
+                  <span className="text-xs text-zinc-500">{t.games.lifetime(gs.lifetime.played)}</span>
+                </div>
+                {gs.season ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="font-display text-2xl font-bold text-white">{gs.season.rating}</span>
+                    <LeagueBadge rating={gs.season.rating} locale={locale} />
+                    {gs.season.position && <span className="text-xs text-purple-200">{t.games.position(gs.season.position)}</span>}
+                    <span className="w-full text-xs text-zinc-400">
+                      {t.games.record(gs.season.wins, gs.season.losses, gs.season.draws)} · {t.games.bestStreak}: {gs.season.bestStreak} · {t.games.peak}: {gs.season.peak}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="mt-2 text-sm text-zinc-500">{t.games.noRating}</div>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+        <h3 className="mb-2 mt-5 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">{t.games.recentTitle}</h3>
+        <RecentMatches matches={recentGames} locale={locale} />
       </section>
 
       {/* Stats Grid */}

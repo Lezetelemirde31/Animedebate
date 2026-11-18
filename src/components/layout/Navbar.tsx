@@ -49,10 +49,9 @@ export function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const LINKS = [
+    { href: "/games", label: t.games.nav, also: ["/play", "/arena", "/room"] },
     { href: "/debates", label: t.nav.debates },
     { href: "/comparisons", label: t.nav.comparisons },
-    { href: "/play", label: t.nav.play },
-    { href: "/arena", label: t.nav.arena },
     { href: "/characters", label: t.nav.characters },
     { href: "/leaderboard", label: t.nav.leaderboard },
   ];
@@ -87,7 +86,10 @@ export function Navbar() {
 
         <nav className="hidden items-center gap-1 lg:flex">
           {LINKS.map((l) => {
-            const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
+            const active =
+              pathname === l.href ||
+              pathname.startsWith(`${l.href}/`) ||
+              ("also" in l && (l.also ?? []).some((p) => pathname === p || pathname.startsWith(`${p}/`)));
             return (
               <Link
                 key={l.href}

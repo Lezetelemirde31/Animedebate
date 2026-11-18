@@ -34,6 +34,10 @@ interface StoreTables {
   notification: Row[];
   xpEvent: Row[];
   coinEvent: Row[];
+  season: Row[];
+  gameRating: Row[];
+  gameMatch: Row[];
+  gameMatchPlayer: Row[];
   moderationLog: Row[];
   matchSpectator: Row[];
   queueEntry: Row[];
@@ -276,6 +280,10 @@ function buildInitialTables(): StoreTables {
     notification: [],
     xpEvent: [],
     coinEvent: [],
+    season: [],
+    gameRating: [],
+    gameMatch: [],
+    gameMatchPlayer: [],
     moderationLog: [],
     matchSpectator: [],
     queueEntry: [],
@@ -292,6 +300,10 @@ function getTables(): StoreTables {
   g.__aaPreviewTables.queueEntry ??= [];
   g.__aaPreviewTables.arenaRoom ??= [];
   g.__aaPreviewTables.coinEvent ??= [];
+  g.__aaPreviewTables.season ??= [];
+  g.__aaPreviewTables.gameRating ??= [];
+  g.__aaPreviewTables.gameMatch ??= [];
+  g.__aaPreviewTables.gameMatchPlayer ??= [];
   return g.__aaPreviewTables;
 }
 
@@ -392,6 +404,14 @@ function resolveRow(tables: StoreTables, tableName: keyof StoreTables, row: Row,
         } else if (k === "_count") {
           target[k] = { bids: tables.bid.filter((b) => b.lotId === row.id).length };
         }
+      } else if ((tableName === "gameRating" || tableName === "gameMatchPlayer") && k === "user") {
+        const u = tables.user.find((x) => x.id === row.userId) ?? null;
+        target[k] = u ? resolveRow(tables, "user", u, subSpec) : null;
+      } else if (tableName === "gameMatchPlayer" && k === "match") {
+        const m = tables.gameMatch.find((x) => x.id === row.matchId) ?? null;
+        target[k] = m ? resolveRow(tables, "gameMatch", m, subSpec) : null;
+      } else if (tableName === "gameMatch" && k === "players") {
+        target[k] = tables.gameMatchPlayer.filter((p) => p.matchId === row.id).map((p) => resolveRow(tables, "gameMatchPlayer", p, subSpec));
       } else if (tableName === "bid" && k === "user") {
         const u = tables.user.find((x) => x.id === row.userId) ?? null;
         target[k] = u ? resolveRow(tables, "user", u, subSpec) : null;
@@ -497,6 +517,11 @@ function matchesWhere(tables: StoreTables, tableName: keyof StoreTables, row: Ro
     if (tableName === "ownedCharacter" && k === "character" && typeof v === "object") {
       const ch = tables.character.find((c) => c.id === row.characterId);
       if (!ch || !matchesWhere(tables, "character", ch, v)) return false;
+      continue;
+    }
+    if (tableName === "gameMatchPlayer" && k === "match" && typeof v === "object") {
+      const m = tables.gameMatch.find((x) => x.id === row.matchId);
+      if (!m || !matchesWhere(tables, "gameMatch", m, v)) return false;
       continue;
     }
     if (tableName === "matchPlayer" && k === "match" && typeof v === "object") {
@@ -689,6 +714,15 @@ function applyDefaults(tableName: keyof StoreTables, data: Row): Row {
   if (tableName === "queueEntry") {
     return { since: now, lastSeenAt: now, matchedCode: null, ...base };
   }
+  if (tableName === "gameRating") {
+    return { rating: 1000, peak: 1000, played: 0, wins: 0, losses: 0, draws: 0, streak: 0, bestStreak: 0, updatedAt: now, ...base };
+  }
+  if (tableName === "gameMatch") {
+    return { ranked: false, seasonId: null, refId: null, winnerId: null, startedAt: null, endedAt: now, ...base };
+  }
+  if (tableName === "gameMatchPlayer") {
+    return { score: null, ratingBefore: null, ratingAfter: null, xp: 0, coins: 0, endedAt: now, ...base };
+  }
   if (tableName === "ownedCharacter") {
     return { copies: 1, acquiredAt: now, lastAcquiredAt: now, sourceMatchId: null, ...base };
   }
@@ -836,6 +870,10 @@ export function createPreviewPrisma(): PrismaClient {
     notification: makeDelegate(tables, "notification"),
     xpEvent: makeDelegate(tables, "xpEvent"),
     coinEvent: makeDelegate(tables, "coinEvent"),
+    season: makeDelegate(tables, "season"),
+    gameRating: makeDelegate(tables, "gameRating"),
+    gameMatch: makeDelegate(tables, "gameMatch"),
+    gameMatchPlayer: makeDelegate(tables, "gameMatchPlayer"),
     moderationLog: makeDelegate(tables, "moderationLog"),
     matchSpectator: makeDelegate(tables, "matchSpectator"),
     queueEntry: makeDelegate(tables, "queueEntry"),

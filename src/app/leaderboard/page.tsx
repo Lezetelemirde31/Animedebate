@@ -8,6 +8,9 @@ import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState, PageHeader } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import { RankBadge } from "@/components/progression/RankBadge";
+import { LeagueBadge } from "@/components/platform/LeagueBadge";
+import { GAMES, gameInfo, isGameKey, type GameKey } from "@/game/platform";
+import { getLadder } from "@/server/platform/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +19,89 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.leaderboard.title };
 }
 
-export default async function LeaderboardPage({ searchParams }: { searchParams: Promise<{ sort?: string }> }) {
+function LadderTabs({ active, t, locale }: { active: string; t: Awaited<ReturnType<typeof getServerTranslations>>["t"]; locale: "tr" | "en" }) {
+  return (
+    <div className="mb-4 flex flex-wrap gap-2" data-testid="ladder-tabs">
+      <Link href="/leaderboard" className="chip !px-4 !py-2" data-active={active === "OVERALL"}>
+        {t.games.general}
+      </Link>
+      {GAMES.map((g) => (
+        <Link key={g.key} href={`/leaderboard?game=${g.key}`} className="chip !px-4 !py-2" data-active={active === g.key}>
+          {g.name[locale]}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+async function GameLadder({ game, locale, t, meId }: { game: GameKey; locale: "tr" | "en"; t: Awaited<ReturnType<typeof getServerTranslations>>["t"]; meId: string | null }) {
+  const { season, rows } = await getLadder(game, 100);
+  const info = gameInfo(game)!;
+  return (
+    <>
+      <PageHeader
+        eyebrow={`${t.leaderboard.eyebrow} · ${season.name}`}
+        title={
+          <>
+            {info.name[locale]} <span className="text-gradient">{t.games.ladderTitle}</span>
+          </>
+        }
+        description={t.games.howRating}
+      />
+      <LadderTabs active={game} t={t} locale={locale} />
+      {rows.length === 0 ? (
+        <EmptyState icon={Trophy} title={t.games.ladderEmpty} description={info.tagline[locale]} action={{ href: info.href, label: t.games.play }} />
+      ) : (
+        <div className="glass overflow-x-auto rounded-3xl" data-testid="game-ladder">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] uppercase tracking-widest text-zinc-500">
+                <th className="px-4 py-3">#</th>
+                <th className="px-4 py-3">{t.games.player}</th>
+                <th className="px-4 py-3 text-right">{t.games.rating}</th>
+                <th className="hidden px-4 py-3 text-right sm:table-cell">{t.games.peak}</th>
+                <th className="hidden px-4 py-3 text-right sm:table-cell">{t.games.played}</th>
+                <th className="hidden px-4 py-3 text-right md:table-cell">{t.games.winRate}</th>
+                <th className="hidden px-4 py-3 text-right md:table-cell">{t.games.bestStreak}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {rows.map((r, i) => (
+                <tr key={r.userId} className={cn(r.userId === meId && "bg-purple-500/10")}>
+                  <td className="px-4 py-3 font-display text-zinc-400">{i + 1}</td>
+                  <td className="px-4 py-3">
+                    <Link href={`/profile/${r.username}`} className="flex items-center gap-2 text-white hover:text-purple-200">
+                      <Avatar username={r.username} style={r.avatarStyle} imageUrl={r.avatarImage} size={28} />
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate font-semibold">{r.username}</span>
+                          <LeagueBadge rating={r.rating} locale={locale} />
+                        </span>
+                        <span className="block text-xs text-zinc-500 sm:hidden">{t.games.record(r.wins, r.losses, r.draws)}</span>
+                      </span>
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-right font-display text-lg font-bold text-white">{r.rating}</td>
+                  <td className="hidden px-4 py-3 text-right text-zinc-400 sm:table-cell">{r.peak}</td>
+                  <td className="hidden whitespace-nowrap px-4 py-3 text-right text-zinc-300 sm:table-cell">{t.games.record(r.wins, r.losses, r.draws)}</td>
+                  <td className="hidden px-4 py-3 text-right text-zinc-300 md:table-cell">{r.played ? `${Math.round((r.wins / r.played) * 100)}%` : "—"}</td>
+                  <td className="hidden px-4 py-3 text-right text-zinc-300 md:table-cell">{r.bestStreak}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default async function LeaderboardPage({ searchParams }: { searchParams: Promise<{ sort?: string; game?: string }> }) {
+  const params = await searchParams;
+  if (isGameKey(params.game)) {
+    const [{ locale, t }, viewer] = await Promise.all([getServerTranslations(), getCurrentUser()]);
+    return <GameLadder game={params.game} locale={locale} t={t} meId={viewer?.id ?? null} />;
+  }
   const [{ sort: rawSort }, { locale, t }, me, allRows] = await Promise.all([
     searchParams,
     getServerTranslations(),
@@ -61,6 +146,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
         }
         description={t.leaderboard.description}
       />
+      <LadderTabs active="OVERALL" t={t} locale={locale} />
       <div className="mb-6 flex flex-wrap gap-2">
         {(Object.keys(SORTS) as SortKey[]).map((k) => (
           <Link key={k} href={`/leaderboard?sort=${k}`} className="chip" data-active={k === sort}>

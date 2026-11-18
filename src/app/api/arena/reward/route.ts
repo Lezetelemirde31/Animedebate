@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/server";
-import { awardXp } from "@/lib/gamification";
+import { prisma } from "@/lib/db";
+import { recordGameResult } from "@/server/platform/results";
 import { isSameOrigin, jsonError, rateLimit } from "@/lib/http";
 
 const rewardSchema = z.object({
@@ -26,18 +27,28 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return jsonError("Invalid payload.", 400);
 
   const amount = parsed.data.won ? 15 : 5;
-  const result = await awardXp({
-    userId: user.id,
-    amount,
-    reason: parsed.data.won ? "ARENA_BOT_WIN" : "ARENA_BOT_PLAY",
-    refType: "ARENA_BOT",
+  const before = await prisma.user.findUnique({ where: { id: user.id }, select: { level: true } });
+  await recordGameResult({
+    game: "CARD_DUEL",
+    mode: "bot",
+    ranked: false,
+    players: [
+      {
+        userId: user.id,
+        result: parsed.data.won ? "WIN" : "LOSS",
+        score: null,
+        xp: amount,
+        reason: parsed.data.won ? "ARENA_BOT_WIN" : "ARENA_BOT_PLAY",
+      },
+    ],
   });
+  const now = await prisma.user.findUnique({ where: { id: user.id }, select: { xp: true, level: true } });
 
   return NextResponse.json({
     ok: true,
     xpAwarded: amount,
-    xp: result.xp,
-    level: result.level,
-    leveledUp: result.leveledUp,
+    xp: now?.xp ?? 0,
+    level: now?.level ?? 1,
+    leveledUp: (now?.level ?? 1) > (before?.level ?? 1),
   });
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Eye, Flame, Gavel, MessageSquare, Radio, ShieldCheck, Sparkles, Swords, Timer, Trophy, Wallet } from "lucide-react";
+import { ArrowRight, Eye, Flame, Gamepad2, Gavel, MessageSquare, Radio, ShieldCheck, Sparkles, Swords, Timer, Trophy, Wallet } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/server";
 import { enabledCharacterWhere, toCharacterDTO } from "@/lib/characters";
@@ -67,11 +67,11 @@ export default async function HomePage() {
             <span className="text-gradient">{t.home.heroLine2}</span>
           </h1>
           <p className="mt-6 max-w-xl text-lg text-zinc-300">
-            {t.home.heroDescPrefix} ${GAME_RULES.startingBalance} {t.home.heroDescMid} {animeNamesList} {t.home.heroDescSuffix}
+            {t.home.heroPlatformDesc(animeNamesList)}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={user ? "/play" : "/register?next=/play"} className="btn btn-primary !px-7 !py-4 !text-base" data-testid="hero-play">
-              <Gavel className="h-5 w-5" /> {user ? t.home.playNow : t.home.startFree}
+            <Link href={user ? "/games" : "/register?next=/games"} className="btn btn-primary !px-7 !py-4 !text-base" data-testid="hero-play">
+              <Gamepad2 className="h-5 w-5" /> {user ? t.home.playNow : t.home.startFree}
             </Link>
             <Link href="/characters" className="btn btn-ghost !px-7 !py-4 !text-base">
               {t.home.browseChars(total)} <ArrowRight className="h-4 w-4" />
