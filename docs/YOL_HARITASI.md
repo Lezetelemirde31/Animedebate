@@ -15,10 +15,11 @@ Açık artırma platformdaki oyunlardan yalnızca biridir; öncelik sırası aş
 | XP, seviye, 10 rütbe, Anime Coin (AC), 17 başarım | ✅ Var (tüm oyunlara ortak) |
 | Karakter veritabanı | ✅ 185 karakter, güç tieri, nadirlik, karaktere özel puan, Türkçe metinler, görseller |
 | Canlı Açık Artırma | ✅ Veritabanı tabanlı, Vercel uyumlu, 5'erli takım kuralları |
-| Kart Arenası (counter-pick düellosu) | ✅ Bot ve PvP, veritabanı tabanlı odalar |
+| Kart Arenası | ⏸ Kaldırıldı; Aşama 5'te sıfırdan yeniden yapılacak |
 | Tartışmalar, VS oylamaları, yorumlar, bildirimler, admin | ✅ Var |
-| Oyun başına ayrı rating, sezonlar, birleşik maç geçmişi | ❌ Yok → **Aşama 1** |
-| Anime 1v1, Bu Karakter Kim?, Quiz, Turnuvalar, Arkadaşlar | ❌ Yok |
+| Oyun başına ayrı rating, sezonlar, birleşik maç geçmişi | ✅ Aşama 1 tamamlandı |
+| Anime 1v1 | ✅ Aşama 2 tamamlandı (`/versus`) |
+| Bu Karakter Kim?, Quiz, Turnuvalar, Arkadaşlar | ❌ Yok |
 
 ### Teknik ilkeler (tüm oyunlar için)
 
@@ -36,7 +37,7 @@ Açık artırma platformdaki oyunlardan yalnızca biridir; öncelik sırası aş
 
 ## Aşamalar
 
-### Aşama 1 — Platform çekirdeği ve ortak ilerleme
+### Aşama 1 — Platform çekirdeği ve ortak ilerleme ✅
 - Oyun kayıt defteri (hangi oyunlar var, adları, sayfaları).
 - **Sezonlar** (ör. 3 aylık), **oyun başına reyting** (Elo; ilk 10 maçta hızlı yerleşme), seri/en iyi seri.
 - **Birleşik maç geçmişi:** her oyunun sonucu tek tabloya yazılır (oyun, mod, dereceli mi, sonuç, reyting değişimi, kazanılan XP/AC).
@@ -46,13 +47,16 @@ Açık artırma platformdaki oyunlardan yalnızca biridir; öncelik sırası aş
 - **Sıralama:** genel (XP) + oyun bazlı sezon reytingleri.
 - **Profil:** oyun bazlı reyting/istatistik ve son maçlar.
 
-### Aşama 2 — Anime 1v1 (stratejik karakter düellosu)
+### Aşama 2 — Anime 1v1 (stratejik karakter düellosu) ✅
 - Her karaktere dengelenmiş nitelikler: Can, Saldırı, Savunma, Hız, Enerji + 3 yetenek
   (tür, enerji maliyeti, etki, bekleme süresi). Nitelikler güç tieri ve rollerden türetilir, elle dengelenir.
 - **Eşzamanlı gizli hamle** sistemi: her tur iki oyuncu aynı anda hamle seçer
   (Saldırı / Savunma / Yetenek / Odaklan). Hız önceliği, karşı hamleler, enerji yönetimi → rastgelelik yok, karar önemli.
 - Modlar: Antrenman (bota karşı), Dostluk maçı (kod/bağlantı), **Dereceli** (eşleştirme, reyting).
 - Maç geçmişi, tur tur tekrar özeti, sezon sıralaması.
+- Uygulandı: 4 dövüş tipi (Tank/Hız/Güç/Taktik), 8 yetenek türü, 20 tur sınırı, 25 sn tur süresi,
+  3 kez hamle seçmeyen kaybeder, çekilen oyuncu ödül almaz, botta günlük 15 ödüllü maç.
+  Denge testi: hiçbir tip diğerine karşı %20–80 dışına çıkmıyor; zor bot kolay botu %75+ yeniyor.
 
 ### Aşama 3 — Bu Karakter Kim?
 - Modlar: **Silüet**, **Bulanık**, **Sadece gözler**, karışık. Zorluk seviyeleri (popüler → az bilinen karakterler, ipucu sayısı).
