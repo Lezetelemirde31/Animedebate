@@ -260,6 +260,7 @@ describe("Deck Arena pure game logic", () => {
         abilities: first.abilities,
         rarity: first.rarity,
         powerLevel: first.powerLevel,
+        score: first.score ?? 10,
         primeForm: first.primeForm,
         tierCode: first.tierCode,
       },

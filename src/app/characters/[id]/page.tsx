@@ -5,7 +5,7 @@ import { ArrowLeft, Flame, Gavel, Sparkles, Swords, TrendingUp, Users, Zap } fro
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getServerTranslations } from "@/lib/i18n-server";
-import { RARITY_INFO } from "@/game/rarity";
+import { RARITY_INFO, characterScore } from "@/game/rarity";
 import { POWER_TIER_INFO, formatPowerTier } from "@/game/power-tier";
 import { getCharacterScaling } from "@/data/characters";
 import { CharacterArt } from "@/components/character/CharacterArt";
@@ -196,7 +196,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             </div>
 
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <StatTile label={t.characters.opensAt} value={`$${info.startingPrice}`} icon={Gavel} accent="purple" hint={t.characters.scorePointsHint(info.points)} />
+              <StatTile label={t.characters.opensAt} value={`$${info.startingPrice}`} icon={Gavel} accent="purple" hint={t.characters.scorePointsHint(characterScore(character))} />
               <StatTile label={t.characters.timesSold} value={stats._count._all} icon={TrendingUp} accent="sky" />
               <StatTile label={t.characters.avgPrice} value={stats._avg.finalPrice ? `$${stats._avg.finalPrice.toFixed(1)}` : "—"} accent="amber" />
               <StatTile label={t.characters.collectors} value={owners} icon={Users} accent="green" />

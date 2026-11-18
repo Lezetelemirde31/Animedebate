@@ -798,5 +798,130 @@
     "url": "https://s4.anilist.co/file/anilistcdn/character/large/3150.jpg",
     "anilistId": 3150,
     "matchedName": "Zetsu"
+  },
+  "one-piece-imu": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b128130-X9N46ajhSMOi.png",
+    "anilistId": 128130,
+    "matchedName": "Imu"
+  },
+  "one-piece-joyboy": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b341936-l61bq77sTJBM.png",
+    "anilistId": 341936,
+    "matchedName": "Joy Boy"
+  },
+  "one-piece-rocks-d-xebec": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b146411-1cWXsUjauDEU.png",
+    "anilistId": 146411,
+    "matchedName": "Xebec Rocks"
+  },
+  "one-piece-silvers-rayleigh": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b17142-OXOpztWZIE2A.png",
+    "anilistId": 17142,
+    "matchedName": "Rayleigh Silvers"
+  },
+  "one-piece-akainu": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b22687-tCQVpj6wZhRk.jpg",
+    "anilistId": 22687,
+    "matchedName": "Sakazuki"
+  },
+  "one-piece-scopper-gaban": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b216702-aXhFfRg9vHcb.jpg",
+    "anilistId": 216702,
+    "matchedName": "Scopper Gaban"
+  },
+  "one-piece-kozuki-oden": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b149797-UmdR7up3kgoK.png",
+    "anilistId": 149797,
+    "matchedName": "Oden Kouzuki"
+  },
+  "one-piece-aokiji": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2752-0ENS2a39muDz.png",
+    "anilistId": 2752,
+    "matchedName": "Kuzan"
+  },
+  "one-piece-kizaru": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b21093-Pc4kOjUn3ZkZ.png",
+    "anilistId": 21093,
+    "matchedName": "Borsalino"
+  },
+  "one-piece-eustass-kid": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b14989-uykLqnBTdAc2.jpg",
+    "anilistId": 14989,
+    "matchedName": "Kid Eustass"
+  },
+  "one-piece-ryuma": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b17178-SczXHzLzZqzn.jpg",
+    "anilistId": 17178,
+    "matchedName": "Ryuuma Shimotsuki"
+  },
+  "one-piece-fujitora": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b82259-NFdvvcSHup7Z.jpg",
+    "anilistId": 82259,
+    "matchedName": "Isshou"
+  },
+  "one-piece-marco": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b9323-tGArly93xBZv.png",
+    "anilistId": 9323,
+    "matchedName": "Marco"
+  },
+  "one-piece-benn-beckman": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b4882-2zsLPjqUeOJ4.png",
+    "anilistId": 4882,
+    "matchedName": "Ben Beckman"
+  },
+  "one-piece-enel": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1541-6c8RouunoL88.jpg",
+    "anilistId": 1541,
+    "matchedName": "Enel"
+  },
+  "one-piece-magellan": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b22618-ki6mxLc2f9Tm.png",
+    "anilistId": 22618,
+    "matchedName": "Magellan"
+  },
+  "one-piece-caesar-clown": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b61603-x8RTOk7DIFIZ.jpg",
+    "anilistId": 61603,
+    "matchedName": "Caesar Clown"
+  },
+  "one-piece-rob-lucci": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b5677-ZrZunVe7Kq5P.png",
+    "anilistId": 5677,
+    "matchedName": "Lucci Rob"
+  },
+  "one-piece-x-drake": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b20289-2bumPKcGsWhU.jpg",
+    "anilistId": 20289,
+    "matchedName": "Drake X."
+  },
+  "one-piece-monkey-d-garp": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b8064-dPltKaZ8RAsj.jpg",
+    "anilistId": 8064,
+    "matchedName": "Garp"
+  },
+  "one-piece-monkey-d-dragon": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b4884-iBn6FzQ2ESLC.png",
+    "anilistId": 4884,
+    "matchedName": "Dragon"
+  },
+  "one-piece-king": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b130416-viDCE52yqITx.png",
+    "anilistId": 130416,
+    "matchedName": "King"
+  },
+  "one-piece-queen": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b131427-nQfM4dHqP6Qw.jpg",
+    "anilistId": 131427,
+    "matchedName": "Queen"
+  },
+  "one-piece-jack": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b135949-CpN2RP72jA20.jpg",
+    "anilistId": 135949,
+    "matchedName": "Jack"
+  },
+  "one-piece-killer": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b18827-uvYXjeffe0gW.png",
+    "anilistId": 18827,
+    "matchedName": "Killer"
   }
 }

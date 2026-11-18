@@ -61,6 +61,7 @@ function buildInitialTables(): StoreTables {
     abilities: [...c.abilities],
     rarity: c.rarity,
     powerLevel: c.powerLevel ?? null,
+    score: c.score ?? null,
     enabled: true,
     createdAt: now,
     updatedAt: now,

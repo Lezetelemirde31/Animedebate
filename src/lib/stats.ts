@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
-import { RARITIES, RARITY_INFO } from "@/game/rarity";
+import { RARITIES, RARITY_INFO, characterScore } from "@/game/rarity";
 
 export interface PlayerStatsRow {
   id: string;
@@ -40,7 +40,7 @@ export async function getPlayerStats(where?: { userId?: string }): Promise<Playe
     });
     return users.map((u) => {
       const mine = owned.filter((o) => o.userId === u.id);
-      const collectionScore = mine.reduce((s, o) => s + RARITY_INFO[o.character.rarity].points, 0);
+      const collectionScore = mine.reduce((s, o) => s + characterScore(o.character), 0);
       return {
         id: u.id,
         username: u.username,
@@ -74,7 +74,7 @@ export async function getPlayerStats(where?: { userId?: string }): Promise<Playe
            u."xp", u."level", u."debatesCount", u."comparisonsCount", u."commentsCount", u."likesReceived",
            u."auctionWins", u."auctionLosses", u."matchesPlayed", u."matchesWon", u."totalSpent",
            COUNT(o."id") AS "characters",
-           COALESCE(SUM(${pointsCase}), 0) AS "collectionScore"
+           COALESCE(SUM(COALESCE(ch."score", ${pointsCase})), 0) AS "collectionScore"
     FROM "User" u
     LEFT JOIN "OwnedCharacter" o ON o."userId" = u."id"
     LEFT JOIN "Character" ch ON ch."id" = o."characterId"

@@ -555,7 +555,7 @@ async function startNextLot(ctx: Ctx, s: RoomS, at: number): Promise<void> {
 /** Adds a character to a player's team (balance, score, collection). */
 async function awardCharacter(ctx: Ctx, s: RoomS, winner: PlayerS, characterId: string, price: number, at: number): Promise<void> {
   const { tx } = ctx;
-  const points = scoreForRarity(ctx.catalog.rarity(characterId) ?? "COMMON");
+  const points = ctx.catalog.get(characterId)?.score ?? scoreForRarity(ctx.catalog.rarity(characterId) ?? "COMMON");
   // A sale can never take a balance below zero.
   const debit = await tx.matchPlayer.updateMany({
     where: { id: winner.rowId, balance: { gte: price } },

@@ -7,7 +7,7 @@ import { enabledCharacterWhere, toCharacterDTO } from "@/lib/characters";
 import { RARITY_LABELS } from "@/lib/i18n";
 import { getServerTranslations } from "@/lib/i18n-server";
 import { ENABLED_ANIME } from "@/data/anime";
-import { RARITIES, RARITY_INFO } from "@/game/rarity";
+import { RARITIES, RARITY_INFO, characterScore } from "@/game/rarity";
 import { EmptyState, PageHeader, StatTile } from "@/components/ui/primitives";
 import { CharacterBrowser, type BrowserItem } from "@/components/character/CharacterBrowser";
 
@@ -31,7 +31,7 @@ export default async function CollectionPage() {
     owned: { copies: o.copies, lastPrice: o.lastPrice, totalSpent: o.totalSpent, acquiredAt: o.lastAcquiredAt.getTime() },
   }));
   const spent = owned.reduce((s, o) => s + o.totalSpent, 0);
-  const value = owned.reduce((s, o) => s + RARITY_INFO[o.character.rarity].points, 0);
+  const value = owned.reduce((s, o) => s + characterScore(o.character), 0);
   const byRarity = [...RARITIES].reverse().map((r) => ({ r, n: owned.filter((o) => o.character.rarity === r).length }));
   const byAnime = ENABLED_ANIME.map((a) => ({ a, n: owned.filter((o) => o.character.animeId === a.id).length }));
 

@@ -1,6 +1,7 @@
 import type { Anime, Character } from "@prisma/client";
 import type { CharacterDTO } from "@/game/types";
 import { getCharacterScaling } from "@/data/characters";
+import { characterScore } from "@/game/rarity";
 
 export type CharacterWithAnime = Character & { anime: Pick<Anime, "name" | "shortName"> };
 
@@ -17,6 +18,7 @@ export function toCharacterDTO(c: CharacterWithAnime): CharacterDTO {
     abilities: c.abilities,
     rarity: c.rarity,
     powerLevel: c.powerLevel,
+    score: characterScore(c),
     primeForm: scaling?.primeForm,
     tierCode: scaling?.tierCode,
   };

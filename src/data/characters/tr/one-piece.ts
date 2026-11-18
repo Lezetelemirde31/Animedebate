@@ -163,4 +163,154 @@ export const onePieceTr: Record<string, CharacterTextTr> = {
       "Parçalanma Meyvesi sayesinde tüm kesiklere bağışık olan ve kasaba yıkan Özel Muggy Topları ateşleyen Buggy, kâğıt üzerinde İmparator olarak Mihawk ve Crocodile'a liderlik eder.",
     abilities: ["Parçalanma Bağışıklığı", "Özel Muggy Topu", "Cross Guild Nüfuzu", "Akıl Almaz Şans"],
   },
+  "one-piece-imu": {
+    title: "Dünyanın Hükümdarı · Boş Taht",
+    description:
+      "Boş Taht'ta oturan Dünya Hükümeti'nin gizli hükümdarı. Imu, Beş Yaşlı'ya ve Ana Alev'e hükmeder; koca bir adayı haritadan silebilir.",
+    abilities: ["Ana Alev", "Beş Yaşlı'ya Emir", "Gölge Ele Geçirme", "Sekiz Asırlık Bilgi"],
+  },
+  "one-piece-joyboy": {
+    title: "İlk Korsan · Güneş Tanrısı",
+    description:
+      "Boşluk Yüzyılı'nın efsanevi adamı; lastik bedeni ve kahkahasıyla insanları özgürleştirdi. Balık-İnsanlara verdiği söz ve hazinesi, sekiz yüz yıl sonra dünyayı şekillendirdi.",
+    abilities: ["Güneş Tanrısı Nika Uyanışı", "Çizgi Film Gücü", "Yüce Kral Aşılaması", "Özgürlük Davulları"],
+  },
+  "one-piece-rocks-d-xebec": {
+    title: "Rocks Korsanları'nın Kaptanı",
+    description:
+      "Geleceğin İmparatorları Beyazsakal, Big Mom ve Kaido'yu tek mürettebatta toplayıp dünyanın kralı olmayı hedefleyen korsan. God Valley'de Roger ile Garp onu durdurdu.",
+    abilities: ["Yüce Kral Aşılaması", "Fatih Hakisi", "Canavarlar Mürettebatı", "Dünya Hâkimiyeti Hırsı"],
+  },
+  "one-piece-monkey-d-garp": {
+    title: "Denizcilerin Kahramanı",
+    description:
+      "God Valley'de Roger ile birlikte Rocks'ı deviren Denizci kahramanı. Hakiyle kaplı Galaksi Darbesi tek yumrukta koca mahalleleri ezer.",
+    abilities: ["Galaksi Darbesi", "Sevgi Yumruğu", "İleri Zırh Hakisi", "Fatih Hakisi"],
+  },
+  "one-piece-monkey-d-dragon": {
+    title: "Devrimci Ordu'nun Lideri",
+    description:
+      "Dünya Hükümeti'nin en büyük düşmanı ve Luffy'nin babası. Dragon dünyanın dört bir yanında devrimlere öncülük eder ve rüzgârın kendisine hükmediyor gibidir.",
+    abilities: ["Rüzgâr Kontrolü", "Devrimci Komuta", "Fatih Hakisi", "Stratejik Deha"],
+  },
+  "one-piece-silvers-rayleigh": {
+    title: "Kara Kral · Roger'ın Yardımcısı",
+    description:
+      "Gol D. Roger'ın sağ kolu ve Luffy'ye Haki'yi öğreten usta. Yaşlıyken bile Amiral Kizaru'yu durdurdu; zirvesinde Korsanlar Kralı'nın yanında savaştı.",
+    abilities: ["Yüce Kral Aşılaması", "İleri Gözlem Hakisi", "Usta Kılıç Ustalığı", "Kaplama Ustalığı"],
+  },
+  "one-piece-akainu": {
+    title: "Filo Amirali · Sakazuki",
+    description:
+      "Mutlak Adalet'i savunan acımasız Filo Amirali. Magma Meyvesi her şeyi eritir; Marineford'da Ace'i öldürdü ve Aokiji ile on gün savaştı.",
+    abilities: ["Magma Meyvesi", "Büyük Patlama", "Meigo", "Mutlak Adalet"],
+  },
+  "one-piece-scopper-gaban": {
+    title: "Korsanlar Kralı'nın Sol Kolu",
+    description:
+      "Balta ve mızrak kullanan Roger Korsanları'nın en güçlülerinden biri. God Valley'de Roger'ın yanında savaştı, sonra Yeni Dünya'da yeniden ortaya çıktı.",
+    abilities: ["Balta ve Mızrak Ustalığı", "Fatih Hakisi", "Roger Korsanları Gazisi", "İleri Haki"],
+  },
+  "one-piece-kozuki-oden": {
+    title: "Kuri'nin Lordu · İki Kılıçlı Samuray",
+    description:
+      "Beyazsakal ve Roger ile denize açılan Wano'nun efsanevi samurayı. Oden İki Kılıç Stili, Kaido'nun taşıdığı tek yara izini bıraktı.",
+    abilities: ["Oden İki Kılıç Stili", "Togen Totsuka", "Fatih Hakisi", "Enma ve Ame no Habakiri"],
+  },
+  "one-piece-aokiji": {
+    title: "Eski Amiral · Kuzan",
+    description:
+      "Marineford'da koca bir denizi donduran rahat tavırlı eski Amiral. Kuzan artık kendi adalet anlayışıyla Karasakal'ın yanında yol alıyor.",
+    abilities: ["Buz Meyvesi", "Buz Çağı", "Buz Zaman Kapsülü", "Buz Kılıcı"],
+  },
+  "one-piece-kizaru": {
+    title: "Amiral · Borsalino",
+    description:
+      "Işık hızında hareket edip lazer tekmeler atan ışığın Amirali. Işık Meyvesi sayesinde ondan kaçmak neredeyse imkânsızdır.",
+    abilities: ["Işık Meyvesi", "Işık Hızında Tekme", "Yasakani Kutsal Mücevheri", "Ama no Murakumo"],
+  },
+  "one-piece-eustass-kid": {
+    title: "Kid Korsanları'nın Kaptanı · Süpernova",
+    description:
+      "Law ile birlikte Big Mom'u deviren En Kötü Nesil'in öfkeli Süpernovası. Uyanmış manyetizması koca savaş alanlarını saldırılarına çeker.",
+    abilities: ["Mıknatıs Meyvesi", "Lanetli Serseri", "Atama", "Fatih Hakisi"],
+  },
+  "one-piece-ryuma": {
+    title: "Ölülerin Kralı · Kılıç Tanrısı",
+    description:
+      "Bir ejderhayı öldürüp kara kılıç Shusui'yi kazanan efsanevi samuray. Thriller Bark'ta zombi olarak bile kılıç ustalığıyla Brook'u alt etti.",
+    abilities: ["Ejderha Kesen Kılıç Ustalığı", "Shusui", "Aslan Şarkısı Kesiği", "Iai Ustalığı"],
+  },
+  "one-piece-fujitora": {
+    title: "Amiral · Issho",
+    description:
+      "Uzaydan göktaşı indiren kör Amiral. Issho, kılıçlı bastonu ve Basınç Meyvesi ile kendi adalet anlayışının izinden gider.",
+    abilities: ["Basınç Meyvesi", "Yerçekimi Kılıcı", "Göktaşı Çekme", "Gözlem Hakisi"],
+  },
+  "one-piece-marco": {
+    title: "Anka · Birinci Tümen Komutanı",
+    description:
+      "Beyazsakal'ın Birinci Tümen Komutanı. Mitolojik Zoan anka alevleri her yarayı iyileştirir; Amirallerle ve İmparatorların en güçlü komutanlarıyla çarpışabilir.",
+    abilities: ["Anka Yenilenmesi", "Mavi Alevler", "Anka Damgası", "Zırh Hakisi"],
+  },
+  "one-piece-king": {
+    title: "Kaido'nun Sağ Kolu · Lunaryalı",
+    description:
+      "Hayvan Korsanları'nın Yıldızı ve son Lunaryalılardan biri. Alevli bedeni ve Antik Zoan Pteranodon formu onu neredeyse dokunulmaz kılar.",
+    abilities: ["Lunaryalı Alevleri", "Pteranodon Formu", "İmparatorluk Ateş Kuşu", "Demir Beden"],
+  },
+  "one-piece-benn-beckman": {
+    title: "Kızıl Saçlı Korsanlar'ın Yardımcısı",
+    description:
+      "IQ'sunun 200'ü aştığı söylenen Shanks'in keskin zekâlı yardımcısı. Marineford'da Amiral Kizaru'yu silah zoruyla durdurdu.",
+    abilities: ["İleri Zırh Hakisi", "Keskin Nişancılık", "Taktik Deha", "Tüfekle Yakın Dövüş"],
+  },
+  "one-piece-queen": {
+    title: "Veba · Yıldız",
+    description:
+      "Hayvan Korsanları'nın sayborg Yıldızı; Brachiosaurus formunda lazerler, testereler ve Buz Oni virüsü gibi biyolojik silahlar saklar.",
+    abilities: ["Brachiosaurus Formu", "Sayborg Cephaneliği", "Buz Oni Virüsü", "Kara Kahve Bombaları"],
+  },
+  "one-piece-enel": {
+    title: "Skypiea'nın Tanrısı",
+    description:
+      "Kendini Skypiea'nın Tanrısı ilan eden, Gürleme Meyvesi ile canlı şimşeğe dönüşen Enel. Mantra ile adadaki her sesi duyuyordu.",
+    abilities: ["Gürleme Meyvesi", "Raigo", "Amaru", "Mantra"],
+  },
+  "one-piece-jack": {
+    title: "Kuraklık · Yıldız",
+    description:
+      "Koca bir donanmayı batıracak saldırıdan sağ çıkan Hayvan Korsanları'nın en dayanıklı Yıldızı. Mamut formu Zou'nun Mink ordusunu ezdi.",
+    abilities: ["Mamut Formu", "Kuraklık Dayanıklılığı", "İkiz Palalar", "Kırılmaz Beden"],
+  },
+  "one-piece-killer": {
+    title: "Katliam Askeri · Kid'in Sağ Kolu",
+    description:
+      "Dönen tırpan bıçaklarıyla Kid'in sadık sağ kolu. Cezalandırıcı tekniği ve saf hızıyla Wano'da Basil Hawkins'i yendi.",
+    abilities: ["Cezalandırıcılar", "Katliam Kesiği", "Hız Atağı", "Zırh Hakisi"],
+  },
+  "one-piece-magellan": {
+    title: "Impel Down Başgardiyanı",
+    description:
+      "Zehir Meyvesi dokunduğu her şeyi zehirleyen Impel Down başgardiyanı. Zehir İblisi formu Luffy'yi yendi ve büyük kaçışın önünü kesti.",
+    abilities: ["Zehir Meyvesi", "Zehir İblisi", "Hidra", "Klor Topu"],
+  },
+  "one-piece-caesar-clown": {
+    title: "Gaz Ustası · Çılgın Bilim İnsanı",
+    description:
+      "Gaz Meyvesi ile bir bölgedeki oksijeni çekebilen ve ölümcül Shinokuni gazını yaratan dâhi ama zalim bilim insanı.",
+    abilities: ["Gaz Meyvesi", "Shinokuni", "Gastinet", "Oksijen Çekme"],
+  },
+  "one-piece-rob-lucci": {
+    title: "CP0 Ajanı · Leopar",
+    description:
+      "Altı Rokushiki tekniğinin hepsinde ustalaşan soğukkanlı CP0 ajanı. Uyanmış Leopar formu ve Rokuogan'ı Egghead'de Luffy'yi zorladı.",
+    abilities: ["Rokushiki Ustalığı", "Rokuogan", "Leopar Formu", "Uyanmış Zoan"],
+  },
+  "one-piece-x-drake": {
+    title: "Eski Denizci Tuğamiral · SWORD",
+    description:
+      "Allosaurus'a dönüşen bir Süpernova ve gizli SWORD kaptanı. Denizciler için casusluk yaparken Kaido'ya Başrol olarak hizmet etti.",
+    abilities: ["Allosaurus Formu", "Antik Zoan Dayanıklılığı", "Kılıç ve Balta", "Gizli Görev Taktikleri"],
+  },
 };

@@ -16,6 +16,8 @@ export interface CharacterSeed {
   rarity: Rarity;
   /** 1–100 power rating derived from primeForm and tierCode. */
   powerLevel: number;
+  /** Match score when it differs from the rarity's default (e.g. 12 for the strongest Mythics). */
+  score?: number;
   /** Override for the artwork lookup if the display name is ambiguous. */
   searchName?: string;
   /** Exact AniList character id for the artwork lookup (wins over searchName). */

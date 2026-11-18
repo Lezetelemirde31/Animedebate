@@ -15,6 +15,8 @@ export interface CharacterDTO {
   abilities: string[];
   rarity: Rarity;
   powerLevel: number | null;
+  /** Match score this character is worth. */
+  score: number;
   primeForm?: string;
   tierCode?: PowerTierCode;
 }

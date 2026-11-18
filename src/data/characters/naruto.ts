@@ -14,6 +14,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       abilities: ["Baryon Mode", "Six Paths Sage Mode", "Tailed Beast Rasenshuriken", "Shadow Clone Jutsu"],
       rarity: "MYTHIC",
       powerLevel: 91,
+      score: 12,
     },
     {
       slug: "madara-uchiha",
@@ -60,7 +61,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "Empowered by Obito's Six Paths chakra and both Mangekyō Sharingan, DMS Kakashi manifested a Perfect Susanoo and phased intangible attacks while slicing Kaguya with Kamui Raikiri.",
       abilities: ["Kamui Raikiri", "Perfect Susanoo", "Kamui Intangibility", "Kamui Shuriken"],
-      rarity: "LEGENDARY",
+      rarity: "MYTHIC",
       powerLevel: 86,
     },
     {
@@ -72,7 +73,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "As the first Ten-Tails Jinchūriki, Obito gained Six Paths Senjutsu, Truth-Seeking Orbs, and the Sword of Nunoboko, overpowering Edo Hokage simultaneously.",
       abilities: ["Sword of Nunoboko", "Truth-Seeking Balls", "Six Red Yang Formation", "Kamui"],
-      rarity: "LEGENDARY",
+      rarity: "MYTHIC",
       powerLevel: 84,
       anilistId: 3149,
     },
@@ -87,6 +88,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       abilities: ["Night Guy", "Evening Elephant", "Eighth Gate of Death", "Hirudora"],
       rarity: "LEGENDARY",
       powerLevel: 83,
+      score: 7,
     },
     {
       slug: "minato-namikaze",
@@ -99,6 +101,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       abilities: ["Flying Thunder God", "Nine-Tails Chakra Mode", "Sage Mode", "Guiding Thunder"],
       rarity: "LEGENDARY",
       powerLevel: 79,
+      score: 7,
     },
     {
       slug: "nagato",
@@ -218,7 +221,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "As an adult taijutsu master capable of opening the Seventh Gate, Lee produces shockwave-generating punches and Hirudora blasts without relying on ninjutsu.",
       abilities: ["Seventh Gate", "Hirudora", "Primary Lotus", "Drunken Fist"],
-      rarity: "RARE",
+      rarity: "EPIC",
       powerLevel: 66,
     },
     {
@@ -230,7 +233,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "Combining unmatched 200+ IQ battlefield strategy with shadow paralysis strong enough to restrain Kage-level opponents briefly, prime Shikamaru leads the Leaf.",
       abilities: ["Shadow Possession", "Shadow Stitching", "Kage-Level Strategy", "Shadow Neck Bind"],
-      rarity: "RARE",
+      rarity: "LEGENDARY",
       powerLevel: 63,
     },
     {
@@ -371,6 +374,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       abilities: ["Full Tailed Beast Mode", "Tailed Beast Bomb", "Seven Swords Dance", "Lariat"],
       rarity: "LEGENDARY",
       powerLevel: 74,
+      score: 6,
     },
     {
       slug: "hiruzen-sarutobi",
@@ -456,6 +460,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       abilities: ["Summoning: Ibuse", "Poison Mist", "Kusarigama Mastery", "Tactical Genius"],
       rarity: "LEGENDARY",
       powerLevel: 63,
+      score: 6,
       searchName: "Hanzou",
     },
     {
@@ -492,7 +497,7 @@ export const narutoCharacters: AnimeCharacterSet = {
       description:
         "The orange-haired orphan who dreamed of peace and founded the original Akatsuki with Nagato and Konan. Trained by Jiraiya, he fought with Wind Release and fierce resolve.",
       abilities: ["Wind Release", "Jiraiya's Training", "Leadership", "Unbreakable Resolve"],
-      rarity: "EPIC",
+      rarity: "RARE",
       powerLevel: 42,
     },
   ],

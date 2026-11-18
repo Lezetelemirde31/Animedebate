@@ -53,6 +53,7 @@ async function main() {
       abilities: c.abilities,
       rarity: c.rarity,
       powerLevel: c.powerLevel ?? null,
+      score: c.score ?? null,
       enabled: true,
     };
     await prisma.character.upsert({ where: { id: c.id }, create: { id: c.id, ...data }, update: data });

@@ -14,6 +14,7 @@ export const borutoCharacters: AnimeCharacterSet = {
       abilities: ["Sukunahikona", "Daikokuten", "Black Receiver Rods", "Ōtsutsuki Taijutsu"],
       rarity: "MYTHIC",
       powerLevel: 91,
+      score: 12,
       searchName: "Isshiki Ootsutsuki",
     },
     {
@@ -62,7 +63,7 @@ export const borutoCharacters: AnimeCharacterSet = {
       description:
         "After absorbing Kinshiki into a chakra fruit, Fused Momoshiki overwhelmed the Four Kage in seconds and forced Naruto and Sasuke into a combined Kurama-Susanoo clash.",
       abilities: ["Takamimusubinokami", "Inukai Takeru no Mikoto", "Chakra Weapon Creation", "Kāma Imprint"],
-      rarity: "LEGENDARY",
+      rarity: "MYTHIC",
       powerLevel: 87,
       searchName: "Momoshiki Ootsutsuki",
     },
@@ -112,7 +113,7 @@ export const borutoCharacters: AnimeCharacterSet = {
       description:
         "Reborn with Kurama's chakra fully harmonized inside her in Two Blue Vortex, Himawari unleashes Tailed Beast Bombs, instant regeneration, and Byakugan precision.",
       abilities: ["Kurama Chakra Mode", "Tailed Beast Bomb", "Instant Regeneration", "Byakugan Gentle Fist"],
-      rarity: "EPIC",
+      rarity: "RARE",
       powerLevel: 73,
     },
     {
@@ -149,7 +150,7 @@ export const borutoCharacters: AnimeCharacterSet = {
       description:
         "Armed with airborne dark viruses, lava release, and a moving internal regeneration core, Boro required Team 7 plus Borushiki's intervention to destroy.",
       abilities: ["Virus Mist", "Core Regeneration", "Lava Release", "Giant Rampage Form"],
-      rarity: "RARE",
+      rarity: "EPIC",
       powerLevel: 67,
     },
     {
