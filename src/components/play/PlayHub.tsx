@@ -167,20 +167,6 @@ export function PlayHub() {
         </div>
       </div>
 
-      {/* Collection Deck Arena Feature Banner */}
-      <div className="glass-strong flex flex-col justify-between gap-4 rounded-3xl border border-purple-500/30 p-6 sm:flex-row sm:items-center">
-        <div>
-          <div className="flex items-center gap-2 font-display text-xs font-semibold uppercase tracking-widest text-purple-300">
-            <Swords className="h-4 w-4" /> {t.arena.eyebrow}
-          </div>
-          <h2 className="mt-1.5 font-display text-xl font-bold text-white">{t.play.deckArenaTitle}</h2>
-          <p className="mt-1 max-w-2xl text-sm text-zinc-400">{t.play.deckArenaDesc}</p>
-        </div>
-        <Link href="/arena" className="btn btn-primary min-h-[44px] whitespace-nowrap shrink-0">
-          <Swords className="h-4 w-4" /> {t.play.deckArenaCta}
-        </Link>
-      </div>
-
       <section>
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-display text-xl font-bold text-white">

@@ -1,7 +1,6 @@
 import type { Rarity } from "./rarity";
 import type { PowerTierCode } from "./power-tier";
 import type { WinnerDetail } from "./rules";
-import type { ArenaCard, RoundResolution } from "./arena";
 
 /** Character data sent to clients. */
 export interface CharacterDTO {
@@ -210,12 +209,6 @@ export type Ack<T = undefined> =
   | ({ ok: true; serverNow?: number } & (T extends undefined ? object : { data: T }))
   | { ok: false; code: ErrorCode; message: string; serverNow?: number; data?: { code?: string; matchId?: string } };
 
-export type ArenaAction =
-  | { action: "join"; deckIds?: string[] }
-  | { action: "sync" }
-  | { action: "play"; cardId: string }
-  | { action: "leave" };
-
 export interface CreateRoomInput {
   isPrivate: boolean;
   bidSeconds: number;
@@ -232,73 +225,3 @@ export type RoomAction =
   | { action: "leave" }
   | { action: "rematch" };
 
-export type ArenaPhase = "LOBBY" | "ATTACK" | "DEFEND" | "ROUND_REVEAL" | "FINISHED" | "ABANDONED";
-
-export interface ArenaPlayerSnapshot {
-  userId: string;
-  username: string;
-  avatar: AvatarDTO;
-  seat: 0 | 1;
-  score: number;
-  cardsRemaining: number;
-  totalPower: number;
-  connected: boolean;
-}
-
-export interface ArenaRoomSnapshot {
-  code: string;
-  phase: ArenaPhase;
-  roundNumber: number;
-  attackerSeat: 0 | 1;
-  players: ArenaPlayerSnapshot[];
-  mySeat: 0 | 1 | null;
-  myHand: ArenaCard[];
-  attackerCard: ArenaCard | null;
-  lastResolution: RoundResolution | null;
-  history: RoundResolution[];
-  winnerId: string | null;
-  xpAwarded: number | null;
-  createdAt: number;
-}
-
-export interface OpenArenaRoomDTO {
-  code: string;
-  host: { username: string; avatar: AvatarDTO };
-  totalPower: number;
-  createdAt: number;
-}
-
-export interface ClientToServerEvents {
-  "time:sync": (clientNow: number, ack: (serverNow: number) => void) => void;
-  "room:create": (input: CreateRoomInput, ack: (res: Ack<{ code: string }>) => void) => void;
-  "room:join": (input: { code: string }, ack: (res: Ack<RoomSnapshot>) => void) => void;
-  "room:leave": (input: { code: string }, ack: (res: Ack) => void) => void;
-  /** Stop receiving updates for a room without giving up the seat (e.g. navigating away). */
-  "room:detach": (input: { code: string }, ack: (res: Ack) => void) => void;
-  "room:ready": (input: { code: string; ready: boolean }, ack: (res: Ack) => void) => void;
-  "room:rematch": (input: { code: string }, ack: (res: Ack) => void) => void;
-  "auction:bid": (input: { code: string; lotId: string; amount: number }, ack: (res: Ack<{ amount: number }>) => void) => void;
-  "queue:join": (ack: (res: Ack<{ matchedCode: string | null }>) => void) => void;
-  "queue:leave": (ack: (res: Ack) => void) => void;
-  "rooms:list": (ack: (res: Ack<OpenRoomDTO[]>) => void) => void;
-  "me:active": (ack: (res: Ack<{ code: string | null; phase: Phase | null }>) => void) => void;
-
-  "arena:create": (input: { deckIds: string[] }, ack: (res: Ack<{ code: string }>) => void) => void;
-  "arena:join": (input: { code: string; deckIds?: string[] }, ack: (res: Ack<ArenaRoomSnapshot>) => void) => void;
-  "arena:play": (input: { code: string; cardId: string }, ack: (res: Ack<ArenaRoomSnapshot>) => void) => void;
-  "arena:leave": (input: { code: string }, ack: (res: Ack) => void) => void;
-  "arena:list": (ack: (res: Ack<OpenArenaRoomDTO[]>) => void) => void;
-}
-
-export interface ServerToClientEvents {
-  "room:state": (snapshot: RoomSnapshot) => void;
-  "room:event": (event: RoomEvent & { code: string; at: number }) => void;
-  "room:redirect": (input: { from: string; to: string }) => void;
-  "queue:matched": (input: { code: string }) => void;
-  "queue:status": (input: { inQueue: boolean; since: number | null }) => void;
-  "presence:stats": (stats: PresenceStats) => void;
-  "rooms:updated": (rooms: OpenRoomDTO[]) => void;
-
-  "arena:state": (snapshot: ArenaRoomSnapshot) => void;
-  "arena:updated": (rooms: OpenArenaRoomDTO[]) => void;
-}

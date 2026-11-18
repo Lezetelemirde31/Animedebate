@@ -7,7 +7,7 @@ import type { Locale } from "@/lib/i18n";
  * Only games that are fully playable are listed (`GAMES`); new games are added
  * here when they ship.
  */
-export type GameKey = "AUCTION" | "CARD_DUEL";
+export type GameKey = "AUCTION";
 
 export interface GameInfo {
   key: GameKey;
@@ -23,19 +23,6 @@ export interface GameInfo {
 }
 
 export const GAMES: readonly GameInfo[] = [
-  {
-    key: "CARD_DUEL",
-    href: "/arena",
-    name: { tr: "Kart Düellosu", en: "Card Duel" },
-    tagline: { tr: "Taktiksel counter-pick kart savaşı", en: "Tactical counter-pick card battle" },
-    description: {
-      tr: "5 kartlık desteni kur, rakibin açılış kartına karşı doğru rolü seç ve turları çevir. İlk 3 turu kazanan düelloyu alır.",
-      en: "Build a 5-card deck, answer your opponent's opening card with the right role and turn the rounds. First to 3 wins.",
-    },
-    modes: { tr: ["Bota karşı", "Oyuncuya karşı (oda)"], en: ["Versus bot", "Versus player (room)"] },
-    hasRanked: false,
-    color: "#a855f7",
-  },
   {
     key: "AUCTION",
     href: "/play",
@@ -53,8 +40,17 @@ export const GAMES: readonly GameInfo[] = [
 
 export const GAME_KEYS = GAMES.map((g) => g.key);
 
+/** Names of games that were played before but are not listed now (kept for match history). */
+const RETIRED: Record<string, Record<Locale, string>> = {
+  CARD_DUEL: { tr: "Kart Arenası (eski)", en: "Card Arena (old)" },
+};
+
 export function gameInfo(key: string): GameInfo | undefined {
   return GAMES.find((g) => g.key === key);
+}
+
+export function gameName(key: string, locale: Locale): string {
+  return gameInfo(key)?.name[locale] ?? RETIRED[key]?.[locale] ?? key;
 }
 
 export function isGameKey(key: unknown): key is GameKey {

@@ -49,7 +49,7 @@ export function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const LINKS = [
-    { href: "/games", label: t.games.nav, also: ["/play", "/arena", "/room"] },
+    { href: "/games", label: t.games.nav, also: ["/play", "/room"] },
     { href: "/debates", label: t.nav.debates },
     { href: "/comparisons", label: t.nav.comparisons },
     { href: "/characters", label: t.nav.characters },

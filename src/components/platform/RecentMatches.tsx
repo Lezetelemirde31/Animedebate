@@ -1,6 +1,6 @@
 import type { Locale } from "@/lib/i18n";
 import { MESSAGES } from "@/lib/i18n";
-import { gameInfo } from "@/game/platform";
+import { gameInfo, gameName } from "@/game/platform";
 import type { RecentMatch } from "@/server/platform/queries";
 import { cn, timeAgo } from "@/lib/utils";
 
@@ -17,7 +17,7 @@ export function RecentMatches({ matches, locale }: { matches: RecentMatch[]; loc
           <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
             <div className="flex min-w-0 items-center gap-2">
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: info?.color ?? "#a1a1aa" }} />
-              <span className="font-semibold text-white">{info?.name[locale] ?? m.game}</span>
+              <span className="font-semibold text-white">{gameName(m.game, locale)}</span>
               <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-zinc-400">{t.modes[m.mode] ?? m.mode}</span>
               {m.opponents.length > 0 && <span className="truncate text-xs text-zinc-500">{t.vs(m.opponents.map((o) => o.username).join(", "))}</span>}
             </div>

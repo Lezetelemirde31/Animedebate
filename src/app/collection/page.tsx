@@ -45,11 +45,6 @@ export default async function CollectionPage() {
           </>
         }
         description={t.collection.description}
-        actions={
-          <Link href="/arena" className="btn btn-primary whitespace-nowrap shrink-0">
-            <Swords className="h-4 w-4" /> {t.collection.fightInArena}
-          </Link>
-        }
       />
       {owned.length === 0 ? (
         <EmptyState

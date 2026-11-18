@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "s4.anilist.co" }],
   },
+  // The old card arena was removed (it will be rebuilt as a new game).
+  async redirects() {
+    return [
+      { source: "/arena", destination: "/games", permanent: false },
+      { source: "/arena/:code", destination: "/games", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

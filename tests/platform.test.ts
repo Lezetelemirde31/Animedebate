@@ -72,7 +72,7 @@ suite("shared match history", () => {
     const [a, b] = [await user(), await user()];
     const season = await currentSeason();
     await recordGameResult({
-      game: "CARD_DUEL",
+      game: "AUCTION",
       mode: "friendly",
       ranked: false,
       refId: `test-${RUN}-2`,
@@ -81,11 +81,11 @@ suite("shared match history", () => {
         { userId: b, result: "LOSS", xp: 15, reason: "ARENA_PVP_PLAY" },
       ],
     });
-    const ra = await prisma.gameRating.findUnique({ where: { userId_game_seasonId: { userId: a, game: "CARD_DUEL", seasonId: season.id } } });
+    const ra = await prisma.gameRating.findUnique({ where: { userId_game_seasonId: { userId: a, game: "AUCTION", seasonId: season.id } } });
     expect(ra).toMatchObject({ rating: 1000, wins: 1, played: 1 });
 
-    await recordGameResult({ game: "CARD_DUEL", mode: "bot", ranked: false, players: [{ userId: a, result: "WIN", xp: 15, reason: "ARENA_BOT_WIN" }] });
-    const again = await prisma.gameRating.findUnique({ where: { userId_game_seasonId: { userId: a, game: "CARD_DUEL", seasonId: season.id } } });
+    await recordGameResult({ game: "AUCTION", mode: "bot", ranked: false, players: [{ userId: a, result: "WIN", xp: 15, reason: "ARENA_BOT_WIN" }] });
+    const again = await prisma.gameRating.findUnique({ where: { userId_game_seasonId: { userId: a, game: "AUCTION", seasonId: season.id } } });
     expect(again?.played).toBe(1);
     expect(await prisma.gameMatchPlayer.count({ where: { userId: a } })).toBe(2);
   });
