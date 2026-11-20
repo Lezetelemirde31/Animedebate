@@ -4,13 +4,13 @@ export const onePieceTr: Record<string, CharacterTextTr> = {
   "one-piece-gol-d-roger": {
     title: "Korsanlar Kralı · Zirve",
     description:
-      "Fiziksel zirvesindeki Grand Line fatihi. Eşsiz Yüce Kral Haki aşılaması ve Supreme Grade kılıcı Ace ile Roger, zirvedeki Beyazsakal ve Garp ile eşit çarpıştı.",
+      "Grand Line'ı fetheden tek adam, fiziksel zirvesinde. Eşsiz Yüce Kral Haki aşılaması, Her Şeyin Sesi ve Supreme Grade kılıcı Ace ile Korsanlar Kralı, döneminin bütün rakiplerinin — zirvedeki Beyazsakal'ın bile — üzerindeydi.",
     abilities: ["İlahi Ayrılış", "Yüce Kral Aşılaması", "İçten Yıkım Hakisi", "Her Şeyin Sesi"],
   },
   "one-piece-edward-newgate": {
     title: "Zirvedeki Beyazsakal",
     description:
-      "Yaş ve hastalık gelmeden önce Beyazsakal, Roger'ın gerçek dengiydi; Fatih Hakisi ile gökleri yarar, Titreşim Meyvesi ile tektonik plakaları eğerdi.",
+      "Yaş ve hastalık gelmeden önce Beyazsakal, Roger'ın en büyük rakibiydi; Fatih Hakisi ile gökleri yarar, Titreşim Meyvesi ile tektonik plakaları eğerdi — ama Korsanlar Kralı ondan bir adım öndeydi.",
     abilities: ["Titreşim Meyvesi", "Yüce Kral Aşılaması", "Murakumogiri", "Dünyayı Sarsan Deniz Depremi"],
   },
   "one-piece-monkey-d-luffy": {

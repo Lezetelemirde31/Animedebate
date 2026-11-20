@@ -37,8 +37,12 @@ describe("character prime-form tier & score scaling", () => {
     expect(score("boruto-isshiki-otsutsuki")).toBeGreaterThan(score("boruto-boruto-uzumaki"));
     expect(score("boruto-boruto-uzumaki")).toBeGreaterThan(score("boruto-momoshiki-otsutsuki"));
 
-    // One Piece: Prime Roger == Prime Whitebeard == Gear 5 Luffy == Kaido >= Shanks == Mihawk > Big Mom/Blackbeard > Zoro/Law
-    expect(score("one-piece-gol-d-roger")).toBe(score("one-piece-edward-newgate"));
+    // One Piece: Prime Roger (the strongest, by the owner's choice) > Prime Whitebeard == Gear 5 Luffy == Kaido >= Shanks == Mihawk > Big Mom/Blackbeard > Zoro/Law
+    expect(score("one-piece-gol-d-roger")).toBeGreaterThan(score("one-piece-edward-newgate"));
+    for (const c of catalog.filter((x) => x.animeId === "one-piece" && x.id !== "one-piece-gol-d-roger")) {
+      expect(score("one-piece-gol-d-roger"), c.id).toBeGreaterThan(c.powerLevel);
+    }
+    expect(score("one-piece-edward-newgate")).toBe(score("one-piece-kaido"));
     expect(score("one-piece-monkey-d-luffy")).toBe(score("one-piece-kaido"));
     expect(score("one-piece-shanks")).toBe(score("one-piece-dracule-mihawk"));
     expect(score("one-piece-monkey-d-luffy")).toBeGreaterThan(score("one-piece-roronoa-zoro"));

@@ -9,12 +9,13 @@ export const onePieceCharacters: AnimeCharacterSet = {
       name: "Gol D. Roger",
       title: "The Pirate King · Prime",
       primeForm: "Prime Pirate King · Divine Departure",
-      tierCode: "High 6-A",
+      tierCode: "5-B",
       description:
-        "Conqueror of the Grand Line at his physical peak. With unmatched Supreme King Haki infusion and his Supreme Grade blade Ace, Roger clashed evenly with Prime Whitebeard and Garp.",
+        "The only man to conquer the Grand Line, at his physical peak. His unmatched Supreme King Haki infusion, the Voice of All Things and his Supreme Grade blade Ace put the Pirate King above every rival of his era — even Prime Whitebeard.",
       abilities: ["Divine Departure", "Supreme King Infusion", "Internal Destruction Haki", "Voice of All Things"],
       rarity: "MYTHIC",
-      powerLevel: 83,
+      powerLevel: 87,
+      score: 12,
     },
     {
       slug: "edward-newgate",
@@ -23,7 +24,7 @@ export const onePieceCharacters: AnimeCharacterSet = {
       primeForm: "Prime Whitebeard · Gura Gura & Murakumogiri",
       tierCode: "High 6-A",
       description:
-        "Before age and illness, Prime Whitebeard was Roger's true equal—splitting skies with Conqueror's Haki and tilting tectonic plates with the Tremor-Tremor Fruit.",
+        "Before age and illness, Prime Whitebeard was Roger's greatest rival—splitting skies with Conqueror's Haki and tilting tectonic plates with the Tremor-Tremor Fruit, though the Pirate King stood above him.",
       abilities: ["Tremor-Tremor Fruit", "Supreme King Infusion", "Murakumogiri", "World-Shaking Seaquake"],
       rarity: "MYTHIC",
       powerLevel: 83,

@@ -17,11 +17,13 @@ describe("character scores", () => {
     expect(score("boruto-isshiki-otsutsuki")).toBe(12);
     expect(score("one-piece-imu")).toBe(12);
     expect(score("one-piece-joyboy")).toBe(12);
+    expect(score("one-piece-gol-d-roger")).toBe(12);
+    expect(score("one-piece-gol-d-roger")).toBeGreaterThan(score("one-piece-edward-newgate"));
     expect(score("one-piece-rocks-d-xebec")).toBe(11);
   });
 
   it("every other Mythic is worth 10", () => {
-    const special = new Set(["naruto-naruto-uzumaki", "boruto-isshiki-otsutsuki", "one-piece-imu", "one-piece-joyboy", "one-piece-rocks-d-xebec"]);
+    const special = new Set(["naruto-naruto-uzumaki", "boruto-isshiki-otsutsuki", "one-piece-imu", "one-piece-joyboy", "one-piece-rocks-d-xebec", "one-piece-gol-d-roger"]);
     for (const c of getCatalog()) {
       if (c.rarity === "MYTHIC" && !special.has(c.id)) expect(characterScore(c), c.id).toBe(10);
     }
