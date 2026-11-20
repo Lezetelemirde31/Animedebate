@@ -1,0 +1,883 @@
+// Anime Auction & Anime Debate — Unified PostgreSQL / Supabase Data Model
+// Characters and anime are seeded from src/data (see prisma/seed.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+  MYTHIC
+}
+
+enum MatchStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+  ABANDONED
+}
+
+/// Live phase of an auction room. Stored in the database so that any server
+/// instance (including serverless functions) can advance the auction.
+enum MatchPhase {
+  LOBBY
+  COUNTDOWN
+  BIDDING
+  INTERMISSION
+  PAUSED
+  FINISHED
+  ABANDONED
+}
+
+enum LotStatus {
+  ACTIVE
+  SOLD
+  UNSOLD
+  CANCELLED
+}
+
+enum MatchResult {
+  WIN
+  LOSS
+  DRAW
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum DebateCategory {
+  GENERAL
+  POWER_SCALING
+  LORE
+  HOT_TAKE
+}
+
+enum ContentStatus {
+  OPEN
+  LOCKED
+  HIDDEN
+}
+
+enum ComparisonCriteria {
+  OVERALL
+  COMBAT
+  WRITING
+  INTELLIGENCE
+}
+
+enum ComparisonSide {
+  A
+  B
+}
+
+enum NotificationType {
+  COMMENT_ON_DEBATE
+  COMMENT_ON_COMPARISON
+  COMMENT_REPLY
+  REACTION_MILESTONE
+  BADGE_EARNED
+  LEVEL_UP
+  RANK_UP
+  MODERATION
+}
+
+enum BadgeRuleType {
+  DEBATES_COUNT
+  COMPARISONS_COUNT
+  COMMENTS_COUNT
+  LIKES_RECEIVED
+  LEVEL_REACHED
+  AUCTION_WINS
+  MATCHES_PLAYED
+  MATCHES_WON
+}
+
+model User {
+  id                String     @id @default(cuid())
+  username          String     @unique
+  /// Lower-cased username used for case-insensitive uniqueness and lookups.
+  usernameKey       String     @unique
+  passwordHash      String
+  role              UserRole   @default(USER)
+  bio               String?
+  /// Preset gradient avatar id (see src/lib/avatars.ts).
+  avatarStyle       String     @default("violet")
+  /// Optional owned character or selected character avatar.
+  avatarCharacterId String?
+  avatarCharacter   Character? @relation("UserAvatar", fields: [avatarCharacterId], references: [id], onDelete: SetNull)
+  /// Optional custom avatar image URL (from allowed presets/storage).
+  avatarCustomUrl   String?
+
+  /// Gamification & Community Stats
+  xp               Int @default(0)
+  level            Int @default(1)
+  /// Anime Coins (AC): fictional currency earned by playing; never bought with real money.
+  coins            Int @default(0)
+  debatesCount     Int @default(0)
+  comparisonsCount Int @default(0)
+  commentsCount    Int @default(0)
+  likesReceived    Int @default(0)
+
+  /// Moderation & Account Safety
+  isBanned          Boolean   @default(false)
+  bannedReason      String?
+  usernameChangedAt DateTime?
+
+  /// Last time this user's browser checked in (drives the "online" counter).
+  lastSeenAt DateTime?
+
+  /// Auction Stats
+  auctionWins   Int @default(0)
+  auctionLosses Int @default(0)
+  matchesPlayed Int @default(0)
+  matchesWon    Int @default(0)
+  totalSpent    Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions           Session[]
+  matchPlayers       MatchPlayer[]
+  bids               Bid[]
+  wonLots            AuctionLot[]          @relation("LotWinner")
+  owned              OwnedCharacter[]
+  hostedMatches      Match[]               @relation("MatchHost")
+  wonMatches         Match[]               @relation("MatchWinner")
+  debates            Debate[]
+  comparisons        CharacterComparison[]
+  comparisonVotes    ComparisonVote[]
+  comments           Comment[]
+  reactions          Reaction[]
+  favorites          Favorite[]
+  badges             UserBadge[]
+  notifications      Notification[]        @relation("NotificationRecipient")
+  actedNotifications Notification[]        @relation("NotificationActor")
+  xpEvents           XpEvent[]
+  coinEvents         CoinEvent[]
+  avatarImage        UserAvatarImage?
+  gameRatings        GameRating[]
+  gameMatches        GameMatchPlayer[]
+  guessRuns          GuessRun[]
+  guessStats         GuessStats?
+  quizRuns           QuizRun[]
+  quizStats          QuizStats?
+  moderationLogs     ModerationLog[]       @relation("ModerationAdmin")
+  queueEntry         QueueEntry?
+  spectating         MatchSpectator[]
+
+  @@index([xp])
+  @@index([role])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  /// SHA-256 of the session token; the raw token only lives in the cookie.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Anime {
+  /// Stable slug, e.g. "naruto".
+  id          String      @id
+  name        String
+  shortName   String
+  color       String
+  description String
+  enabled     Boolean     @default(true)
+  sortOrder   Int         @default(0)
+  characters  Character[]
+  debates     Debate[]
+}
+
+model Character {
+  /// Stable slug, e.g. "naruto-itachi-uchiha".
+  id          String   @id
+  name        String
+  title       String
+  animeId     String
+  anime       Anime    @relation(fields: [animeId], references: [id])
+  imageUrl    String?
+  description String
+  abilities   String[]
+  rarity      Rarity
+  powerLevel  Int?
+  /// Match score this character is worth; null = the rarity's default.
+  score       Int?
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lots           AuctionLot[]
+  owners         OwnedCharacter[]
+  avatarOfUsers  User[]                @relation("UserAvatar")
+  debates        Debate[]
+  comparisonsAsA CharacterComparison[] @relation("ComparisonCharA")
+  comparisonsAsB CharacterComparison[] @relation("ComparisonCharB")
+  comments       Comment[]
+  favorites      Favorite[]
+
+  @@index([animeId])
+  @@index([rarity])
+}
+
+model Match {
+  id              String      @id @default(cuid())
+  code            String      @unique
+  status          MatchStatus @default(WAITING)
+  isPrivate       Boolean     @default(true)
+  isMatchmade     Boolean     @default(false)
+  hostId          String?
+  host            User?       @relation("MatchHost", fields: [hostId], references: [id], onDelete: SetNull)
+  totalLots       Int
+  bidSeconds      Int
+  startingBalance Int
+  minIncrement    Int
+  animeIds        String[]
+  winnerId        String?
+  winner          User?       @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  endReason       String?
+  /// JSON describing how the match was decided (rendered in the reader's language).
+  resultDetail    String?
+
+  // ── Live state (authoritative; advanced lazily by any request) ──
+  phase             MatchPhase  @default(LOBBY)
+  /// End of the current timed phase (countdown, intermission, pause deadline).
+  phaseEndsAt       DateTime?
+  pausedPhase       MatchPhase?
+  pausedRemainingMs Int?
+  /// Character ids still to be auctioned, in order.
+  pool              String[]
+  lotsCompleted     Int         @default(0)
+  /// Bumped on every state change; clients use it to order snapshots.
+  version           Int         @default(0)
+  rematchVotes      String[]
+  rematchCode       String?
+  /// Whose turn it is to open the next lot (opening turns alternate).
+  nextOpenerId      String?
+
+  createdAt DateTime  @default(now())
+  startedAt DateTime?
+  endedAt   DateTime?
+  updatedAt DateTime  @updatedAt
+
+  players    MatchPlayer[]
+  lots       AuctionLot[]
+  spectators MatchSpectator[]
+
+  @@index([status, isPrivate])
+  @@index([createdAt])
+}
+
+model MatchPlayer {
+  id         String       @id @default(cuid())
+  matchId    String
+  match      Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seat       Int
+  balance    Int
+  score      Int          @default(0)
+  result     MatchResult?
+  ready      Boolean      @default(false)
+  /// Heartbeat from the player's browser; decides connected / disconnected.
+  lastSeenAt DateTime?
+  joinedAt   DateTime     @default(now())
+
+  @@unique([matchId, userId])
+  @@unique([matchId, seat])
+  @@index([userId])
+}
+
+model AuctionLot {
+  id              String    @id @default(cuid())
+  matchId         String
+  match           Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  lotNumber       Int
+  characterId     String
+  character       Character @relation(fields: [characterId], references: [id])
+  startingPrice   Int
+  status          LotStatus @default(ACTIVE)
+  winnerId        String?
+  winner          User?     @relation("LotWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  finalPrice      Int?
+  highestBid      Int?
+  highestBidderId String?
+  /// The player whose turn it was to open: the server placed the opening bid for them.
+  forcedOpenerId  String?
+  /// Both players chose to skip this character (no sale, it does not come back).
+  skipped         Boolean   @default(false)
+  /// Given for free by the server to a player who ran out of money.
+  autoAssigned    Boolean   @default(false)
+  /// Players who voted to skip this character.
+  skipVotes       String[]  @default([])
+  /// When bidding closes (null while paused or after closing).
+  endsAt          DateTime?
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+
+  bids Bid[]
+
+  @@unique([matchId, lotNumber])
+  @@index([characterId])
+  @@index([winnerId])
+}
+
+model Bid {
+  id        String     @id @default(cuid())
+  lotId     String
+  lot       AuctionLot @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  createdAt DateTime   @default(now())
+
+  @@index([lotId])
+  @@index([userId])
+}
+
+model OwnedCharacter {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  characterId    String
+  character      Character @relation(fields: [characterId], references: [id])
+  copies         Int       @default(1)
+  lastPrice      Int
+  totalSpent     Int
+  acquiredAt     DateTime  @default(now())
+  lastAcquiredAt DateTime  @default(now())
+  sourceMatchId  String?
+
+  @@unique([userId, characterId])
+  @@index([characterId])
+}
+
+// ─── Anime Debate Community Models ──────────────────────────────────────────
+
+model Debate {
+  id            String         @id @default(cuid())
+  slug          String         @unique
+  authorId      String
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  animeId       String?
+  anime         Anime?         @relation(fields: [animeId], references: [id], onDelete: SetNull)
+  characterId   String?
+  character     Character?     @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  title         String
+  content       String
+  category      DebateCategory @default(GENERAL)
+  status        ContentStatus  @default(OPEN)
+  isPinned      Boolean        @default(false)
+  likesCount    Int            @default(0)
+  dislikesCount Int            @default(0)
+  commentsCount Int            @default(0)
+  viewsCount    Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  comments  Comment[]
+  reactions Reaction[]
+  favorites Favorite[]
+
+  @@index([status, isPinned, createdAt])
+  @@index([authorId])
+  @@index([animeId])
+  @@index([characterId])
+}
+
+model CharacterComparison {
+  id            String             @id @default(cuid())
+  slug          String             @unique
+  authorId      String
+  author        User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  characterAId  String
+  characterA    Character          @relation("ComparisonCharA", fields: [characterAId], references: [id])
+  characterBId  String
+  characterB    Character          @relation("ComparisonCharB", fields: [characterBId], references: [id])
+  title         String
+  description   String
+  criteria      ComparisonCriteria @default(OVERALL)
+  status        ContentStatus      @default(OPEN)
+  votesACount   Int                @default(0)
+  votesBCount   Int                @default(0)
+  likesCount    Int                @default(0)
+  dislikesCount Int                @default(0)
+  commentsCount Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  sideVotes ComparisonVote[]
+  comments  Comment[]
+  reactions Reaction[]
+  favorites Favorite[]
+
+  @@index([status, createdAt])
+  @@index([authorId])
+  @@index([characterAId])
+  @@index([characterBId])
+}
+
+model ComparisonVote {
+  id           String              @id @default(cuid())
+  comparisonId String
+  comparison   CharacterComparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  side         ComparisonSide
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([comparisonId, userId])
+  @@index([userId])
+}
+
+model Comment {
+  id            String               @id @default(cuid())
+  authorId      String
+  author        User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  debateId      String?
+  debate        Debate?              @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  comparisonId  String?
+  comparison    CharacterComparison? @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  characterId   String?
+  character     Character?           @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  parentId      String?
+  parent        Comment?             @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Comment[]            @relation("CommentReplies")
+  body          String
+  likesCount    Int                  @default(0)
+  dislikesCount Int                  @default(0)
+  isDeleted     Boolean              @default(false)
+  editedAt      DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  reactions Reaction[]
+
+  @@index([debateId, createdAt])
+  @@index([comparisonId, createdAt])
+  @@index([characterId, createdAt])
+  @@index([parentId])
+  @@index([authorId])
+}
+
+model Reaction {
+  id           String               @id @default(cuid())
+  userId       String
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  debateId     String?
+  debate       Debate?              @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  comparisonId String?
+  comparison   CharacterComparison? @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  commentId    String?
+  comment      Comment?             @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  /// 1 = Like, -1 = Dislike
+  value        Int
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@unique([userId, debateId])
+  @@unique([userId, comparisonId])
+  @@unique([userId, commentId])
+  @@index([debateId])
+  @@index([comparisonId])
+  @@index([commentId])
+}
+
+model Favorite {
+  id           String               @id @default(cuid())
+  userId       String
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  characterId  String?
+  character    Character?           @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  debateId     String?
+  debate       Debate?              @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  comparisonId String?
+  comparison   CharacterComparison? @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  createdAt    DateTime             @default(now())
+
+  @@unique([userId, characterId])
+  @@unique([userId, debateId])
+  @@unique([userId, comparisonId])
+  @@index([userId, createdAt])
+}
+
+model Badge {
+  id          String        @id
+  slug        String        @unique
+  name        String
+  description String
+  icon        String
+  color       String
+  ruleType    BadgeRuleType
+  threshold   Int
+  createdAt   DateTime      @default(now())
+
+  users UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?            @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  type      NotificationType
+  title     String
+  message   String
+  /// Values for the localized text (level, badge slug, names…). Rows without
+  /// params are shown with the stored title/message.
+  params    Json?
+  linkUrl   String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
+
+model XpEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  reason    String
+  refType   String?
+  refId     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model ModerationLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation("ModerationAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  action     String
+  targetType String
+  targetId   String
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([adminId])
+}
+
+// ─── Live auction support ───────────────────────────────────────────────────
+
+model MatchSpectator {
+  matchId    String
+  match      Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastSeenAt DateTime @default(now())
+
+  @@id([matchId, userId])
+}
+
+/// Matchmaking queue (one row per waiting player).
+model QueueEntry {
+  userId      String   @id
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  since       DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  /// Set when another player was paired with this one; read once by the waiting player.
+  matchedCode String?
+}
+
+/// 1v1 Counter-Pick Arena room. The whole room lives in `state` (JSON) so any
+/// server instance (e.g. a serverless function) can serve it; every request
+/// locks the row while it changes the room.
+model ArenaRoom {
+  code      String   @id
+  phase     String
+  /// Seated players, for "is this user already in a room?" lookups.
+  playerIds String[] @default([])
+  state     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phase, updatedAt])
+}
+
+/// Every Anime Coin change (earned or spent), for history and auditing.
+model CoinEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  reason    String
+  refType   String?
+  refId     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+/// A profile picture uploaded from the user's device, re-encoded on the
+/// server (square WebP, metadata stripped) and served from /api/avatar/[userId].
+model UserAvatarImage {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      Bytes
+  mime      String
+  updatedAt DateTime @updatedAt
+}
+
+/// Competitive season. Ratings start fresh every season; history is kept.
+model Season {
+  id        String       @id @default(cuid())
+  number    Int          @unique
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime     @default(now())
+  ratings   GameRating[]
+  matches   GameMatch[]
+}
+
+/// A player's rating and record in one game for one season. Every game keeps
+/// its own rating, so doing well in one game never affects another.
+model GameRating {
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Game key from src/game/platform.ts (e.g. "AUCTION", "CARD_DUEL").
+  game       String
+  seasonId   String
+  season     Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  rating     Int      @default(1000)
+  peak       Int      @default(1000)
+  played     Int      @default(0)
+  wins       Int      @default(0)
+  losses     Int      @default(0)
+  draws      Int      @default(0)
+  /// Current winning streak.
+  streak     Int      @default(0)
+  bestStreak Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@id([userId, game, seasonId])
+  @@index([game, seasonId, rating])
+}
+
+/// One finished game of any kind — the platform-wide match history.
+model GameMatch {
+  id        String            @id @default(cuid())
+  game      String
+  /// "ranked", "friendly", "bot", "solo", "daily"…
+  mode      String
+  ranked    Boolean           @default(false)
+  seasonId  String?
+  season    Season?           @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  /// The game's own record (auction match id, arena room code…); makes recording idempotent.
+  refId     String?
+  winnerId  String?
+  startedAt DateTime?
+  endedAt   DateTime          @default(now())
+  players   GameMatchPlayer[]
+
+  @@unique([game, refId])
+  @@index([game, endedAt])
+}
+
+model GameMatchPlayer {
+  matchId      String
+  match        GameMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// WIN, LOSS or DRAW.
+  result       String
+  score        Int?
+  ratingBefore Int?
+  ratingAfter  Int?
+  xp           Int       @default(0)
+  coins        Int       @default(0)
+  endedAt      DateTime  @default(now())
+
+  @@id([matchId, userId])
+  @@index([userId, endedAt])
+}
+
+/// Anime 1v1 match. The whole match (picks, hidden moves, turn log) lives in
+/// `state`; every request locks the row while it changes the match.
+model VersusMatch {
+  code      String   @id
+  /// ranked, friendly or bot
+  mode      String
+  /// LOBBY, PICK, BATTLE, FINISHED or ABANDONED
+  phase     String
+  playerIds String[] @default([])
+  state     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phase, updatedAt])
+}
+
+/// Players looking for a ranked Anime 1v1 opponent.
+model VersusQueueEntry {
+  userId      String   @id
+  rating      Int
+  since       DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  matchedCode String?
+}
+
+// ─── Who Is This Character? ──────────────────────────────────────────────
+
+/// A solo run or a daily challenge (the whole run as JSON; answers stay on the server).
+model GuessRun {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "solo" or "daily"
+  kind       String
+  /// Daily challenge day (YYYY-MM-DD, Türkiye time); null for solo runs.
+  dayKey     String?
+  mode       String
+  difficulty String
+  animeId    String?
+  state      Json
+  score      Int      @default(0)
+  correct    Int      @default(0)
+  rounds     Int
+  finished   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, dayKey])
+  @@index([kind, dayKey, score])
+  @@index([userId, createdAt])
+}
+
+/// Lifetime numbers and the daily-challenge streak of one player.
+model GuessStats {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runs            Int      @default(0)
+  roundsPlayed    Int      @default(0)
+  roundsCorrect   Int      @default(0)
+  bestScore       Int      @default(0)
+  /// Most correct answers in a row within one run.
+  bestStreak      Int      @default(0)
+  dailyPlayed     Int      @default(0)
+  dailyStreak     Int      @default(0)
+  bestDailyStreak Int      @default(0)
+  lastDailyKey    String?
+  updatedAt       DateTime @updatedAt
+}
+
+/// A multiplayer race room (friendly or ranked).
+model GuessRoom {
+  code      String   @id
+  /// friendly or ranked
+  mode      String
+  /// LOBBY, PLAYING, FINISHED or ABANDONED
+  phase     String
+  playerIds String[] @default([])
+  state     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phase, updatedAt])
+}
+
+/// Players looking for a ranked race opponent.
+model GuessQueueEntry {
+  userId      String   @id
+  rating      Int
+  since       DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  matchedCode String?
+}
+
+// ─── Anime Quiz ──────────────────────────────────────────────────────────
+
+/// A solo quiz run or a daily quiz (questions and answers as JSON; answers stay on the server).
+model QuizRun {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "solo" or "daily"
+  kind       String
+  /// Daily quiz day (YYYY-MM-DD, Türkiye time); null for solo runs.
+  dayKey     String?
+  difficulty String
+  animeId    String?
+  state      Json
+  score      Int      @default(0)
+  correct    Int      @default(0)
+  questions  Int
+  finished   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, dayKey])
+  @@index([kind, dayKey, score])
+  @@index([userId, createdAt])
+}
+
+/// Lifetime quiz numbers and the daily-quiz streak of one player.
+model QuizStats {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runs            Int      @default(0)
+  answered        Int      @default(0)
+  correct         Int      @default(0)
+  bestScore       Int      @default(0)
+  bestStreak      Int      @default(0)
+  dailyPlayed     Int      @default(0)
+  dailyStreak     Int      @default(0)
+  bestDailyStreak Int      @default(0)
+  lastDailyKey    String?
+  updatedAt       DateTime @updatedAt
+}
+
+/// A multiplayer quiz race room (friendly or ranked).
+model QuizRoom {
+  code      String   @id
+  mode      String
+  phase     String
+  playerIds String[] @default([])
+  state     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phase, updatedAt])
+}
+
+/// Players looking for a ranked quiz opponent.
+model QuizQueueEntry {
+  userId      String   @id
+  rating      Int
+  since       DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  matchedCode String?
+}

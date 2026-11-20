@@ -1,0 +1,927 @@
+{
+  "naruto-naruto-uzumaki": {
+    "url": "/characters/naruto-naruto-uzumaki.jpg",
+    "matchedName": "Naruto Uzumaki",
+    "source": "manual"
+  },
+  "naruto-sasuke-uchiha": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b13-SISLEw1oAD7a.png",
+    "anilistId": 13,
+    "matchedName": "Sasuke Uchiha"
+  },
+  "naruto-madara-uchiha": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b53901-HnRKSoHMG5Vg.png",
+    "anilistId": 53901,
+    "matchedName": "Madara Uchiha"
+  },
+  "naruto-hashirama-senju": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n12464-fcgqkCPZoREw.png",
+    "anilistId": 12464,
+    "matchedName": "Hashirama Senju"
+  },
+  "naruto-itachi-uchiha": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b14-9Kb1E5oel1ke.png",
+    "anilistId": 14,
+    "matchedName": "Itachi Uchiha"
+  },
+  "naruto-kakashi-hatake": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b85-mkVBh2yjxjmx.png",
+    "anilistId": 85,
+    "matchedName": "Kakashi Hatake"
+  },
+  "naruto-minato-namikaze": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2535-Xq9WKNPJQEt3.png",
+    "anilistId": 2535,
+    "matchedName": "Minato Namikaze"
+  },
+  "naruto-jiraiya": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2423-RO5MyoXSA9OL.png",
+    "anilistId": 2423,
+    "matchedName": "Jiraiya"
+  },
+  "naruto-tsunade": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2767-r61Cj9v8I0wl.png",
+    "anilistId": 2767,
+    "matchedName": "Tsunade Senju"
+  },
+  "naruto-orochimaru": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n2455-V9tLMS3TIgJW.png",
+    "anilistId": 2455,
+    "matchedName": "Orochimaru"
+  },
+  "naruto-gaara": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1662-4E5J0LX9jZKZ.png",
+    "anilistId": 1662,
+    "matchedName": "Gaara"
+  },
+  "naruto-might-guy": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b307-xieUEdhdTVwQ.png",
+    "anilistId": 307,
+    "matchedName": "Guy Might"
+  },
+  "naruto-kisame-hoshigaki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/2672-oxbHx8n3N7WY.jpg",
+    "anilistId": 2672,
+    "matchedName": "Kisame Hoshigaki"
+  },
+  "naruto-sakura-haruno": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b145-IorfpI8arxeX.png",
+    "anilistId": 145,
+    "matchedName": "Sakura Haruno"
+  },
+  "naruto-rock-lee": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b306-oUTOO45xInXt.png",
+    "anilistId": 306,
+    "matchedName": "Rock Lee"
+  },
+  "naruto-shikamaru-nara": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2007-QaesJlIZDifj.jpg",
+    "anilistId": 2007,
+    "matchedName": "Shikamaru Nara"
+  },
+  "naruto-deidara": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1902-JsEFRFwjmtZJ.png",
+    "anilistId": 1902,
+    "matchedName": "Deidara"
+  },
+  "naruto-kiba-inuzuka": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n3495-dtw0gHa5SOo6.png",
+    "anilistId": 3495,
+    "matchedName": "Kiba Inuzuka"
+  },
+  "naruto-ino-yamanaka": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2009-H7n38Ns1fr0Y.jpg",
+    "anilistId": 2009,
+    "matchedName": "Ino Yamanaka"
+  },
+  "naruto-iruka-umino": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2011-WUBm7wMCA6cE.png",
+    "anilistId": 2011,
+    "matchedName": "Iruka Umino"
+  },
+  "boruto-isshiki-otsutsuki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b189948-rJgnPxArby9V.png",
+    "anilistId": 189948,
+    "matchedName": "Isshiki Ootsutsuki"
+  },
+  "boruto-momoshiki-otsutsuki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/127027-m7MCB7YNuvGe.png",
+    "anilistId": 127027,
+    "matchedName": "Momoshiki Ootsutsuki"
+  },
+  "boruto-boruto-uzumaki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b121439-0XY8buCyFI94.png",
+    "anilistId": 121439,
+    "matchedName": "Boruto Uzumaki"
+  },
+  "boruto-kawaki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b130426-umQ1G1MjtYJ9.png",
+    "anilistId": 130426,
+    "matchedName": "Kawaki"
+  },
+  "boruto-kashin-koji": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b130421-0qMP8WggzVEO.jpg",
+    "anilistId": 130421,
+    "matchedName": "Koji Kashin"
+  },
+  "boruto-sarada-uchiha": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b121440-gaUIBrChR9Wo.png",
+    "anilistId": 121440,
+    "matchedName": "Sarada Uchiha"
+  },
+  "boruto-mitsuki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b121444-efjlKLZCvGhz.png",
+    "anilistId": 121444,
+    "matchedName": "Mitsuki"
+  },
+  "boruto-konohamaru-sarutobi": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n3889-gCUewPsRY2kD.png",
+    "anilistId": 3889,
+    "matchedName": "Konohamaru Sarutobi"
+  },
+  "boruto-delta": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b130415-0L7qYVHsJaP4.jpg",
+    "anilistId": 130415,
+    "matchedName": "Delta"
+  },
+  "boruto-himawari-uzumaki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b121445-XvIaaLrd82O6.png",
+    "anilistId": 121445,
+    "matchedName": "Himawari Uzumaki"
+  },
+  "boruto-shikadai-nara": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/121442-mWU38debEYsQ.jpg",
+    "anilistId": 121442,
+    "matchedName": "Shikadai Nara"
+  },
+  "boruto-kagura-karatachi": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b23186-VsNeePFMHvWj.png",
+    "anilistId": 23186,
+    "matchedName": "Kagura Karatachi"
+  },
+  "boruto-shinki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b126154-OXDIMpLeHnlU.jpg",
+    "anilistId": 126154,
+    "matchedName": "Shinki"
+  },
+  "boruto-inojin-yamanaka": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b121441-75mrucTuKv3D.jpg",
+    "anilistId": 121441,
+    "matchedName": "Inojin Yamanaka"
+  },
+  "boruto-chocho-akimichi": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b121443-HFtoW84BqyVZ.jpg",
+    "anilistId": 121443,
+    "matchedName": "Chouchou Akimichi"
+  },
+  "boruto-metal-lee": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b130423-j3qJOdAR5Qta.jpg",
+    "anilistId": 130423,
+    "matchedName": "Metal Lee"
+  },
+  "boruto-denki-kaminarimon": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b237843-foJlwLshKhZ4.png",
+    "anilistId": 237843,
+    "matchedName": "Denki Kaminarimon"
+  },
+  "one-piece-monkey-d-luffy": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b40-MNypXsxSRb1R.png",
+    "anilistId": 40,
+    "matchedName": "Luffy Monkey"
+  },
+  "one-piece-shanks": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b727-wUJx7M1z5xON.png",
+    "anilistId": 727,
+    "matchedName": "Shanks"
+  },
+  "one-piece-edward-newgate": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2751-NnzW0N2vCTjX.jpg",
+    "anilistId": 2751,
+    "matchedName": "Newgate Edward"
+  },
+  "one-piece-kaido": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b46109-MT7Hm4Bk93In.png",
+    "anilistId": 46109,
+    "matchedName": "Kaidou"
+  },
+  "one-piece-roronoa-zoro": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b62-S7oAeA9WInjV.png",
+    "anilistId": 62,
+    "matchedName": "Zoro Roronoa"
+  },
+  "one-piece-dracule-mihawk": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n2064-OpnF4nLi6bvL.png",
+    "anilistId": 2064,
+    "matchedName": "Dracule Mihawk"
+  },
+  "one-piece-charlotte-linlin": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b54495-3x1TzSzPEOLd.jpg",
+    "anilistId": 54495,
+    "matchedName": "Linlin Charlotte"
+  },
+  "one-piece-marshall-d-teach": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b3331-7ZJDc4BNv9Yp.jpg",
+    "anilistId": 3331,
+    "matchedName": "Teach Marshall"
+  },
+  "one-piece-trafalgar-law": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b13767-U604OJN9dxCn.jpg",
+    "anilistId": 13767,
+    "matchedName": "Law Trafalgar"
+  },
+  "one-piece-portgas-d-ace": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2072-Lc6jEdsueJUK.jpg",
+    "anilistId": 2072,
+    "matchedName": "Ace Portgas"
+  },
+  "one-piece-sanji": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b305-6lisPmHtCnLT.png",
+    "anilistId": 305,
+    "matchedName": "Sanji"
+  },
+  "one-piece-boa-hancock": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b16342-kVOF6V5Q94go.png",
+    "anilistId": 16342,
+    "matchedName": "Hancock Boa"
+  },
+  "one-piece-donquixote-doflamingo": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2754-B4gGSlNYgsyh.jpg",
+    "anilistId": 2754,
+    "matchedName": "Doflamingo Donquixote"
+  },
+  "one-piece-charlotte-katakuri": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124077-TODX2ThCdyx2.png",
+    "anilistId": 124077,
+    "matchedName": "Katakuri Charlotte"
+  },
+  "one-piece-sabo": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b32893-3weZS61cdwLD.png",
+    "anilistId": 32893,
+    "matchedName": "Sabo"
+  },
+  "one-piece-jinbe": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b18938-yZANEfjsVhW4.png",
+    "anilistId": 18938,
+    "matchedName": "Jinbe"
+  },
+  "one-piece-nico-robin": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b61-ywXUyyocEEqt.png",
+    "anilistId": 61,
+    "matchedName": "Robin Nico"
+  },
+  "one-piece-franky": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n64-ChX6ZzHHjXqA.png",
+    "anilistId": 64,
+    "matchedName": "Franky"
+  },
+  "one-piece-brook": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b5627-av8oD3zhKvDl.png",
+    "anilistId": 5627,
+    "matchedName": "Brook"
+  },
+  "one-piece-crocodile": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2749-e8ebEBN1SlS2.png",
+    "anilistId": 2749,
+    "matchedName": "Crocodile"
+  },
+  "one-piece-smoker": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2753-Y2ja8Pl6PRs0.jpg",
+    "anilistId": 2753,
+    "matchedName": "Smoker"
+  },
+  "one-piece-nami": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b723-vp5hPptgnNEC.png",
+    "anilistId": 723,
+    "matchedName": "Nami"
+  },
+  "one-piece-usopp": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b724-GFGgI9AJQkfy.jpg",
+    "anilistId": 724,
+    "matchedName": "Usopp"
+  },
+  "one-piece-tony-tony-chopper": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b309-H64NhbJ2ywIQ.jpg",
+    "anilistId": 309,
+    "matchedName": "Chopper Tony Tony"
+  },
+  "one-piece-buggy": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n725-g04AaiaK5f9B.png",
+    "anilistId": 725,
+    "matchedName": "Buggy"
+  },
+  "one-piece-koby": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b12361-H0SmgKxZ9T61.png",
+    "anilistId": 12361,
+    "matchedName": "Koby"
+  },
+  "black-clover-asta": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b123285-tKijiuQErDS0.png",
+    "anilistId": 123285,
+    "matchedName": "Asta"
+  },
+  "black-clover-yuno": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b123284-w6kIFYnTclMd.png",
+    "anilistId": 123284,
+    "matchedName": "Yuno"
+  },
+  "black-clover-julius-novachrono": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124435-gXFVXWrCcieK.jpg",
+    "anilistId": 124435,
+    "matchedName": "Julius Novachrono"
+  },
+  "black-clover-yami-sukehiro": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124440-Lpdo6y8cljV6.png",
+    "anilistId": 124440,
+    "matchedName": "Yami Sukehiro"
+  },
+  "black-clover-mereoleona-vermillion": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124522-lJK4Hy6Aokie.png",
+    "anilistId": 124522,
+    "matchedName": "Mereoleona Vermillion"
+  },
+  "black-clover-dante-zogratis": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b163782-lbNzUCyy4lk0.png",
+    "anilistId": 163782,
+    "matchedName": "Dante Zogratis"
+  },
+  "black-clover-licht": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124472-sCjDIE5232uS.png",
+    "anilistId": 124472,
+    "matchedName": "Licht"
+  },
+  "black-clover-nacht-faust": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b187268-vkcrcTvjNSrA.png",
+    "anilistId": 187268,
+    "matchedName": "Nacht Faust"
+  },
+  "black-clover-noelle-silva": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b123283-7nJHtKha0LSm.png",
+    "anilistId": 123283,
+    "matchedName": "Noelle Silva"
+  },
+  "black-clover-fuegoleon-vermillion": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124521-MqX5KT2tGSa8.png",
+    "anilistId": 124521,
+    "matchedName": "Fuegoleon Vermillion"
+  },
+  "black-clover-william-vangeance": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124441-nggzgZExhb1w.png",
+    "anilistId": 124441,
+    "matchedName": "William Vangeance"
+  },
+  "black-clover-nozel-silva": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124442-KpZhHmhjw2EG.png",
+    "anilistId": 124442,
+    "matchedName": "Nozel Silva"
+  },
+  "black-clover-charlotte-roselei": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124434-ZmaDj2J5lSId.png",
+    "anilistId": 124434,
+    "matchedName": "Charlotte Roselei"
+  },
+  "black-clover-vanica-zogratis": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b168300-xpKqucVqnd7j.png",
+    "anilistId": 168300,
+    "matchedName": "Vanica Zogratis"
+  },
+  "black-clover-luck-voltia": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/124449-M67Ex2GcxmYM.jpg",
+    "anilistId": 124449,
+    "matchedName": "Luck Voltia"
+  },
+  "black-clover-gauche-adlai": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124446-4YXFoCIllCKh.png",
+    "anilistId": 124446,
+    "matchedName": "Gauche Adlai"
+  },
+  "black-clover-langris-vaude": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124975-vRUxV3oIOle7.png",
+    "anilistId": 124975,
+    "matchedName": "Langris Vaude"
+  },
+  "black-clover-vanessa-enoteca": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124436-dES6CtprlZNy.png",
+    "anilistId": 124436,
+    "matchedName": "Vanessa Enoteca"
+  },
+  "black-clover-magna-swing": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124439-EqjbyC8GOKW0.jpg",
+    "anilistId": 124439,
+    "matchedName": "Magna Swing"
+  },
+  "black-clover-finral-roulacase": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124433-QyoZrgIUsSpd.png",
+    "anilistId": 124433,
+    "matchedName": "Finral Roulacase"
+  },
+  "black-clover-charmy-pappitson": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124447-2J1PKMgWETNT.png",
+    "anilistId": 124447,
+    "matchedName": "Charmy Pappitson"
+  },
+  "black-clover-klaus-lunettes": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b124437-3C1plJbD8jSn.png",
+    "anilistId": 124437,
+    "matchedName": "Klaus Lunettes"
+  },
+  "bleach-ichigo-kurosaki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b5-a7bkJgjhhigE.png",
+    "anilistId": 5,
+    "matchedName": "Ichigo Kurosaki"
+  },
+  "bleach-sosuke-aizen": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1086-qR9218BjZTC0.png",
+    "anilistId": 1086,
+    "matchedName": "Sousuke Aizen"
+  },
+  "bleach-yhwach": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b68537-iUYuTUyHRJpf.png",
+    "anilistId": 68537,
+    "matchedName": "Yhwach"
+  },
+  "bleach-genryusai-yamamoto": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b5726-mO7kc8Abka9J.jpg",
+    "anilistId": 5726,
+    "matchedName": "Genryuusai Yamamoto"
+  },
+  "bleach-byakuya-kuchiki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b907-kgnDKeMtEN5y.png",
+    "anilistId": 907,
+    "matchedName": "Byakuya Kuchiki"
+  },
+  "bleach-kenpachi-zaraki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b909-slhoFBon7oiH.jpg",
+    "anilistId": 909,
+    "matchedName": "Kenpachi Zaraki"
+  },
+  "bleach-ulquiorra-cifer": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1081-xLTqHfLL2I2W.png",
+    "anilistId": 1081,
+    "matchedName": "Ulquiorra Cifer"
+  },
+  "bleach-kisuke-urahara": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b210-mw01NrQfRjzT.png",
+    "anilistId": 210,
+    "matchedName": "Kisuke Urahara"
+  },
+  "bleach-shunsui-kyoraku": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1088-6oO10CmxZ1lP.jpg",
+    "anilistId": 1088,
+    "matchedName": "Jirou Sakuranosuke Shunsui Kyouraku"
+  },
+  "bleach-yoruichi-shihoin": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b908-JSYUkJLCw1f0.png",
+    "anilistId": 908,
+    "matchedName": "Yoruichi Shihouin"
+  },
+  "bleach-rukia-kuchiki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b6-25WoBeWMZXBc.png",
+    "anilistId": 6,
+    "matchedName": "Rukia Kuchiki"
+  },
+  "bleach-toshiro-hitsugaya": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b245-buy3Cfn6IFSB.jpg",
+    "anilistId": 245,
+    "matchedName": "Toushirou Hitsugaya"
+  },
+  "bleach-grimmjow-jaegerjaquez": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1080-JUNo2Or0UGZg.jpg",
+    "anilistId": 1080,
+    "matchedName": "Grimmjow Jaegerjaquez"
+  },
+  "bleach-gin-ichimaru": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1087-wMTny26FezYB.png",
+    "anilistId": 1087,
+    "matchedName": "Gin Ichimaru"
+  },
+  "bleach-uryu-ishida": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b564-a6LJitrjSfKC.jpg",
+    "anilistId": 564,
+    "matchedName": "Uryuu Ishida"
+  },
+  "bleach-coyote-starrk": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b3212-F5qZe4NWlZq9.png",
+    "anilistId": 3212,
+    "matchedName": "Coyote Starrk"
+  },
+  "bleach-mayuri-kurotsuchi": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1168-y2jsGtlJVv4z.png",
+    "anilistId": 1168,
+    "matchedName": "Mayuri Kurotsuchi"
+  },
+  "bleach-renji-abarai": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b906-ImRjx5HFM8X6.png",
+    "anilistId": 906,
+    "matchedName": "Renji Abarai"
+  },
+  "bleach-soi-fon": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b905-zKwCoIRiYJSr.png",
+    "anilistId": 905,
+    "matchedName": "Soi Fon"
+  },
+  "bleach-rangiku-matsumoto": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b904-bdfi2xqHicCj.png",
+    "anilistId": 904,
+    "matchedName": "Rangiku Matsumoto"
+  },
+  "bleach-ikkaku-madarame": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1151-izBrO6oWMvDv.png",
+    "anilistId": 1151,
+    "matchedName": "Ikkaku Madarame"
+  },
+  "bleach-yasutora-sado": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/575.jpg",
+    "anilistId": 575,
+    "matchedName": "Yasutora Sado"
+  },
+  "bleach-orihime-inoue": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b7-JdR4betokDjR.jpg",
+    "anilistId": 7,
+    "matchedName": "Orihime Inoue"
+  },
+  "bleach-yumichika-ayasegawa": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b3911-MPzJX9ra7TRN.png",
+    "anilistId": 3911,
+    "matchedName": "Yumichika Ayasegawa"
+  },
+  "bleach-ganju-shiba": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1091-yuxA8VXns4ui.png",
+    "anilistId": 1091,
+    "matchedName": "Ganju Shiba"
+  },
+  "bleach-hanataro-yamada": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2161-DyKLTXn1hkcL.png",
+    "anilistId": 2161,
+    "matchedName": "Hanatarou Yamada"
+  },
+  "bleach-kon": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/1089.jpg",
+    "anilistId": 1089,
+    "matchedName": "Kon"
+  },
+  "tokyo-revengers-manjiro-sano": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b145341-CuPldCLZMvvf.png",
+    "anilistId": 145341,
+    "matchedName": "Manjirou Sano"
+  },
+  "tokyo-revengers-takemichi-hanagaki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b145342-GSUutL83jGgI.png",
+    "anilistId": 145342,
+    "matchedName": "Takemichi Hanagaki"
+  },
+  "tokyo-revengers-izana-kurokawa": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b170484-HZEUSM7UrtKN.jpg",
+    "anilistId": 170484,
+    "matchedName": "Izana Kurokawa"
+  },
+  "tokyo-revengers-keisuke-baji": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b145343-vRrkdWEUXwYM.jpg",
+    "anilistId": 145343,
+    "matchedName": "Keisuke Baji"
+  },
+  "tokyo-revengers-taiju-shiba": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b167845-ltNMfgsTIeBV.jpg",
+    "anilistId": 167845,
+    "matchedName": "Taiju Shiba"
+  },
+  "tokyo-revengers-kazutora-hanemiya": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b167846-k6G44c97MOug.jpg",
+    "anilistId": 167846,
+    "matchedName": "Kazutora Hanemiya"
+  },
+  "tokyo-revengers-takashi-mitsuya": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b167841-Pp08TBnzGhK4.jpg",
+    "anilistId": 167841,
+    "matchedName": "Takashi Mitsuya"
+  },
+  "tokyo-revengers-chifuyu-matsuno": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b145344-q4BqRljEBYNc.png",
+    "anilistId": 145344,
+    "matchedName": "Chifuyu Matsuno"
+  },
+  "tokyo-revengers-kakucho": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b203564-nRyP1rDplqq4.png",
+    "anilistId": 203564,
+    "matchedName": "Kakucho"
+  },
+  "tokyo-revengers-shuji-hanma": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b215868-NwLXplJ79C62.png",
+    "anilistId": 215868,
+    "matchedName": "Shuuji Hanma"
+  },
+  "tokyo-revengers-tetta-kisaki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b170483-mXcSRDNqVwCP.png",
+    "anilistId": 170483,
+    "matchedName": "Tetta Kisaki"
+  },
+  "tokyo-revengers-haruchiyo-sanzu": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b227242-DWMsJH6r6rbm.jpg",
+    "anilistId": 227242,
+    "matchedName": "Haruchiyo Sanzu"
+  },
+  "tokyo-revengers-hakkai-shiba": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b167842-AGGO6WuQOJmd.png",
+    "anilistId": 167842,
+    "matchedName": "Hakkai Shiba"
+  },
+  "tokyo-revengers-nahoya-kawata": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b168679-CRZktzv0DvBl.jpg",
+    "anilistId": 168679,
+    "matchedName": "Nahoya Kawata"
+  },
+  "tokyo-revengers-souya-kawata": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b168678-gf2ljBfKDnmC.png",
+    "anilistId": 168678,
+    "matchedName": "Souya Kawata"
+  },
+  "tokyo-revengers-yasuhiro-muto": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b203561-8RDWUtzcfSJ8.png",
+    "anilistId": 203561,
+    "matchedName": "Yasuhiro Mutou"
+  },
+  "tokyo-revengers-ran-haitani": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b203562-qhT4f8Bdj9JF.png",
+    "anilistId": 203562,
+    "matchedName": "Ran Haitani"
+  },
+  "tokyo-revengers-rindo-haitani": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b203563-KrzJuwhHZDpB.png",
+    "anilistId": 203563,
+    "matchedName": "Rindou Haitani"
+  },
+  "tokyo-revengers-haruki-hayashida": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b171925-l21FnUg2rgPa.png",
+    "anilistId": 171925,
+    "matchedName": "Haruki Hayashida"
+  },
+  "tokyo-revengers-ryohei-hayashi": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b212447-gvuSp2nTJodB.png",
+    "anilistId": 212447,
+    "matchedName": "Ryouhei Hayashi"
+  },
+  "tokyo-revengers-naoto-tachibana": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b167843-w9Lc6OWif5zy.jpg",
+    "anilistId": 167843,
+    "matchedName": "Naoto Tachibana"
+  },
+  "tokyo-revengers-hinata-tachibana": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b138453-MFISjDiAEfiM.png",
+    "anilistId": 138453,
+    "matchedName": "Hinata Tachibana"
+  },
+  "tokyo-revengers-emma-sano": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b171924-fouXHPz9y5of.png",
+    "anilistId": 171924,
+    "matchedName": "Emma Sano"
+  },
+  "naruto-nagato": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b3180-ITMGBLWNBOgV.png",
+    "anilistId": 3180,
+    "matchedName": "Pain"
+  },
+  "naruto-obito-uchiha": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b3149-j6cl8A9yup51.png",
+    "anilistId": 3149,
+    "matchedName": "Tobi"
+  },
+  "naruto-hinata-hyuga": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1555-Q41GLTV3FvYF.png",
+    "anilistId": 1555,
+    "matchedName": "Hinata Hyuuga"
+  },
+  "naruto-neji-hyuga": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1694-TL4obouDwJ7k.jpg",
+    "anilistId": 1694,
+    "matchedName": "Neji Hyuuga"
+  },
+  "naruto-choji-akimichi": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n2008-j1oCafEGZucg.png",
+    "anilistId": 2008,
+    "matchedName": "Chouji Akimichi"
+  },
+  "boruto-code": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b189949-RnTSmg1Co8cd.jpg",
+    "anilistId": 189949,
+    "matchedName": "Code"
+  },
+  "boruto-boro": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b180513-PCi61KcnKd5p.png",
+    "anilistId": 180513,
+    "matchedName": "Boro"
+  },
+  "one-piece-gol-d-roger": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b4883-0t76xH00sehO.png",
+    "anilistId": 4883,
+    "matchedName": "Roger Gold"
+  },
+  "black-clover-secre-swallowtail": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b126948-2yL8YEIqLLpq.png",
+    "anilistId": 126948,
+    "matchedName": "Kuro Nero"
+  },
+  "tokyo-revengers-ken-ryuguji": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b145345-zyirrSsKIDCb.png",
+    "anilistId": 145345,
+    "matchedName": "Ken Ryuuguji"
+  },
+  "naruto-hagoromo-otsutsuki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b57883-TrjcL1LU7qnj.png",
+    "anilistId": 57883,
+    "matchedName": "Hagoromo Ootsutsuki"
+  },
+  "naruto-indra-otsutsuki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b197843-kUcrXaFGesMU.jpg",
+    "anilistId": 197843,
+    "matchedName": "Indra Ootsutsuki"
+  },
+  "naruto-tobirama-senju": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n12465-y8ByDAvzC5cA.png",
+    "anilistId": 12465,
+    "matchedName": "Tobirama Senju"
+  },
+  "naruto-killer-b": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b18473-AiI3mk28a1Nm.png",
+    "anilistId": 18473,
+    "matchedName": "Killer Bee"
+  },
+  "naruto-hiruzen-sarutobi": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/n7571-fKldLuBWUtCO.png",
+    "anilistId": 7571,
+    "matchedName": "Hiruzen Sarutobi"
+  },
+  "naruto-konan": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/3179-YVD5zJSYrnPg.jpg",
+    "anilistId": 3179,
+    "matchedName": "Konan"
+  },
+  "naruto-a-fourth-raikage": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b22894-KZQFgbnqUFrZ.png",
+    "anilistId": 22894,
+    "matchedName": "A"
+  },
+  "naruto-sasori": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1900-Dpd9wVWtlvIx.png",
+    "anilistId": 1900,
+    "matchedName": "Sasori"
+  },
+  "naruto-kakuzu": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b3178-fCqs5wyV0dlJ.jpg",
+    "anilistId": 3178,
+    "matchedName": "Kakuzu"
+  },
+  "naruto-kimimaro": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b3438-h1fxTDdwew0h.png",
+    "anilistId": 3438,
+    "matchedName": "Kimimaro Kaguya"
+  },
+  "naruto-hanzo": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/23055.jpg",
+    "anilistId": 23055,
+    "matchedName": "Hanzou"
+  },
+  "naruto-hidan": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2792-lyvtbiT4COp0.jpg",
+    "anilistId": 2792,
+    "matchedName": "Hidan"
+  },
+  "naruto-yahiko": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b23050-4PPhGLw40Lij.jpg",
+    "anilistId": 23050,
+    "matchedName": "Yahiko"
+  },
+  "naruto-asura-otsutsuki": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b269851-hpIaqSiC0HnE.png",
+    "anilistId": 269851,
+    "matchedName": "Ashura Ootsutsuki"
+  },
+  "naruto-black-zetsu": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/3150.jpg",
+    "anilistId": 3150,
+    "matchedName": "Zetsu"
+  },
+  "one-piece-imu": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b128130-X9N46ajhSMOi.png",
+    "anilistId": 128130,
+    "matchedName": "Imu"
+  },
+  "one-piece-joyboy": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b341936-l61bq77sTJBM.png",
+    "anilistId": 341936,
+    "matchedName": "Joy Boy"
+  },
+  "one-piece-rocks-d-xebec": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b146411-1cWXsUjauDEU.png",
+    "anilistId": 146411,
+    "matchedName": "Xebec Rocks"
+  },
+  "one-piece-silvers-rayleigh": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b17142-OXOpztWZIE2A.png",
+    "anilistId": 17142,
+    "matchedName": "Rayleigh Silvers"
+  },
+  "one-piece-akainu": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b22687-tCQVpj6wZhRk.jpg",
+    "anilistId": 22687,
+    "matchedName": "Sakazuki"
+  },
+  "one-piece-scopper-gaban": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b216702-aXhFfRg9vHcb.jpg",
+    "anilistId": 216702,
+    "matchedName": "Scopper Gaban"
+  },
+  "one-piece-kozuki-oden": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b149797-UmdR7up3kgoK.png",
+    "anilistId": 149797,
+    "matchedName": "Oden Kouzuki"
+  },
+  "one-piece-aokiji": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b2752-0ENS2a39muDz.png",
+    "anilistId": 2752,
+    "matchedName": "Kuzan"
+  },
+  "one-piece-kizaru": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b21093-Pc4kOjUn3ZkZ.png",
+    "anilistId": 21093,
+    "matchedName": "Borsalino"
+  },
+  "one-piece-eustass-kid": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b14989-uykLqnBTdAc2.jpg",
+    "anilistId": 14989,
+    "matchedName": "Kid Eustass"
+  },
+  "one-piece-ryuma": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b17178-SczXHzLzZqzn.jpg",
+    "anilistId": 17178,
+    "matchedName": "Ryuuma Shimotsuki"
+  },
+  "one-piece-fujitora": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b82259-NFdvvcSHup7Z.jpg",
+    "anilistId": 82259,
+    "matchedName": "Isshou"
+  },
+  "one-piece-marco": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b9323-tGArly93xBZv.png",
+    "anilistId": 9323,
+    "matchedName": "Marco"
+  },
+  "one-piece-benn-beckman": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b4882-2zsLPjqUeOJ4.png",
+    "anilistId": 4882,
+    "matchedName": "Ben Beckman"
+  },
+  "one-piece-enel": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b1541-6c8RouunoL88.jpg",
+    "anilistId": 1541,
+    "matchedName": "Enel"
+  },
+  "one-piece-magellan": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b22618-ki6mxLc2f9Tm.png",
+    "anilistId": 22618,
+    "matchedName": "Magellan"
+  },
+  "one-piece-caesar-clown": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b61603-x8RTOk7DIFIZ.jpg",
+    "anilistId": 61603,
+    "matchedName": "Caesar Clown"
+  },
+  "one-piece-rob-lucci": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b5677-ZrZunVe7Kq5P.png",
+    "anilistId": 5677,
+    "matchedName": "Lucci Rob"
+  },
+  "one-piece-x-drake": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b20289-2bumPKcGsWhU.jpg",
+    "anilistId": 20289,
+    "matchedName": "Drake X."
+  },
+  "one-piece-monkey-d-garp": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b8064-dPltKaZ8RAsj.jpg",
+    "anilistId": 8064,
+    "matchedName": "Garp"
+  },
+  "one-piece-monkey-d-dragon": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b4884-iBn6FzQ2ESLC.png",
+    "anilistId": 4884,
+    "matchedName": "Dragon"
+  },
+  "one-piece-king": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b130416-viDCE52yqITx.png",
+    "anilistId": 130416,
+    "matchedName": "King"
+  },
+  "one-piece-queen": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b131427-nQfM4dHqP6Qw.jpg",
+    "anilistId": 131427,
+    "matchedName": "Queen"
+  },
+  "one-piece-jack": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b135949-CpN2RP72jA20.jpg",
+    "anilistId": 135949,
+    "matchedName": "Jack"
+  },
+  "one-piece-killer": {
+    "url": "https://s4.anilist.co/file/anilistcdn/character/large/b18827-uvYXjeffe0gW.png",
+    "anilistId": 18827,
+    "matchedName": "Killer"
+  }
+}
