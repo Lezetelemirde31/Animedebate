@@ -243,7 +243,7 @@ export const onePieceCharacters: AnimeCharacterSet = {
       tierCode: "7-A",
       description:
         "Manifesting a giant horned demonic form using Fish-Man Karate palm strikes and giant clutches, Robin defeated Tobiroppo Black Maria solo.",
-      abilities: ["Demonio Fleur", "Gigante Fleur", "Fish-Man Karate", "Clutch Submission"],
+      abilities: ["Demonio Fleur", "Gigante Fleur", "Mil Fleur", "Clutch Submission"],
       rarity: "RARE",
       powerLevel: 65,
     },

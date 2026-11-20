@@ -119,7 +119,7 @@ export const onePieceTr: Record<string, CharacterTextTr> = {
     title: "Demonio Fleur",
     description:
       "Balık-İnsan Karatesi avuç darbeleri ve dev kavrayışlarla boynuzlu dev bir şeytan formu oluşturan Robin, Tobiroppo Black Maria'yı tek başına yendi.",
-    abilities: ["Demonio Fleur", "Gigante Fleur", "Balık-İnsan Karatesi", "Kıskaç Teslimiyeti"],
+    abilities: ["Demonio Fleur", "Gigante Fleur", "Mil Fleur", "Kıskaç Teslimiyeti"],
   },
   "one-piece-franky": {
     title: "Demir Adam · General Franky",

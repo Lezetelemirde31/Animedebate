@@ -40,6 +40,12 @@ export const COIN_REWARDS: Record<string, number> = {
   GUESS_RANKED_PLAY: 10,
   GUESS_RACE_WIN: 15,
   GUESS_RACE_PLAY: 5,
+  QUIZ_DAILY: 15,
+  QUIZ_SOLO: 4,
+  QUIZ_RANKED_WIN: 30,
+  QUIZ_RANKED_PLAY: 10,
+  QUIZ_RACE_WIN: 15,
+  QUIZ_RACE_PLAY: 5,
 };
 /** AC for every level gained. */
 export const LEVEL_UP_COINS = 20;

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClock, Gamepad2, Gavel, ScanEye, Swords, Trophy } from "lucide-react";
+import { BrainCircuit, CalendarClock, Gamepad2, Gavel, ScanEye, Swords, Trophy } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getServerTranslations } from "@/lib/i18n-server";
 import { GAMES } from "@/game/platform";
@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.games.title };
 }
 
-const ICONS = { AUCTION: Gavel, VERSUS: Swords, GUESS: ScanEye } as const;
+const ICONS = { AUCTION: Gavel, VERSUS: Swords, GUESS: ScanEye, QUIZ: BrainCircuit } as const;
 
 export default async function GamesPage() {
   const [{ locale, t }, user, season, activity] = await Promise.all([

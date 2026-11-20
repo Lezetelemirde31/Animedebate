@@ -170,6 +170,8 @@ model User {
   gameMatches        GameMatchPlayer[]
   guessRuns          GuessRun[]
   guessStats         GuessStats?
+  quizRuns           QuizRun[]
+  quizStats          QuizStats?
   moderationLogs     ModerationLog[]       @relation("ModerationAdmin")
   queueEntry         QueueEntry?
   spectating         MatchSpectator[]
@@ -809,6 +811,70 @@ model GuessRoom {
 
 /// Players looking for a ranked race opponent.
 model GuessQueueEntry {
+  userId      String   @id
+  rating      Int
+  since       DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  matchedCode String?
+}
+
+// ─── Anime Quiz ──────────────────────────────────────────────────────────
+
+/// A solo quiz run or a daily quiz (questions and answers as JSON; answers stay on the server).
+model QuizRun {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "solo" or "daily"
+  kind       String
+  /// Daily quiz day (YYYY-MM-DD, Türkiye time); null for solo runs.
+  dayKey     String?
+  difficulty String
+  animeId    String?
+  state      Json
+  score      Int      @default(0)
+  correct    Int      @default(0)
+  questions  Int
+  finished   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, dayKey])
+  @@index([kind, dayKey, score])
+  @@index([userId, createdAt])
+}
+
+/// Lifetime quiz numbers and the daily-quiz streak of one player.
+model QuizStats {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runs            Int      @default(0)
+  answered        Int      @default(0)
+  correct         Int      @default(0)
+  bestScore       Int      @default(0)
+  bestStreak      Int      @default(0)
+  dailyPlayed     Int      @default(0)
+  dailyStreak     Int      @default(0)
+  bestDailyStreak Int      @default(0)
+  lastDailyKey    String?
+  updatedAt       DateTime @updatedAt
+}
+
+/// A multiplayer quiz race room (friendly or ranked).
+model QuizRoom {
+  code      String   @id
+  mode      String
+  phase     String
+  playerIds String[] @default([])
+  state     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phase, updatedAt])
+}
+
+/// Players looking for a ranked quiz opponent.
+model QuizQueueEntry {
   userId      String   @id
   rating      Int
   since       DateTime @default(now())

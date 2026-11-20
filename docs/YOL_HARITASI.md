@@ -20,7 +20,8 @@ Açık artırma platformdaki oyunlardan yalnızca biridir; öncelik sırası aş
 | Oyun başına ayrı rating, sezonlar, birleşik maç geçmişi | ✅ Aşama 1 tamamlandı |
 | Anime 1v1 | ✅ Aşama 2 tamamlandı (`/versus`) |
 | Bu Karakter Kim? | ✅ Aşama 3 tamamlandı (`/guess`) |
-| Quiz, Turnuvalar, Arkadaşlar | ❌ Yok |
+| Anime Quiz | ✅ Aşama 4 tamamlandı (`/quiz`) |
+| Turnuvalar, Arkadaşlar | ❌ Yok |
 
 ### Teknik ilkeler (tüm oyunlar için)
 
@@ -73,12 +74,18 @@ Açık artırma platformdaki oyunlardan yalnızca biridir; öncelik sırası aş
 - Not: anime çizimlerinde güvenilir göz tespiti olmadığından "Sadece gözler" yerine göz hizasından kırpılan
   "Yakın plan" modu kullanılıyor; bazı görsellerde kadraj saç/alın bölgesine denk gelebilir.
 
-### Aşama 4 — Anime Quiz
+### Aşama 4 — Anime Quiz ✅
 - Yapılandırılmış **soru bankası** (anime, kategori, zorluk, doğrulama durumu, kaynak).
 - Karakter verisinden doğrulanabilir otomatik sorular + elle eklenen sorular + admin soru yönetimi;
   banka zamanla binlerce soruya büyür.
 - Solo, süreli, günlük meydan okuma, çok oyunculu düello.
 - Hile koruması: doğru cevap istemciye gitmez, süre sunucuda ölçülür, soru başına tek cevap.
+- Uygulandı: 202 elle yazılmış ve doğrulanmış soru (6 anime, 3 seviye, 4 kategori; Türkçe + İngilizce) ve seri üyeliğinden
+  üretilen "hangisi bu animeden değil" soruları. Karakter teknik listelerinden soru üretilmedi: bazı ünlü teknikleri
+  (Amaterasu, Kamui, Chidori…) birden fazla karakter kullandığı için adil olmazdı.
+- Tekli oyun (10 soru, 50/50 ve +10 sn jokerleri), günlük quiz (herkese aynı 10 soru, günlük seri), yarış odası
+  (2–8 oyuncu, her oyuncuya farklı şık sırası) ve dereceli yarış. Doğru cevap yalnızca cevapladıktan sonra gönderilir;
+  soru bankası istemci paketine girmez.
 
 ### Aşama 5 — Kart Düellosu (Kart Arenası'nın tam oyuna dönüşmesi)
 - Koleksiyon (açık artırma + başlangıç kartları + ödüller), nadirlikler, karaktere özel yetenekler.

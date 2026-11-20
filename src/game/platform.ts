@@ -7,7 +7,7 @@ import type { Locale } from "@/lib/i18n";
  * Only games that are fully playable are listed (`GAMES`); new games are added
  * here when they ship.
  */
-export type GameKey = "VERSUS" | "GUESS" | "AUCTION";
+export type GameKey = "VERSUS" | "GUESS" | "QUIZ" | "AUCTION";
 
 export interface GameInfo {
   key: GameKey;
@@ -48,6 +48,19 @@ export const GAMES: readonly GameInfo[] = [
     modes: { tr: ["Günlük meydan okuma", "Tekli oyun", "Yarış odası", "Dereceli yarış"], en: ["Daily challenge", "Solo", "Race room", "Ranked race"] },
     hasRanked: true,
     color: "#a3e635",
+  },
+  {
+    key: "QUIZ",
+    href: "/quiz",
+    name: { tr: "Anime Quiz", en: "Anime Quiz" },
+    tagline: { tr: "Bilgini 6 animede sına", en: "Test your knowledge across 6 anime" },
+    description: {
+      tr: "Karakterler, teknikler, hikâye ve dünya hakkında sorular. Hızlı ve doğru cevap daha çok puan getirir; jokerlerini akıllıca kullan.",
+      en: "Questions on characters, techniques, story and world. Fast, correct answers score more — use your jokers wisely.",
+    },
+    modes: { tr: ["Günlük quiz", "Tekli oyun", "Yarış odası", "Dereceli yarış"], en: ["Daily quiz", "Solo", "Race room", "Ranked race"] },
+    hasRanked: true,
+    color: "#f59e0b",
   },
   {
     key: "AUCTION",
